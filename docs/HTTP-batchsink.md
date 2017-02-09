@@ -8,36 +8,38 @@ Sink plugin to send the messages from the pipeline to an external http endpoint.
 Properties
 ----------
 
-**url:** The URL to post data to.
+**url:** The URL to post data to. (Macro enabled)
 
-**method:** The HTTP request method. Defaults to POST.
+**method:** The HTTP request method. Defaults to POST. (Macro enabled)
 
-**bathSize:** Batch size. Defaults to 1.
+**batchSize:** Batch size. Defaults to 1. (Macro enabled)
 
-**messageFormat:** Format to send messsage in. Options are JSON,Form,Custom. Defaults to JSON.
+**messageFormat:** Format to send messsage in. Options are JSON, Form, Custom. Defaults to JSON. (Macro enabled)
 
-**body:** Custom message. This would be mandatory if message format is selected as Custom.
-          In case user wants to have Custom message and want to use some of the input record fields as variables to build the message,
-          then user needs to put the variable with # as prefix in the message so that the same would be replaced by the value from the input record.
+**body:** Optional custom message. This is required if the message format is set to 'Custom'.
+          User can leverage incoming message fields in the post payload.
+          For example-
+          User has defined payload as \{ "messageType" : "update", "name" : "#firstName" \}
+          where #firstName will be substituted for the value that is in firstName in the incoming message. (Macro enabled)
 
-**delimiterForMessages:** Delimiter for messages in case of batching > 1. Defaults to "\n".
+**delimiterForMessages:** Delimiter for messages in case of batching > 1. Defaults to "\n". (Macro enabled)
 
 **requestHeaders:** An optional string of header values to send in each request where the keys and values are
-delimited by a colon (":") and each pair is delimited by a newline ("\n").
+delimited by a colon (":") and each pair is delimited by a newline ("\n"). (Macro enabled)
 
-**charset:** Charset. Defaults to UTF-8.
+**charset:** Charset. Defaults to UTF-8. (Macro enabled)
 
-**followRedirects:** Whether to automatically follow redirects. Defaults to true.
+**followRedirects:** Whether to automatically follow redirects. Defaults to true. (Macro enabled)
 
-**disableSSLValidation:**  If user enables SSL validation, they will be expected to add the certificate to the trustStore on each machine. Defaults to true.
+**disableSSLValidation:**  If user enables SSL validation, they will be expected to add the certificate to the trustStore on each machine. Defaults to true. (Macro enabled)
 
-**numRetries:** The number of times the request should be retried if the request fails. Defaults to 3.
+**numRetries:** The number of times the request should be retried if the request fails. Defaults to 3. (Macro enabled)
 
-**connectTimeout:** The time in milliseconds to wait for a connection. Set to 0 for infinite. Defaults to 60000 (1 minute).
+**connectTimeout:** The time in milliseconds to wait for a connection. Set to 0 for infinite. Defaults to 60000 (1 minute). (Macro enabled)
 
-**readTimeout:** The time in milliseconds to wait for a read. Set to 0 for infinite. Defaults to 60000 (1 minute).
+**readTimeout:** The time in milliseconds to wait for a read. Set to 0 for infinite. Defaults to 60000 (1 minute). (Macro enabled)
 
-**failOnNon200Response** Whether to fail the pipeline on non-200 response from the http end point. Defaults to true.
+**failOnNon200Response** Whether to fail the pipeline on non-200 response from the http end point. Defaults to true. (Macro enabled)
 
 Example
 -------

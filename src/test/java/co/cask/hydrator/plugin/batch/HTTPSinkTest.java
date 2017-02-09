@@ -78,7 +78,7 @@ public class HTTPSinkTest extends HydratorTestBase {
   @BeforeClass
   public static void setupTestClass() throws Exception {
     setupBatchArtifacts(BATCH_ARTIFACT_ID, DataPipelineApp.class);
-    addPluginArtifact(NamespaceId.DEFAULT.artifact("http-sink-plugin", "1.6.0"), BATCH_ARTIFACT_ID,
+    addPluginArtifact(NamespaceId.DEFAULT.artifact("http-sink-plugin", "1.0.0"), BATCH_ARTIFACT_ID,
                       HTTPSink.class);
     List<HttpHandler> handlers = new ArrayList<>();
     handlers.add(new MockFeedHandler());

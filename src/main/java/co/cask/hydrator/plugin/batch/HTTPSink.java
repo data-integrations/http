@@ -70,16 +70,16 @@ import javax.ws.rs.HttpMethod;
 @Plugin(type = BatchSink.PLUGIN_TYPE)
 @Name("HTTP")
 @Description("Sink plugin to send the messages from the pipeline to an external http endpoint.")
-
 public class HTTPSink extends ReferenceBatchSink<StructuredRecord, Void, Void> {
 
   private static final Logger LOG = LoggerFactory.getLogger(HTTPSink.class);
   private static final String KV_DELIMITER = ":";
   private static final String DELIMITER = "\n";
+  private static final String REGEX_HASHED_VAR = "#s*(\\w+)";
   private static final Set<String> METHODS = ImmutableSet.of(HttpMethod.GET, HttpMethod.POST,
                                                              HttpMethod.PUT, HttpMethod.DELETE);
   private static StringBuilder messages = new StringBuilder("");
-
+  private String contentType;
   private HTTPSinkConfig config;
 
   public HTTPSink(HTTPSinkConfig config) {
@@ -102,11 +102,6 @@ public class HTTPSink extends ReferenceBatchSink<StructuredRecord, Void, Void> {
   public void transform(StructuredRecord input, Emitter<KeyValue<Void, Void>> emitter) throws Exception {
     config.validate();
     String message = null;
-    String contentType = null;
-    int responseCode;
-    int retries = 0;
-    Exception exception = null;
-
     if (config.method.equals("POST") || config.method.equals("PUT")) {
       if (config.messageFormat.equals("JSON")) {
         message = StructuredRecordStringConverter.toJsonString(input);
@@ -116,67 +111,86 @@ public class HTTPSink extends ReferenceBatchSink<StructuredRecord, Void, Void> {
         contentType = " application/x-www-form-urlencoded";
       } else if (config.messageFormat.equals("Custom")) {
         message = createCustomMessage(config.body, input);
-        contentType = "application/plain";
+        contentType = " text/plain";
       }
       messages.append(message).append(config.delimiterForMessages);
     }
     StringTokenizer tokens = new StringTokenizer(messages.toString().trim(), config.delimiterForMessages);
     if (config.batchSize == 1 || tokens.countTokens() == config.batchSize) {
-      do {
-        HttpURLConnection conn = null;
-        Map<String, String> headers = config.getRequestHeadersMap();
-        try {
-          URL url = new URL(config.url);
-          conn = (HttpURLConnection) url.openConnection();
-          if (conn instanceof HttpsURLConnection) {
-            //Disable SSLv3
-            System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2");
-            if (config.disableSSLValidation) {
-              disableSSLValidation();
-            }
-          }
-          conn.setRequestMethod(config.method.toUpperCase());
-          conn.setConnectTimeout(config.connectTimeout);
-          conn.setReadTimeout(config.readTimeout);
-          conn.setInstanceFollowRedirects(config.followRedirects);
-          conn.addRequestProperty("charset", config.charset);
-          for (Map.Entry<String, String> propertyEntry : headers.entrySet()) {
-            conn.addRequestProperty(propertyEntry.getKey(), propertyEntry.getValue());
-          }
-          if (config.method.equals("POST") || config.method.equals("PUT")) {
-            if (!headers.containsKey("Content-Type")) {
-              conn.addRequestProperty("Content-Type", contentType);
-            }
-          }
+      executeHTTPService();
+    }
+  }
 
-          if (messages.length() > 0) {
-            conn.setDoOutput(true);
-            try (OutputStream outputStream = conn.getOutputStream()) {
-              LOG.info("Payload: " + messages.toString().trim());
-              outputStream.write(messages.toString().trim().getBytes(config.charset));
-            }
-          }
-          responseCode = conn.getResponseCode();
-          messages.setLength(0);
-          if (config.failOnNon200Response && responseCode != 200) {
-            exception = new IllegalStateException("Received error response. Response code: " + responseCode);
-          }
-          break;
-        } catch (MalformedURLException | ProtocolException e) {
-          throw new IllegalStateException("Error opening url connection. Reason: " + e.getMessage(), e);
-        } catch (Exception e) {
-          LOG.warn("Error making {} request to url {} with headers {}.", config.method, config.url, headers);
-          exception = e;
-        } finally {
-          if (conn != null) {
-            conn.disconnect();
+  @Override
+  public void destroy() {
+    // Process remaining messages after batch executions.
+    if (!messages.toString().isEmpty()) {
+      try {
+        executeHTTPService();
+      } catch (Exception e) {
+        throw new RuntimeException("Error while executing http request for remaining input messages " +
+                                     "after the batch execution. " + e);
+      }
+    }
+  }
+
+  private void executeHTTPService() throws Exception {
+    int responseCode;
+    int retries = 0;
+    Exception exception = null;
+    do {
+      HttpURLConnection conn = null;
+      Map<String, String> headers = config.getRequestHeadersMap();
+      try {
+        URL url = new URL(config.url);
+        conn = (HttpURLConnection) url.openConnection();
+        if (conn instanceof HttpsURLConnection) {
+          //Disable SSLv3
+          System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2");
+          if (config.disableSSLValidation) {
+            disableSSLValidation();
           }
         }
-        retries++;
-      } while (retries < config.numRetries);
-      if (exception != null) {
-        throw exception;
+        conn.setRequestMethod(config.method.toUpperCase());
+        conn.setConnectTimeout(config.connectTimeout);
+        conn.setReadTimeout(config.readTimeout);
+        conn.setInstanceFollowRedirects(config.followRedirects);
+        conn.addRequestProperty("charset", config.charset);
+        for (Map.Entry<String, String> propertyEntry : headers.entrySet()) {
+          conn.addRequestProperty(propertyEntry.getKey(), propertyEntry.getValue());
+        }
+        //Default contentType value would be added in the request properties if user has not added in the headers.
+        if (config.method.equals("POST") || config.method.equals("PUT")) {
+          if (!headers.containsKey("Content-Type")) {
+            conn.addRequestProperty("Content-Type", contentType);
+          }
+        }
+        if (messages.length() > 0) {
+          conn.setDoOutput(true);
+          try (OutputStream outputStream = conn.getOutputStream()) {
+            outputStream.write(messages.toString().trim().getBytes(config.charset));
+          }
+        }
+        responseCode = conn.getResponseCode();
+        messages.setLength(0);
+        if (config.failOnNon200Response && !(responseCode >= 200 && responseCode < 300)) {
+          exception = new IllegalStateException("Received error response. Response code: " + responseCode);
+        }
+        break;
+      } catch (MalformedURLException | ProtocolException e) {
+        throw new IllegalStateException("Error opening url connection. Reason: " + e.getMessage(), e);
+      } catch (Exception e) {
+        LOG.warn("Error making {} request to url {} with headers {}.", config.method, config.url, headers);
+        exception = e;
+      } finally {
+        if (conn != null) {
+          conn.disconnect();
+        }
       }
+      retries++;
+    } while (retries < config.numRetries);
+    if (exception != null) {
+      throw exception;
     }
   }
 
@@ -190,7 +204,9 @@ public class HTTPSink extends ReferenceBatchSink<StructuredRecord, Void, Void> {
       } else {
         sb.append("&");
       }
-      sb.append(field.getName() + "=" + input.get(field.getName()));
+      sb.append(field.getName());
+      sb.append("=");
+      sb.append(input.get(field.getName()));
     }
     try {
       formMessage = URLEncoder.encode(sb.toString(), config.charset);
@@ -202,8 +218,7 @@ public class HTTPSink extends ReferenceBatchSink<StructuredRecord, Void, Void> {
 
   private String createCustomMessage(String body, StructuredRecord input) {
     String customMessage = body;
-    String regexForHashedVariables = "#s*(\\w+)";
-    Matcher matcher = Pattern.compile(regexForHashedVariables).matcher(customMessage);
+    Matcher matcher = Pattern.compile(REGEX_HASHED_VAR).matcher(customMessage);
     HashMap<String, String> findReplaceMap = new HashMap();
     while (matcher.find()) {
       if (input.get(matcher.group(1)) != null) {
@@ -213,7 +228,7 @@ public class HTTPSink extends ReferenceBatchSink<StructuredRecord, Void, Void> {
           "Field %s doesnt exist in the input schema.", matcher.group(1)));
       }
     }
-    Matcher replaceMatcher = Pattern.compile(regexForHashedVariables).matcher(customMessage);
+    Matcher replaceMatcher = Pattern.compile(REGEX_HASHED_VAR).matcher(customMessage);
     while (replaceMatcher.find()) {
       String val = replaceMatcher.group().replace("#", "");
       customMessage = (customMessage.replace(replaceMatcher.group(), findReplaceMap.get(val)));
@@ -272,61 +287,74 @@ public class HTTPSink extends ReferenceBatchSink<StructuredRecord, Void, Void> {
    */
   public static class HTTPSinkConfig extends ReferencePluginConfig {
 
-    @Description("The URL to post data to.")
+    @Description("The URL to post data to. (Macro Enabled)")
     @Macro
     private String url;
 
-    @Description("The http request method. Defaults to POST")
+    @Description("The http request method. Defaults to POST. (Macro Enabled)")
+    @Macro
     private String method;
 
-    @Description("Batch size. Defaults to 1.")
+    @Description("Batch size. Defaults to 1. (Macro Enabled)")
     @Macro
     private Integer batchSize;
 
     @Nullable
-    @Description("Delimiter for messages to be used while batching. Defaults to \"\\n\"")
+    @Description("Delimiter for messages to be used while batching. Defaults to \"\\n\". (Macro Enabled)")
+    @Macro
     private String delimiterForMessages;
 
-    @Description("Format to send messsage in.")
+    @Description("Format to send messsage in. (Macro Enabled)")
+    @Macro
     private String messageFormat;
 
     @Nullable
-    @Description("Custom message. This would be mandatory if message format is selected as Custom." +
-      "In case user want to have Custom message and want to use some of the input record fields as variables " +
-      "to build the message,then user needs to put the variable with # as prefix in the message " +
-      "so that the same would be replaced by the value from the input record.")
+    @Description("Optional custom message. This is required if the message format is set to 'Custom'." +
+      "User can leverage incoming message fields in the post payload. For example-" +
+      "User has defined payload as \\{ \"messageType\" : \"update\", \"name\" : \"#firstName\" \\}" +
+      "where #firstName will be substituted for the value that is in firstName in the incoming message. " +
+      "(Macro enabled)")
     @Macro
     private String body;
 
     @Nullable
-    @Description("Request headers to set when performing the http request.")
+    @Description("Request headers to set when performing the http request. (Macro enabled)")
     @Macro
     private String requestHeaders;
 
-    @Description("Charset. Defaults to UTF-8.")
+    @Description("Charset. Defaults to UTF-8. (Macro enabled)")
+    @Macro
     private String charset;
 
-    @Description("Whether to automatically follow redirects. Defaults to true.")
+    @Description("Whether to automatically follow redirects. Defaults to true. (Macro enabled)")
+    @Macro
     private Boolean followRedirects;
 
     @Description("If user enables SSL validation, they will be expected to add the certificate to the trustStore" +
-      " on each machine. Defaults to true.")
+      " on each machine. Defaults to true. (Macro enabled)")
+    @Macro
     private Boolean disableSSLValidation;
 
-    @Description("The number of times the request should be retried if the request fails. Defaults to 3.")
+    @Description("The number of times the request should be retried if the request fails. Defaults to 3. " +
+      "(Macro enabled)")
+    @Macro
     private Integer numRetries;
 
-    @Description("Sets the connection timeout in milliseconds. Set to 0 for infinite. Default is 60000 (1 minute).")
+    @Description("Sets the connection timeout in milliseconds. Set to 0 for infinite. Default is 60000 (1 minute). " +
+      "(Macro enabled)")
     @Nullable
     @Macro
     private Integer connectTimeout;
 
-    @Description("The time in milliseconds to wait for a read. Set to 0 for infinite. Defaults to 60000 (1 minute).")
+    @Description("The time in milliseconds to wait for a read. Set to 0 for infinite. Defaults to 60000 (1 minute). " +
+      "(Macro enabled)")
     @Nullable
     @Macro
     private Integer readTimeout;
 
-    @Description("Whether to fail the pipeline on non-200 response from the http end point. Defaults to true.")
+    @Description("Whether to fail the pipeline on non-200 response from the http end point. Defaults to true. " +
+      "(Macro enabled)")
+    @Macro
     private Boolean failOnNon200Response;
 
     public HTTPSinkConfig(String referenceName, String url, String method, Integer batchSize,
@@ -378,8 +406,9 @@ public class HTTPSink extends ReferenceBatchSink<StructuredRecord, Void, Void> {
         throw new IllegalArgumentException(String.format(
           "Invalid readTimeout %d. Timeout must be 0 or a positive number.", readTimeout));
       }
-      if (messageFormat.equalsIgnoreCase("Custom") && body == null) {
-        throw new IllegalArgumentException("For Custom message format,then message cannot be null.");
+      if (!containsMacro("messageFormat") && !containsMacro("body") && messageFormat.equalsIgnoreCase("Custom")
+        && body == null) {
+        throw new IllegalArgumentException("For Custom message format, message cannot be null.");
       }
     }
 
@@ -398,5 +427,4 @@ public class HTTPSink extends ReferenceBatchSink<StructuredRecord, Void, Void> {
       return headersMap;
     }
   }
-
 }
