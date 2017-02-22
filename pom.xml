@@ -21,7 +21,7 @@
   <name>HTTP Sink Plugin</name>
   <groupId>groupId</groupId>
   <artifactId>http-sink-plugin</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.0</version>
 
   <licenses>
     <license>
