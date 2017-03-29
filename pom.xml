@@ -79,10 +79,10 @@
   </repositories>
 
   <properties>
-    <cdap.version>4.1.0-SNAPSHOT</cdap.version>
+    <cdap.version>4.1.0</cdap.version>
     <hadoop.version>2.3.0</hadoop.version>
     <junit.version>4.11</junit.version>
-    <hydrator.version>1.6.0-SNAPSHOT</hydrator.version>
+    <hydrator.version>1.6.0</hydrator.version>
     <widgets.dir>widgets</widgets.dir>
     <docs.dir>docs</docs.dir>
     <app.parents>
