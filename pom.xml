@@ -392,6 +392,26 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>co.cask</groupId>
+        <artifactId>cdap-maven-plugin</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <configuration>
+          <cdapArtifacts>
+            <parent>system:cdap-data-pipeline[4.0.0,5.0.0-SNAPSHOT)</parent>
+            <parent>system:cdap-data-streams[4.0.0,5.0.0-SNAPSHOT)</parent>
+          </cdapArtifacts>
+        </configuration>
+        <executions>
+          <execution>
+            <id>create-artifact-config</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>create-plugin-json</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 </project>
