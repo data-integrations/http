@@ -14,34 +14,35 @@
  * the License.
  */
 
-package co.cask.hydrator.plugin.batch;
+package io.cdap.plugin.batch;
 
-import co.cask.cdap.api.data.format.StructuredRecord;
-import co.cask.cdap.api.data.schema.Schema;
-import co.cask.cdap.api.dataset.table.Table;
-import co.cask.cdap.datapipeline.DataPipelineApp;
-import co.cask.cdap.datapipeline.SmartWorkflow;
-import co.cask.cdap.etl.api.batch.BatchSink;
-import co.cask.cdap.etl.mock.batch.MockSource;
-import co.cask.cdap.etl.mock.test.HydratorTestBase;
-import co.cask.cdap.etl.proto.v2.ETLBatchConfig;
-import co.cask.cdap.etl.proto.v2.ETLPlugin;
-import co.cask.cdap.etl.proto.v2.ETLStage;
-import co.cask.cdap.proto.artifact.AppRequest;
-import co.cask.cdap.proto.artifact.ArtifactSummary;
-import co.cask.cdap.proto.id.ApplicationId;
-import co.cask.cdap.proto.id.ArtifactId;
-import co.cask.cdap.proto.id.NamespaceId;
-import co.cask.cdap.test.ApplicationManager;
-import co.cask.cdap.test.DataSetManager;
-import co.cask.cdap.test.TestConfiguration;
-import co.cask.cdap.test.WorkflowManager;
-import co.cask.http.HttpHandler;
-import co.cask.http.NettyHttpService;
-import co.cask.hydrator.plugin.mock.MockFeedHandler;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import io.cdap.cdap.api.artifact.ArtifactSummary;
+import io.cdap.cdap.api.data.format.StructuredRecord;
+import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.api.dataset.table.Table;
+import io.cdap.cdap.datapipeline.DataPipelineApp;
+import io.cdap.cdap.datapipeline.SmartWorkflow;
+import io.cdap.cdap.etl.api.batch.BatchSink;
+import io.cdap.cdap.etl.mock.batch.MockSource;
+import io.cdap.cdap.etl.mock.test.HydratorTestBase;
+import io.cdap.cdap.etl.proto.v2.ETLBatchConfig;
+import io.cdap.cdap.etl.proto.v2.ETLPlugin;
+import io.cdap.cdap.etl.proto.v2.ETLStage;
+import io.cdap.cdap.proto.ProgramRunStatus;
+import io.cdap.cdap.proto.artifact.AppRequest;
+import io.cdap.cdap.proto.id.ApplicationId;
+import io.cdap.cdap.proto.id.ArtifactId;
+import io.cdap.cdap.proto.id.NamespaceId;
+import io.cdap.cdap.test.ApplicationManager;
+import io.cdap.cdap.test.DataSetManager;
+import io.cdap.cdap.test.TestConfiguration;
+import io.cdap.cdap.test.WorkflowManager;
+import io.cdap.http.HttpHandler;
+import io.cdap.http.NettyHttpService;
+import io.cdap.plugin.mock.MockFeedHandler;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -82,8 +83,8 @@ public class HTTPSinkTest extends HydratorTestBase {
                       HTTPSink.class);
     List<HttpHandler> handlers = new ArrayList<>();
     handlers.add(new MockFeedHandler());
-    httpService = NettyHttpService.builder("MockService").addHttpHandlers(handlers).build();
-    httpService.startAndWait();
+    httpService = NettyHttpService.builder("MockService").setHttpHandlers(handlers).build();
+    httpService.start();
     int port = httpService.getBindAddress().getPort();
     baseURL = "http://localhost:" + port;
     URL setPortURL = new URL(baseURL + "/feeds/users");
@@ -96,8 +97,8 @@ public class HTTPSinkTest extends HydratorTestBase {
   }
 
   @AfterClass
-  public static void teardown() throws IOException {
-    httpService.stopAndWait();
+  public static void teardown() throws Exception {
+    httpService.stop();
   }
 
   @After
@@ -144,7 +145,7 @@ public class HTTPSinkTest extends HydratorTestBase {
     MockSource.writeInput(inputManager, input);
     WorkflowManager manager = appManager.getWorkflowManager(SmartWorkflow.NAME);
     manager.start();
-    manager.waitForFinish(5, TimeUnit.MINUTES);
+    manager.waitForRun(ProgramRunStatus.COMPLETED, 5, TimeUnit.MINUTES);
   }
 
   private int resetFeeds() throws IOException {
