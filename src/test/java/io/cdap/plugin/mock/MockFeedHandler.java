@@ -14,11 +14,11 @@
  * the License.
  */
 
-package co.cask.hydrator.plugin.mock;
+package io.cdap.plugin.mock;
 
-import co.cask.http.HandlerContext;
-import co.cask.http.HttpHandler;
-import co.cask.http.HttpResponder;
+import io.cdap.http.HandlerContext;
+import io.cdap.http.HttpHandler;
+import io.cdap.http.HttpResponder;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
