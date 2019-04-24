@@ -19,10 +19,11 @@ package co.cask.hydrator.plugin.mock;
 import co.cask.http.HandlerContext;
 import co.cask.http.HttpHandler;
 import co.cask.http.HttpResponder;
-import com.google.common.base.Charsets;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponseStatus;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import javax.ws.rs.DELETE;
@@ -61,7 +62,7 @@ public class MockFeedHandler implements HttpHandler {
   @PUT
   @Path("port")
   public void setPort(HttpRequest request, HttpResponder responder) {
-    port = Integer.parseInt(request.getContent().toString(Charsets.UTF_8));
+    port = Integer.parseInt(getStringContent(request));
     responder.sendStatus(HttpResponseStatus.OK);
   }
 
@@ -71,7 +72,7 @@ public class MockFeedHandler implements HttpHandler {
   @Path("feeds/{feed-id}")
   public void setBasePath(HttpRequest request, HttpResponder responder,
                           @PathParam("feed-id") String feedId) {
-    String content = request.getContent().toString(Charsets.UTF_8);
+    String content = getStringContent(request);
     feeds.put(feedId, content);
     responder.sendStatus(HttpResponseStatus.OK);
   }
@@ -112,5 +113,9 @@ public class MockFeedHandler implements HttpHandler {
       return;
     }
     responder.sendString(HttpResponseStatus.OK, feeds.get(feedId));
+  }
+
+  private String getStringContent(HttpRequest request) {
+    return ((FullHttpRequest) request).content().toString(StandardCharsets.UTF_8);
   }
 }
