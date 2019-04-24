@@ -206,7 +206,7 @@ public class HTTPSink extends ReferenceBatchSink<StructuredRecord, Void, Void> {
       }
       sb.append(field.getName());
       sb.append("=");
-      sb.append(input.get(field.getName()));
+      sb.append((String) input.get(field.getName()));
     }
     try {
       formMessage = URLEncoder.encode(sb.toString(), config.charset);

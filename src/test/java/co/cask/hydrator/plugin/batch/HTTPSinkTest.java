@@ -16,6 +16,7 @@
 
 package co.cask.hydrator.plugin.batch;
 
+import co.cask.cdap.api.artifact.ArtifactSummary;
 import co.cask.cdap.api.data.format.StructuredRecord;
 import co.cask.cdap.api.data.schema.Schema;
 import co.cask.cdap.api.dataset.table.Table;
@@ -27,8 +28,8 @@ import co.cask.cdap.etl.mock.test.HydratorTestBase;
 import co.cask.cdap.etl.proto.v2.ETLBatchConfig;
 import co.cask.cdap.etl.proto.v2.ETLPlugin;
 import co.cask.cdap.etl.proto.v2.ETLStage;
+import co.cask.cdap.proto.ProgramRunStatus;
 import co.cask.cdap.proto.artifact.AppRequest;
-import co.cask.cdap.proto.artifact.ArtifactSummary;
 import co.cask.cdap.proto.id.ApplicationId;
 import co.cask.cdap.proto.id.ArtifactId;
 import co.cask.cdap.proto.id.NamespaceId;
@@ -82,8 +83,8 @@ public class HTTPSinkTest extends HydratorTestBase {
                       HTTPSink.class);
     List<HttpHandler> handlers = new ArrayList<>();
     handlers.add(new MockFeedHandler());
-    httpService = NettyHttpService.builder("MockService").addHttpHandlers(handlers).build();
-    httpService.startAndWait();
+    httpService = NettyHttpService.builder("MockService").setHttpHandlers(handlers).build();
+    httpService.start();
     int port = httpService.getBindAddress().getPort();
     baseURL = "http://localhost:" + port;
     URL setPortURL = new URL(baseURL + "/feeds/users");
@@ -96,8 +97,8 @@ public class HTTPSinkTest extends HydratorTestBase {
   }
 
   @AfterClass
-  public static void teardown() throws IOException {
-    httpService.stopAndWait();
+  public static void teardown() throws Exception {
+    httpService.stop();
   }
 
   @After
@@ -144,7 +145,7 @@ public class HTTPSinkTest extends HydratorTestBase {
     MockSource.writeInput(inputManager, input);
     WorkflowManager manager = appManager.getWorkflowManager(SmartWorkflow.NAME);
     manager.start();
-    manager.waitForFinish(5, TimeUnit.MINUTES);
+    manager.waitForRun(ProgramRunStatus.COMPLETED, 5, TimeUnit.MINUTES);
   }
 
   private int resetFeeds() throws IOException {

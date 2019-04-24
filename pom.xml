@@ -19,9 +19,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <name>HTTP Sink Plugin</name>
-  <groupId>groupId</groupId>
+  <groupId>co.cask</groupId>
   <artifactId>http-sink-plugin</artifactId>
-  <version>1.0.1</version>
+  <version>1.0.2</version>
 
   <licenses>
     <license>
@@ -79,14 +79,14 @@
   </repositories>
 
   <properties>
-    <cdap.version>4.1.0</cdap.version>
+    <cdap.version>5.1.2</cdap.version>
     <hadoop.version>2.3.0</hadoop.version>
     <junit.version>4.11</junit.version>
-    <hydrator.version>1.6.0</hydrator.version>
+    <hydrator.version>2.1.0</hydrator.version>
     <widgets.dir>widgets</widgets.dir>
     <docs.dir>docs</docs.dir>
     <app.parents>
-      system:cdap-etl-batch[4.0.0,5.0.0-SNAPSHOT),system:cdap-etl-realtime[4.0.0,5.0.0-SNAPSHOT),system:cdap-data-pipeline[4.0.0,5.0.0-SNAPSHOT),system:cdap-data-streams[4.0.0,5.0.0-SNAPSHOT)
+      system:cdap-data-pipeline[5.0.0,6.0.0-SNAPSHOT),system:cdap-data-streams[5.0.0,6.0.0-SNAPSHOT)
     </app.parents>
     <!-- this is here because project.basedir evaluates to null in the script build step -->
     <main.basedir>${project.basedir}</main.basedir>
@@ -115,12 +115,6 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>13.0.1</version>
-    </dependency>
-    <dependency>
-      <groupId>co.cask.cdap</groupId>
-      <artifactId>cdap-etl-realtime</artifactId>
-      <version>${cdap.version}</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>co.cask.cdap</groupId>
@@ -161,10 +155,10 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.1</version>
+        <version>3.7.0</version>
         <configuration>
-          <source>1.7</source>
-          <target>1.7</target>
+          <source>1.8</source>
+          <target>1.8</target>
         </configuration>
       </plugin>
       <plugin>
@@ -373,7 +367,7 @@
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
-        <version>2.3.7</version>
+        <version>3.5.0</version>
         <extensions>true</extensions>
         <configuration>
           <instructions>
