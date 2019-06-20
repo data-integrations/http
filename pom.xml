@@ -18,9 +18,9 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <name>HTTP Sink Plugin</name>
+  <name>HTTP Plugins</name>
   <groupId>io.cdap</groupId>
-  <artifactId>http-sink-plugin</artifactId>
+  <artifactId>http-plugins</artifactId>
   <version>1.2.0-SNAPSHOT</version>
 
   <licenses>
@@ -42,14 +42,14 @@
   </developers>
 
   <scm>
-    <connection>scm:git:https://github.com/hydrator/http-sink.git</connection>
-    <developerConnection>scm:git:git@github.com:hydrator/http-sink.git</developerConnection>
-    <url>https://github.com/hydrator/http-sink.git</url>
+    <connection>scm:git:https://github.com/data-integrations/http.git</connection>
+    <developerConnection>scm:git:git@github.com:data-integrations/http.git</developerConnection>
+    <url>https://github.com/data-integrations/http.git</url>
     <tag>HEAD</tag>
   </scm>
 
   <issueManagement>
-    <url>https://issues.cask.co/browse/HYDRATOR</url>
+    <url>https://issues.cask.co/browse/CDAP</url>
   </issueManagement>
 
   <distributionManagement>
@@ -57,10 +57,6 @@
       <id>sonatype.release</id>
       <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
     </repository>
-    <snapshotRepository>
-      <id>sonatype.snapshots</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
     <site>
       <id>cdap</id>
       <url>http://cdap.io</url>
@@ -79,10 +75,10 @@
   </repositories>
 
   <properties>
-    <cdap.version>6.0.0-SNAPSHOT</cdap.version>
+    <cdap.version>6.0.0</cdap.version>
     <hadoop.version>2.3.0</hadoop.version>
     <junit.version>4.11</junit.version>
-    <hydrator.version>2.2.0-SNAPSHOT</hydrator.version>
+    <hydrator.version>2.2.0</hydrator.version>
     <widgets.dir>widgets</widgets.dir>
     <docs.dir>docs</docs.dir>
     <app.parents>
@@ -93,6 +89,12 @@
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>io.cdap.cdap</groupId>
+      <artifactId>cdap-api</artifactId>
+      <version>${cdap.version}</version>
+      <scope>provided</scope>
+    </dependency>
     <dependency>
       <groupId>io.cdap.cdap</groupId>
       <artifactId>cdap-etl-api</artifactId>
@@ -120,7 +122,7 @@
       <groupId>io.cdap.cdap</groupId>
       <artifactId>cdap-data-pipeline</artifactId>
       <version>${cdap.version}</version>
-      <scope>provided</scope>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>io.cdap.cdap</groupId>
@@ -280,86 +282,21 @@
         </dependencies>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <version>1.7</version>
+        <groupId>io.cdap</groupId>
+        <artifactId>cdap-maven-plugin</artifactId>
+        <version>1.1.0</version>
+        <configuration>
+          <cdapArtifacts>
+            <parent>system:cdap-data-pipeline[6.0.0,7.0.0-SNAPSHOT)</parent>
+            <parent>system:cdap-data-streams[6.0.0,7.0.0-SNAPSHOT)</parent>
+          </cdapArtifacts>
+        </configuration>
         <executions>
-          <!-- Create the config file for artifact which can be used to deploy the artifact.
-               Sets the parents field to system:cdap-etl-batch and system:cdap-etl-realtime with whatever
-               version range is set in the app.parents property.
-               also sets a widget and doc property for each file contained in the widgets and docs directories. -->
           <execution>
             <id>create-artifact-config</id>
             <phase>prepare-package</phase>
-            <configuration>
-              <target>
-                <script language="javascript"> <![CDATA[
-                  // for some reason, project.basedir evaluates to null if we just get the property here.
-                  // so we set main.basedir to project.basedir in the pom properties, then main.basedir is used here
-                  // where it evaluates correctly for whatever reason
-                  var baseDir = project.getProperty("main.basedir");
-                  var targetDir = project.getProperty("project.build.directory");
-                  var artifactId = project.getProperty("project.artifactId");
-                  var version = project.getProperty("project.version");
-                  var cfgFile = new java.io.File(targetDir, artifactId + "-" + version + ".json");
-                  if (!cfgFile.exists()) {
-                    cfgFile.createNewFile();
-                  }
-                  var parents = project.getProperty("app.parents").split(",");
-                  var config = {
-                    "parents": [ ],
-                    "properties": {}
-                  }
-                  for (i = 0; i < parents.length; i+=2) {
-                    // because name1[lo,hi],name2[lo,hi] gets split into "name1[lo", "hi]", "name2[lo", "hi]"
-                    // so we have to combine them again
-                    config.parents.push(parents[i] + "," + parents[i+1]);
-                  }
-                  // look in widgets directory for widget config for each plugin
-                  var widgetsDir = new java.io.File(baseDir, project.getProperty("widgets.dir"));
-                  if (widgetsDir.isDirectory()) {
-                    var widgetsFiles = widgetsDir.listFiles();
-                    for (i = 0; i < widgetsFiles.length; i++) {
-                      var widgetsFile = widgetsFiles[i];
-                      if (widgetsFile.isFile()) {
-                        var propertyName = "widgets." + widgetsFile.getName();
-                        // if the filename ends with .json
-                        if (propertyName.indexOf(".json", propertyName.length - 5) !== -1) {
-                          // strip the .json
-                          propertyName = propertyName.slice(0, -5);
-                          var contents = new java.lang.String(java.nio.file.Files.readAllBytes(widgetsFile.toPath()), java.nio.charset.StandardCharsets.UTF_8);
-                          var contentsAsJson = JSON.parse(contents);
-                          config.properties[propertyName] = JSON.stringify(contentsAsJson);
-                        }
-                      }
-                    }
-                  }
-                  // look in the docs directory for docs for each plugin
-                  var docsDir = new java.io.File(baseDir, project.getProperty("docs.dir"));
-                  if (docsDir.isDirectory()) {
-                    var docFiles = docsDir.listFiles();
-                    for (i = 0; i < docFiles.length; i++) {
-                      var docFile = docFiles[i];
-                      if (docFile.isFile()) {
-                        var propertyName = "doc." + docFile.getName();
-                        // if the filename ends with .md
-                        if (propertyName.indexOf(".md", propertyName.length - 3) !== -1) {
-                          // strip the extension
-                          propertyName = propertyName.slice(0, -3);
-                          var contents = new java.lang.String(java.nio.file.Files.readAllBytes(docFile.toPath()), java.nio.charset.StandardCharsets.UTF_8);
-                          config.properties[propertyName] = contents + "";
-                        }
-                      }
-                    }
-                  }
-                  var fw = new java.io.BufferedWriter(new java.io.FileWriter(cfgFile.getAbsoluteFile()));
-                  fw.write(JSON.stringify(config, null, 2));
-                  fw.close();
-                ]]></script>
-              </target>
-            </configuration>
             <goals>
-              <goal>run</goal>
+              <goal>create-plugin-json</goal>
             </goals>
           </execution>
         </executions>
@@ -371,7 +308,7 @@
         <extensions>true</extensions>
         <configuration>
           <instructions>
-            <_exportcontents>io.cdap.plugin.*</_exportcontents>
+            <_exportcontents>io.cdap.plugin.http.*</_exportcontents>
             <Embed-Dependency>*;inline=false;scope=compile</Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Embed-Directory>lib</Embed-Directory>
