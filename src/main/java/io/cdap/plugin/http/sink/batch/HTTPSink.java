@@ -14,7 +14,7 @@
  * the License.
  */
 
-package io.cdap.plugin.http.batch;
+package io.cdap.plugin.http.sink.batch;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
