@@ -9,9 +9,9 @@ Data in JSON, XML, CSV, TSV, TEXT and BLOB formats is supported.
 Properties
 ----------
 
-**Reference Name:** Name used to uniquely identify this source for lineage, annotating metadata, etc.
-
 ### General
+
+**Reference Name:** Name used to uniquely identify this source for lineage, annotating metadata, etc.
 
 **URL:** Url to fetch to the first page.
 The url must start with a protocol (e.g. http://).
@@ -352,7 +352,7 @@ a next page url based on previous page contents and headers.
 
 **OAuth2 Enabled:** If true, plugin will perform OAuth2 authentication.
 
-**Auth URL:** Endpoint for authorization server, which retrieves the authorization code.
+**Auth URL:** Endpoint for the authorization server used to retrieve the authorization code.
 
 **Token URL:** Endpoint for the resource server, which exchanges the authorization code for an access token.
 
