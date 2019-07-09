@@ -14,7 +14,7 @@
  * the License.
  */
 
-package io.cdap.plugin.http.batch;
+package io.cdap.plugin.http.sink.batch;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
@@ -42,7 +42,7 @@ import io.cdap.cdap.test.TestConfiguration;
 import io.cdap.cdap.test.WorkflowManager;
 import io.cdap.http.HttpHandler;
 import io.cdap.http.NettyHttpService;
-import io.cdap.plugin.mock.MockFeedHandler;
+import io.cdap.plugin.http.sink.mock.MockFeedHandler;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;

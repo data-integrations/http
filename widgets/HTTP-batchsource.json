@@ -1,0 +1,507 @@
+{
+  "metadata": {
+    "spec-version": "1.5"
+  },
+  "configuration-groups": [
+    {
+      "label": "General",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Reference Name",
+          "name": "referenceName"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "URL",
+          "name": "url"
+        },
+        {
+          "widget-type": "select",
+          "label": "HTTP Method",
+          "name": "httpMethod",
+          "widget-attributes": {
+            "values": [
+              "GET",
+              "POST",
+              "PUT",
+              "DELETE",
+              "HEAD"
+            ],
+            "default": "GET"
+          }
+        },
+        {
+          "widget-type": "keyvalue",
+          "label": "Headers",
+          "name": "headers",
+          "widget-attributes": {
+            "showDelimiter": "false"
+          }
+        },
+        {
+          "widget-type": "textarea",
+          "name": "requestBody",
+          "label": "Request Body",
+          "widget-attributes": {
+            "rows": "5"
+          }
+        }
+      ]
+    },
+    {
+      "label": "Format",
+      "properties": [
+        {
+          "widget-type": "select",
+          "label": "Format",
+          "name": "format",
+          "widget-attributes": {
+            "values": [
+              "json",
+              "xml",
+              "tsv",
+              "csv",
+              "text",
+              "blob"
+            ]
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "JSON/XML Result Path",
+          "name": "resultPath"
+        },
+        {
+          "widget-type": "keyvalue",
+          "label": "JSON/XML Fields Mapping",
+          "name": "fieldsMapping",
+          "widget-attributes": {
+            "showDelimiter": "false"
+          }
+        },
+        {
+          "widget-type": "radio-group",
+          "label": "CSV Skip First Row",
+          "name": "csvSkipFirstRow",
+          "widget-attributes": {
+            "layout": "inline",
+            "default": "false",
+            "options": [
+              {
+                "id": "true",
+                "label": "true"
+              },
+              {
+                "id": "false",
+                "label": "false"
+              }
+            ]
+          }
+        },
+      ]
+    },
+    {
+      "label": "Basic Authentication",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Username",
+          "name": "username"
+        },
+        {
+          "widget-type": "password",
+          "label": "Password",
+          "name": "password"
+        }
+      ]
+    },
+    {
+      "label": "HTTP Proxy",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Proxy URL",
+          "name": "proxyUrl"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Username",
+          "name": "proxyUsername"
+        },
+        {
+          "widget-type": "password",
+          "label": "Password",
+          "name": "proxyPassword"
+        }
+      ]
+    },
+    {
+      "label": "Error Handling",
+      "properties": [
+        {
+          "widget-type": "keyvalue-dropdown",
+          "label": "HTTP Errors Handling",
+          "name": "httpErrorsHandling",
+          "widget-attributes": {
+            "default": "2..:Success,.*:Fail",
+            "showDelimiter": "false",
+            "dropdownOptions": [
+              "Success",
+              "Fail",
+              "Skip",
+              "Send to error",
+              "Retry and fail",
+              "Retry and skip",
+              "Retry and send to error"
+            ],
+            "key-placeholder": "HTTP Status Code Regex"
+          }
+        },
+        {
+          "widget-type": "radio-group",
+          "label": "Non-HTTP Error Handling",
+          "name": "errorHandling",
+          "widget-attributes": {
+            "layout": "inline",
+            "default": "stopOnError",
+            "options": [
+              {
+                "id": "stopOnError",
+                "label": "Stop on error"
+              },
+              {
+                "id": "sendToError",
+                "label": "Send to error"
+              },
+              {
+                "id": "skipOnError",
+                "label": "Skip on error"
+              }
+            ]
+          }
+        },
+        {
+          "widget-type": "radio-group",
+          "label": "Retry Policy",
+          "name": "retryPolicy",
+          "widget-attributes": {
+            "layout": "inline",
+            "default": "exponential",
+            "options": [
+              {
+                "id": "exponential",
+                "label": "Exponential"
+              },
+              {
+                "id": "linear",
+                "label": "Linear"
+              }
+            ]
+          }
+        },
+        {
+          "widget-type": "number",
+          "label": "Linear Retry Interval",
+          "name": "linearRetryInterval",
+          "widget-attributes": {
+            "min": "0",
+            "default": "30"
+          }
+        },
+        {
+          "widget-type": "number",
+          "label": "Max Retry Duration",
+          "name": "maxRetryDuration",
+          "widget-attributes": {
+            "min": "0",
+            "default": "600"
+          }
+        },
+        {
+          "widget-type": "number",
+          "label": "Connect Timeout",
+          "name": "connectTimeout",
+          "widget-attributes": {
+            "min": "0",
+            "default": "120"
+          }
+        },
+        {
+          "widget-type": "number",
+          "label": "Read Timeout",
+          "name": "readTimeout",
+          "widget-attributes": {
+            "min": "0",
+            "default": "120"
+          }
+        }
+      ]
+    },
+    {
+      "label": "Pagination",
+      "properties": [
+        {
+          "widget-type": "select",
+          "label": "Pagination Type",
+          "name": "paginationType",
+          "widget-attributes": {
+            "values": [
+              "None",
+              "Link in response header",
+              "Link in response body",
+              "Token in response body",
+              "Increment an index",
+              "Custom"
+            ],
+            "default": "None"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Start Index",
+          "name": "startIndex",
+          "widget-attributes": {
+            "placeholder": "For pagination type \"Increment an index\""
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Max Index",
+          "name": "maxIndex",
+          "widget-attributes": {
+            "placeholder": "For pagination type \"Increment an index\""
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Index Increment",
+          "name": "indexIncrement",
+          "widget-attributes": {
+            "placeholder": "For pagination type \"Increment an index\""
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Next Page JSON/XML Field Path",
+          "name": "nextPageFieldPath",
+          "widget-attributes": {
+            "placeholder": "For pagination type \"Link in response body\""
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Next Page Token Path",
+          "name": "nextPageTokenPath",
+          "widget-attributes": {
+            "placeholder": "For pagination type \"Token in response body\""
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Next Page Url Parameter",
+          "name": "nextPageUrlParameter",
+          "widget-attributes": {
+            "placeholder": "For pagination type \"Token in response body\""
+          }
+        },
+        {
+          "widget-type": "python-editor",
+          "label": "Custom Pagination Python Code",
+          "name": "customPaginationCode",
+          "widget-attributes": {
+            "default": ""
+          }
+        },
+        {
+          "widget-type": "number",
+          "label": "Wait Time Between Pages (milliseconds)",
+          "name": "waitTimeBetweenPages",
+          "widget-attributes": {
+            "min": "0",
+            "default": "0"
+          }
+        }
+      ]
+    },
+    {
+      "label": "OAuth2",
+      "properties": [
+        {
+          "widget-type": "radio-group",
+          "label": "OAuth2 Enabled",
+          "name": "oauth2Enabled",
+          "widget-attributes": {
+            "layout": "inline",
+            "default": "false",
+            "options": [
+              {
+                "id": "true",
+                "label": "true"
+              },
+              {
+                "id": "false",
+                "label": "false"
+              }
+            ]
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Auth URL",
+          "name": "authUrl"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Token URL",
+          "name": "tokenUrl"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Client ID",
+          "name": "clientId"
+        },
+        {
+          "widget-type": "password",
+          "label": "Client Secret",
+          "name": "clientSecret"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Scopes",
+          "name": "scopes"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Refresh Token",
+          "name": "refreshToken"
+        }
+      ]
+    },
+    {
+      "label": "SSL/TLS",
+      "properties": [
+        {
+          "widget-type": "radio-group",
+          "label": "Verify HTTPS Trust Certificates",
+          "name": "verifyHttps",
+          "widget-attributes": {
+            "layout": "inline",
+            "default": "true",
+            "options": [
+              {
+                "id": "true",
+                "label": "true"
+              },
+              {
+                "id": "false",
+                "label": "false"
+              }
+            ]
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Keystore File",
+          "name": "keystoreFile"
+        },
+        {
+          "widget-type": "select",
+          "label": "Keystore Type",
+          "name": "keystoreType",
+          "widget-attributes": {
+            "default": "Java KeyStore (JKS)",
+            "values": [
+              "Java KeyStore (JKS)",
+              "Java Cryptography Extension KeyStore (JCEKS)",
+              "PKCS #12"
+            ]
+          }
+        },
+        {
+          "widget-type": "password",
+          "label": "Keystore Password",
+          "name": "keystorePassword"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Keystore Key Algorithm",
+          "name": "keystoreKeyAlgorithm",
+          "widget-attributes": {
+            "default": "SunX509"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "TrustStore File",
+          "name": "trustStoreFile"
+        },
+        {
+          "widget-type": "select",
+          "label": "TrustStore Type",
+          "name": "trustStoreType",
+
+          "widget-attributes": {
+            "default": "Java KeyStore (JKS)",
+            "values": [
+              "Java KeyStore (JKS)",
+              "Java Cryptography Extension KeyStore (JCEKS)",
+              "PKCS #12"
+            ]
+          }
+        },
+        {
+          "widget-type": "password",
+          "label": "TrustStore Password",
+          "name": "trustStorePassword"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "TrustStore Key Algorithm",
+          "name": "trustStoreKeyAlgorithm",
+          "widget-attributes": {
+            "default": "SunX509"
+          }
+        },
+        {
+          "widget-type": "csv",
+          "label": "Transport Protocols",
+          "name": "transportProtocols",
+          "widget-attributes": {
+            "default": "TLSv1.2"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Cipher Suites",
+          "name": "cipherSuites"
+        }
+      ]
+    }
+  ],
+  "emit-errors": true,
+  "outputs": [
+    {
+      "name": "schema",
+      "label": "schema",
+      "widget-type": "schema",
+      "widget-attributes": {
+        "schema-types": [
+          "boolean",
+          "int",
+          "long",
+          "float",
+          "double",
+          "bytes",
+          "string",
+          "array",
+          "record",
+          "map",
+          "union"
+        ],
+        "schema-default-type": "string",
+        "property-watch": "format"
+      }
+    }
+  ]
+}

@@ -14,7 +14,7 @@
  * the License.
  */
 
-package io.cdap.plugin.mock;
+package io.cdap.plugin.http.sink.mock;
 
 import io.cdap.http.HandlerContext;
 import io.cdap.http.HttpHandler;
