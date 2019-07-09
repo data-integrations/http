@@ -4,52 +4,31 @@
   },
   "configuration-groups": [
     {
-      "label": "Reference",
+      "label": "General",
       "properties": [
         {
           "widget-type": "textbox",
           "label": "Reference Name",
           "name": "referenceName"
-        }
-      ]
-    },
-    {
-      "label": "General",
-      "properties": [
+        },
         {
           "widget-type": "textbox",
           "label": "URL",
           "name": "url"
         },
         {
-          "widget-type": "radio-group",
+          "widget-type": "select",
           "label": "HTTP Method",
           "name": "httpMethod",
           "widget-attributes": {
-            "layout": "inline",
-            "default": "get",
-            "options": [
-              {
-                "id": "get",
-                "label": "GET"
-              },
-              {
-                "id": "post",
-                "label": "POST"
-              },
-              {
-                "id": "put",
-                "label": "PUT"
-              },
-              {
-                "id": "delete",
-                "label": "DELETE"
-              },
-              {
-                "id": "head",
-                "label": "HEAD"
-              }
-            ]
+            "values": [
+              "GET",
+              "POST",
+              "PUT",
+              "DELETE",
+              "HEAD"
+            ],
+            "default": "GET"
           }
         },
         {
@@ -331,13 +310,12 @@
           "label": "Custom Pagination Python Code",
           "name": "customPaginationCode",
           "widget-attributes": {
-            "TODO": "add default value",
             "default": ""
           }
         },
         {
           "widget-type": "number",
-          "label": "Wait time between pages (milliseconds)",
+          "label": "Wait Time Between Pages (milliseconds)",
           "name": "waitTimeBetweenPages",
           "widget-attributes": {
             "min": "0",
