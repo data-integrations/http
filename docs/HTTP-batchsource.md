@@ -358,7 +358,7 @@ a next page url based on previous page contents and headers.
 
 **Client ID:** Client identifier obtained during the Application registration process.
 
-**Client Secret:** Client secret given obtained during the Application registration process.
+**Client Secret:** Client secret obtained during the Application registration process.
 
 **Scopes:** Scope of the access request, which might have multiple space-separated values.
 
@@ -367,7 +367,7 @@ a next page url based on previous page contents and headers.
 ### SSL/TLS
 
 **Verify HTTPS Trust Certificates:** If false, untrusted trust certificates (e.g. self signed), will not lead to an
-error.
+error. Do not disable this in production environment on a network you do not entirely trust. Especially public internet.
 
 **Keystore File:** A path to a file which contains keystore.
 
@@ -388,5 +388,6 @@ error.
 **Transport Protocols:** Transport protocols which are allowed for connection.
 
 **Cipher Suites:** Cipher suites which are allowed for connection.
+Colons, commas or spaces are also acceptable separators.
 
 **Schema:** Output schema. Is required to be set.
