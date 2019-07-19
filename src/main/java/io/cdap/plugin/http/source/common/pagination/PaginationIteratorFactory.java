@@ -23,6 +23,22 @@ import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
  */
 public class PaginationIteratorFactory {
   public static BaseHttpPaginationIterator createInstance(BaseHttpSourceConfig config) {
-    throw new IllegalStateException("Not yet implemented"); // TODO: implement this
+    switch (config.getPaginationType()) {
+      case NONE:
+        return new NonePaginationIterator(config);
+      case LINK_IN_RESPONSE_HEADER:
+        return new LinkInResponseHeaderPaginationIterator(config);
+      case LINK_IN_RESPONSE_BODY:
+        return new LinkInResponseBodyPaginationIterator(config);
+      case TOKEN_IN_RESPONSE_BODY:
+        return new TokenPaginationIterator(config);
+      case INCREMENT_AN_INDEX:
+        return new IncrementAnIndexPaginationIterator(config);
+      case CUSTOM:
+        return new CustomPaginationIterator(config);
+      default:
+        throw new IllegalArgumentException(
+          String.format("Unsupported pagination type: '%s'", config.getPaginationType()));
+    }
   }
 }

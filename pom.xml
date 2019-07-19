@@ -75,17 +75,22 @@
   </repositories>
 
   <properties>
+    <awaitility.version>3.1.6</awaitility.version>
     <cdap.version>6.0.0</cdap.version>
-    <hadoop.version>2.3.0</hadoop.version>
-    <junit.version>4.11</junit.version>
-    <hydrator.version>2.2.0</hydrator.version>
-    <widgets.dir>widgets</widgets.dir>
+    <commons.version>3.9</commons.version>
+    <common.codec.version>1.12</common.codec.version>
     <docs.dir>docs</docs.dir>
-    <app.parents>
-      system:cdap-data-pipeline[6.0.0-SNAPSHOT,7.0.0-SNAPSHOT),system:cdap-data-streams[6.0.0-SNAPSHOT,7.0.0-SNAPSHOT)
-    </app.parents>
+    <gson.version>2.8.5</gson.version>
+    <hadoop.version>2.3.0</hadoop.version>
+    <httpcomponents.version>4.5.9</httpcomponents.version>
+    <hydrator.version>2.2.0</hydrator.version>
+    <jackson.version>2.9.9</jackson.version>
+    <junit.version>4.11</junit.version>
+    <jython.version>2.7.1</jython.version>
     <!-- this is here because project.basedir evaluates to null in the script build step -->
     <main.basedir>${project.basedir}</main.basedir>
+    <mockito.version>1.10.19</mockito.version>
+    <unxml.version>0.9</unxml.version>
   </properties>
 
   <dependencies>
@@ -103,31 +108,23 @@
     </dependency>
     <dependency>
       <groupId>io.cdap.cdap</groupId>
-      <artifactId>cdap-unit-test</artifactId>
+      <artifactId>cdap-formats</artifactId>
       <version>${cdap.version}</version>
-      <scope>test</scope>
       <exclusions>
         <exclusion>
-          <groupId>asm</groupId>
-          <artifactId>asm</artifactId>
+          <groupId>org.apache.avro</groupId>
+          <artifactId>avro</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.thekraken</groupId>
+          <artifactId>grok</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>13.0.1</version>
-    </dependency>
-    <dependency>
-      <groupId>io.cdap.cdap</groupId>
-      <artifactId>cdap-data-pipeline</artifactId>
-      <version>${cdap.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.cdap.cdap</groupId>
-      <artifactId>cdap-formats</artifactId>
-      <version>${cdap.version}</version>
+      <groupId>io.cdap.plugin</groupId>
+      <artifactId>hydrator-common</artifactId>
+      <version>${hydrator.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
@@ -241,16 +238,84 @@
         </exclusion>
       </exclusions>
     </dependency>
+
     <dependency>
-      <groupId>io.cdap.plugin</groupId>
-      <artifactId>hydrator-common</artifactId>
-      <version>${hydrator.version}</version>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>${commons.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>${common.codec.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <version>${awaitility.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>${httpcomponents.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>${gson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-xml</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.nerdforge</groupId>
+      <artifactId>unxml</artifactId>
+      <version>${unxml.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.python</groupId>
+      <artifactId>jython-standalone</artifactId>
+      <version>${jython.version}</version>
+    </dependency>
+
+
+    <!-- tests -->
+    <dependency>
+      <groupId>io.cdap.cdap</groupId>
+      <artifactId>cdap-etl-proto</artifactId>
+      <version>${cdap.version}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>io.cdap.cdap</groupId>
       <artifactId>hydrator-test</artifactId>
       <version>${cdap.version}</version>
-      <scope>provided</scope>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.cdap.cdap</groupId>
+      <artifactId>cdap-data-pipeline</artifactId>
+      <version>${cdap.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
+      <version>${mockito.version}</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 

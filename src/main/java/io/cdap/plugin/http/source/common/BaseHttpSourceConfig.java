@@ -214,12 +214,12 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   @Name(PROPERTY_CONNECT_TIMEOUT)
   @Description("Maximum time in seconds connection initialization is allowed to take.")
   @Macro
-  protected Long connectTimeout;
+  protected Integer connectTimeout;
 
   @Name(PROPERTY_READ_TIMEOUT)
   @Description("Maximum time in seconds fetching data from the server is allowed to take.")
   @Macro
-  protected Long readTimeout;
+  protected Integer readTimeout;
 
   @Name(PROPERTY_PAGINATION_TYPE)
   @Description("Strategy used to determine how to get next page.")
@@ -479,11 +479,11 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     return maxRetryDuration;
   }
 
-  public Long getConnectTimeout() {
+  public Integer getConnectTimeout() {
     return connectTimeout;
   }
 
-  public Long getReadTimeout() {
+  public Integer getReadTimeout() {
     return readTimeout;
   }
 
