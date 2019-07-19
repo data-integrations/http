@@ -348,6 +348,32 @@ and headers and when to finish pagination.
 **Custom Pagination Python Code:** A code which implements retrieving
 a next page url based on previous page contents and headers.
 
+Example code:
+```
+import json
+
+def get_next_page_url(url, page, headers):
+    """
+    Based on previous page data generates next page url, when "Custom pagination" is enabled.
+
+    Args:
+        url (string): previous page url
+        page (string): a body of previous page
+        headers (dict): a dictionary of headers from previous page
+
+    """
+    page_json = json.loads(page)
+    next_page_num = page_json['nextpage']
+
+    # stop the iteration
+    if next_page_num == None or next_page_num > 5:
+      return None
+
+    return "https://searchcode.com/api/codesearch_I/?q=curl&p={}".format(next_page_num)
+```
+The above code iterates over first five pages of searchcode.com results. When 'None' is returned the iteration
+is stopped.
+
 ### OAuth2
 
 **OAuth2 Enabled:** If true, plugin will perform OAuth2 authentication.

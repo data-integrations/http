@@ -98,7 +98,7 @@
               }
             ]
           }
-        },
+        }
       ]
     },
     {
@@ -310,7 +310,7 @@
           "label": "Custom Pagination Python Code",
           "name": "customPaginationCode",
           "widget-attributes": {
-            "default": ""
+            "placeholder": "def get_next_page_url(url, page, headers):\n    \"\"\"\n    Based on previous page data generates next page url, when \"Custom pagination\" is enabled.\n    Returns 'None' if no more pages to load \n\n    Args:\n        url (string): previous page url\n        page (string): a body of previous page\n        headers (dict): a dictionary of headers from previous page\n\n    \"\"\"\n    return \"https://next-page-url.com\""
           }
         },
         {
