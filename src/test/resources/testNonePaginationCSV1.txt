@@ -1,0 +1,13 @@
+VENUE NAME,VENUE ADDRESS,VENUE ADDRESS 2,VENUE CITY,VENUE STATE/PROVINCE,VENUE ZIP,VENUE COUNTRY,VENUE PHONE,VENUE WEBSITE
+Art Institute of Chicago,111 S Michigan Ave,,Chicago,IL,60603,United States,,http://www.artic.edu/
+Party Haus,330 S Broadway,Unit 602,Los Angelos,CA,90013,united States,,
+Cambridge University Library,West Road,,Cambridge,,CB3 9DR,United Kingdom,+44 1223 333000,http://www.lib.cam.ac.uk/
+New Brookland Tavern,122 State Street,,West Columbia,SC,29169,United States,(803) 791-4413,
+Musee D’Orsay,1 Rue de la Légion d'Honneur,,Paris,,75007,France,+33 1 40 49 48 14,http://www.musee-orsay.fr/
+Bamboo Fresh,655 Front St.,#108,Lahaina,HI,96761,United States,,
+The Corn Palace,601 N Main St,,Mitchell,SD,57301,United States,,http://cornpalace.com/
+San Diego Zoo,2920 Zoo Drive,,San Diego,CA,92101,United States,619-231-1515,http://zoo.sandiegozoo.org/
+Doug Fir Lounge,830 E. Burnside St.,,Portland,OR,97214,United States,(503) 231-9663,http://www.dougfirlounge.com/
+Krispy Kreme,6935 South Lindbergh,,St. Louis,MO,63129,,,https://www.krispykreme.com/
+The Beanery,500 SW 2nd St,,Corvallis,OR,97330,United States,,
+Winchester Mystery House,525 S Winchester Blvd,,San Jose,CA,95128,United States,,http://www.winchestermysteryhouse.com/
