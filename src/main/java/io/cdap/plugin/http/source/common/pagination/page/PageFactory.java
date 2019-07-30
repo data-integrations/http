@@ -16,15 +16,37 @@
 package io.cdap.plugin.http.source.common.pagination.page;
 
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
-import io.cdap.plugin.http.source.common.error.HttpErrorHandlingStrategy;
+import io.cdap.plugin.http.source.common.error.HttpErrorHandler;
+import io.cdap.plugin.http.source.common.http.HttpResponse;
+
+import java.io.IOException;
 
 /**
  * A factory which creates instance of {@BasePage} in accordance to format configured in input config.
- * If erroneous page is being handled, the records should not be iterated so {@WholeTextPage} is returned.
+ * If erroneous page is being handled, {@HttpErrorPage} is returned, which returns a single error entry.
  */
 public class PageFactory {
-  public static BasePage createInstance(BaseHttpSourceConfig config, String responseBody,
-                                        HttpErrorHandlingStrategy postRetryStrategy) {
-    throw new IllegalStateException("Not yet implemented"); // TODO: implement this
+  public static BasePage createInstance(BaseHttpSourceConfig config, HttpResponse httpResponse,
+                                        HttpErrorHandler httpErrorHandler, boolean isError) throws IOException {
+    if (isError) {
+      return new HttpErrorPage(config, httpResponse, httpErrorHandler);
+    }
+
+    switch(config.getFormat()) {
+      case JSON:
+        return new JsonPage(config, httpResponse);
+      case XML:
+        return new XmlPage(config, httpResponse);
+      case TSV:
+        return new DelimitedPage(config, httpResponse, "\t");
+      case CSV:
+        return new DelimitedPage(config, httpResponse, ",");
+      case TEXT:
+        return new TextPage(config, httpResponse);
+      case BLOB:
+        return new BlobPage(config, httpResponse);
+      default:
+        throw new IllegalArgumentException(String.format("Unsupported page format: '%s'", config.getFormat()));
+    }
   }
 }

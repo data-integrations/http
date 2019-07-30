@@ -17,16 +17,13 @@ package io.cdap.plugin.http.source.common.pagination;
 
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.source.common.RetryPolicy;
+import io.cdap.plugin.http.source.common.error.ErrorHandling;
 import io.cdap.plugin.http.source.common.error.HttpErrorHandler;
-import io.cdap.plugin.http.source.common.error.HttpErrorHandlingStrategy;
+import io.cdap.plugin.http.source.common.error.RetryableErrorHandling;
 import io.cdap.plugin.http.source.common.http.HttpClient;
+import io.cdap.plugin.http.source.common.http.HttpResponse;
 import io.cdap.plugin.http.source.common.pagination.page.BasePage;
 import io.cdap.plugin.http.source.common.pagination.page.PageFactory;
-import io.cdap.plugin.http.source.common.pagination.page.PageFormat;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.util.EntityUtils;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 import org.awaitility.pollinterval.FixedPollInterval;
@@ -37,7 +34,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
@@ -47,7 +43,7 @@ import javax.annotation.Nullable;
  * An iterator which iterates over every element on all the pages of the given resource. The page urls are generated
  * based on configured {@link PaginationType}.
  */
-public abstract class BaseHttpPaginationIterator implements Iterator<PageEntry>, Closeable {
+public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, Closeable {
   private static final Logger LOG = LoggerFactory.getLogger(BaseHttpPaginationIterator.class);
 
   protected final BaseHttpSourceConfig config;
@@ -56,9 +52,10 @@ public abstract class BaseHttpPaginationIterator implements Iterator<PageEntry>,
   private final PollInterval pollInterval;
 
   protected String nextPageUrl;
+  private boolean currentPageReturned = true;
   private BasePage page;
   private Integer httpStatusCode;
-  private CloseableHttpResponse response;
+  private HttpResponse response;
 
   public BaseHttpPaginationIterator(BaseHttpSourceConfig config) {
     this.config = config;
@@ -73,7 +70,7 @@ public abstract class BaseHttpPaginationIterator implements Iterator<PageEntry>,
     }
   }
 
-  protected abstract String getNextPageUrl(String body, CloseableHttpResponse response, BasePage page);
+  protected abstract String getNextPageUrl(HttpResponse httpResponse, BasePage page);
   public abstract boolean supportsSkippingPages();
 
   protected boolean visitPageAndCheckStatusCode() throws IOException {
@@ -81,9 +78,9 @@ public abstract class BaseHttpPaginationIterator implements Iterator<PageEntry>,
       response.close();
     }
 
-    response = getHttpClient().executeHTTP(nextPageUrl);
-    httpStatusCode = response.getStatusLine().getStatusCode();
-    HttpErrorHandlingStrategy errorHandlingStrategy = httpErrorHandler.getErrorHandlingStrategy(httpStatusCode);
+    response = new HttpResponse(getHttpClient().executeHTTP(nextPageUrl));
+    httpStatusCode = response.getStatusCode();
+    RetryableErrorHandling errorHandlingStrategy = httpErrorHandler.getErrorHandlingStrategy(httpStatusCode);
 
     return !errorHandlingStrategy.shouldRetry();
   }
@@ -96,7 +93,7 @@ public abstract class BaseHttpPaginationIterator implements Iterator<PageEntry>,
     }
 
     // response being null, means it's the first page we are loading
-    Long delay = (response == null) ? 0L : config.getWaitTimeBetweenPages();
+    Long delay = (response == null || config.getWaitTimeBetweenPages() == null) ? 0L : config.getWaitTimeBetweenPages();
     LOG.debug("Fetching '{}'", nextPageUrl);
 
     try {
@@ -110,44 +107,34 @@ public abstract class BaseHttpPaginationIterator implements Iterator<PageEntry>,
       // Retries failed. We don't need to do anything here. This will be handled using httpStatusCode below.
     }
 
-    HttpEntity reponseEntity = response.getEntity();
-    byte[] responseBytes = EntityUtils.toByteArray(reponseEntity);
-    String responseBody = new String(responseBytes, StandardCharsets.UTF_8);
-
-    HttpErrorHandlingStrategy postRetryStrategy = httpErrorHandler.getErrorHandlingStrategy(httpStatusCode)
+    ErrorHandling postRetryStrategy = httpErrorHandler.getErrorHandlingStrategy(httpStatusCode)
       .getAfterRetryStrategy();
-
-    String errorMessage = String.format("Fetching from url '%s' returned status code '%d' and body '%s'",
-                                        nextPageUrl, httpStatusCode, responseBody);
 
     switch (postRetryStrategy) {
       case SUCCESS:
         break;
-      case FAIL:
-        throw new IllegalStateException(errorMessage);
+      case STOP:
+        throw new IllegalStateException(String.format("Fetching from url '%s' returned status code '%d' and body '%s'",
+                                                      nextPageUrl, httpStatusCode, response.getBody()));
       case SKIP:
-      case SEND_TO_ERROR:
+      case SEND:
         if (!this.supportsSkippingPages()) {
           throw new IllegalStateException(String.format(
             "Pagination type '%s', does not support 'skip' and 'send to error' error handling.",
             config.getPaginationType()));
         }
-        LOG.warn(errorMessage);
+        LOG.warn(String.format("Fetching from url '%s' returned status code '%d' and body '%s'",
+                               nextPageUrl, httpStatusCode, response.getBody()));
         // this will be handled by PageFactory. Here no handling is needed.
         break;
       default:
         throw new IllegalArgumentException(String.format("Unexpected http error handling: '%s'", postRetryStrategy));
     }
 
-    if (config.getFormat().equals(PageFormat.BLOB)) {
-      responseBody = new String(Base64.encodeBase64(responseBytes), StandardCharsets.UTF_8);
-    }
-
-    BasePage page = createPageInstance(config, responseBody, postRetryStrategy);
-    nextPageUrl = getNextPageUrl(responseBody, response, page);
+    BasePage page = createPageInstance(config, response, postRetryStrategy);
+    nextPageUrl = getNextPageUrl(response, page);
 
     LOG.debug("Next Page Url is '{}'", nextPageUrl);
-    //LOG.info("Schema is: {}", config.getSchemaString());
 
     return page;
   }
@@ -158,11 +145,12 @@ public abstract class BaseHttpPaginationIterator implements Iterator<PageEntry>,
    */
   protected boolean ensurePageIterable() {
     try {
-      if (page == null || !page.hasNext()) {
+      if (currentPageReturned) {
         page = getNextPage();
+        currentPageReturned = false;
       }
 
-      return page != null && page.hasNext();
+      return page != null && page.hasNext(); // check hasNext() to stop on first empty page.
     } catch (IOException e) {
       throw new IllegalStateException("Failed to the load page", e);
     }
@@ -174,18 +162,20 @@ public abstract class BaseHttpPaginationIterator implements Iterator<PageEntry>,
   }
 
   // for testing purposes
-  BasePage createPageInstance(BaseHttpSourceConfig config, String responseBody,
-                              HttpErrorHandlingStrategy postRetryStrategy) {
-    return PageFactory.createInstance(config, responseBody, postRetryStrategy);
+  BasePage createPageInstance(BaseHttpSourceConfig config, HttpResponse httpResponse,
+                              ErrorHandling postRetryStrategy) throws IOException {
+    return PageFactory.createInstance(config, httpResponse, httpErrorHandler,
+                                      !postRetryStrategy.equals(ErrorHandling.SUCCESS));
   }
 
   @Override
-  public PageEntry next() {
+  public BasePage next() {
     if (!ensurePageIterable()) {
       throw new NoSuchElementException("No more pages to load.");
     }
 
-    return new PageEntry(httpStatusCode, page.next());
+    currentPageReturned = true;
+    return page;
   }
 
   @Override

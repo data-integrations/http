@@ -20,18 +20,16 @@ import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
-import io.cdap.cdap.api.data.schema.UnsupportedTypeException;
 import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.cdap.etl.api.validation.InvalidStageException;
 import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.http.source.common.error.ErrorHandling;
 import io.cdap.plugin.http.source.common.error.HttpErrorHandlerEntity;
-import io.cdap.plugin.http.source.common.error.HttpErrorHandlingStrategy;
+import io.cdap.plugin.http.source.common.error.RetryableErrorHandling;
 import io.cdap.plugin.http.source.common.http.KeyStoreType;
 import io.cdap.plugin.http.source.common.pagination.PaginationIteratorFactory;
 import io.cdap.plugin.http.source.common.pagination.PaginationType;
 import io.cdap.plugin.http.source.common.pagination.page.PageFormat;
-import io.cdap.plugin.http.source.common.record.StringToRecordConverterFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -642,7 +640,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
       String regex = entry.getKey();
       try {
         results.add(new HttpErrorHandlerEntity(Pattern.compile(regex),
-                   getEnumValueByString(HttpErrorHandlingStrategy.class,
+                   getEnumValueByString(RetryableErrorHandling.class,
                                         entry.getValue(), PROPERTY_HTTP_ERROR_HANDLING)));
       } catch (PatternSyntaxException e) {
         // We embed causing exception message into this one. Since this message is shown on UI when validation fails.
@@ -691,9 +689,9 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
 
       if (!supportsSkippingPages) {
         for (HttpErrorHandlerEntity httpErrorsHandlingEntry : httpErrorsHandlingEntries) {
-          HttpErrorHandlingStrategy postRetryStrategy = httpErrorsHandlingEntry.getStrategy().getAfterRetryStrategy();
-          if (postRetryStrategy.equals(HttpErrorHandlingStrategy.SEND_TO_ERROR) ||
-            postRetryStrategy.equals(HttpErrorHandlingStrategy.SKIP)) {
+          ErrorHandling postRetryStrategy = httpErrorsHandlingEntry.getStrategy().getAfterRetryStrategy();
+          if (postRetryStrategy.equals(ErrorHandling.SEND) ||
+            postRetryStrategy.equals(ErrorHandling.SKIP)) {
             throw new InvalidConfigPropertyException(
               String.format("Error handling strategy '%s' is not support in combination with pagination type",
                             httpErrorsHandlingEntry.getStrategy(), getPaginationType()), PROPERTY_HTTP_ERROR_HANDLING);
@@ -801,11 +799,15 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
 
   public void validateSchema() {
     if (!containsMacro(PROPERTY_FORMAT)) {
-      try {
-        StringToRecordConverterFactory.createInstance(this, getSchema()).validateSchema();
-      } catch (UnsupportedTypeException e) {
-        // Copy message so that UI shows it instead of some other message.
-        throw new InvalidStageException(e.getMessage(), e);
+      PageFormat format = getFormat();
+
+      if (format.equals(PageFormat.TEXT) || format.equals(PageFormat.BLOB)) {
+        Schema.Type expectedFieldType = format.equals(PageFormat.TEXT) ? Schema.Type.STRING : Schema.Type.BYTES;
+        List<Schema.Field> fields = getSchema().getFields();
+        if (fields == null || fields.size() != 1 || fields.get(0).getSchema().getType() != expectedFieldType) {
+          throw new InvalidStageException(String.format("Schema must be a record with a single %s field.",
+                                                        expectedFieldType.toString().toLowerCase()));
+        }
       }
     }
   }

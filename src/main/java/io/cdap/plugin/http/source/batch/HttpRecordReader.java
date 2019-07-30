@@ -18,11 +18,10 @@ package io.cdap.plugin.http.source.batch;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.cdap.plugin.http.source.common.pagination.BaseHttpPaginationIterator;
-import io.cdap.plugin.http.source.common.pagination.PageEntry;
 import io.cdap.plugin.http.source.common.pagination.PaginationIteratorFactory;
+import io.cdap.plugin.http.source.common.pagination.page.BasePage;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -35,13 +34,12 @@ import java.io.IOException;
  * RecordReader implementation, which reads text records representations and http codes
  * using {@link BaseHttpPaginationIterator} subclasses.
  */
-public class HttpRecordReader extends RecordReader<IntWritable, Text> {
+public class HttpRecordReader extends RecordReader<NullWritable, BasePage> {
   private static final Logger LOG = LoggerFactory.getLogger(HttpRecordReader.class);
   private static final Gson gson = new GsonBuilder().create();
 
   private BaseHttpPaginationIterator httpPaginationIterator;
-  private IntWritable key;
-  private Text value;
+  private BasePage value;
 
   /**
    * Initialize an iterator and config.
@@ -62,19 +60,17 @@ public class HttpRecordReader extends RecordReader<IntWritable, Text> {
     if (!httpPaginationIterator.hasNext()) {
       return false;
     }
-    PageEntry pageEntry = httpPaginationIterator.next();
-    key = new IntWritable(pageEntry.getHttpCode());
-    value = new Text(pageEntry.getBody());
+    value = httpPaginationIterator.next();
     return true;
   }
 
   @Override
-  public IntWritable getCurrentKey() {
-    return key;
+  public NullWritable getCurrentKey() {
+    return null;
   }
 
   @Override
-  public Text getCurrentValue() {
+  public BasePage getCurrentValue() {
     return value;
   }
 

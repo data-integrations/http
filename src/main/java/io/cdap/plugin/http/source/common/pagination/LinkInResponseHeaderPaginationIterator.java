@@ -16,10 +16,10 @@
 package io.cdap.plugin.http.source.common.pagination;
 
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
+import io.cdap.plugin.http.source.common.http.HttpResponse;
 import io.cdap.plugin.http.source.common.pagination.page.BasePage;
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,11 +38,15 @@ public class LinkInResponseHeaderPaginationIterator extends BaseHttpPaginationIt
   }
 
   @Override
-  protected String getNextPageUrl(String body, CloseableHttpResponse response, BasePage page) {
+  protected String getNextPageUrl(HttpResponse response, BasePage page) {
     return getNextLinkFromHeader(response.getFirstHeader("Link"));
   }
 
   private static String getNextLinkFromHeader(Header header) {
+    if (header == null) {
+      return null;
+    }
+
     for (HeaderElement headerElement : header.getElements()) {
       Matcher matcher = nextLinkPattern.matcher(headerElement.toString());
       if (matcher.matches()) {

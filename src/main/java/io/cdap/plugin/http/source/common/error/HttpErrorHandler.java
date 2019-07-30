@@ -34,7 +34,7 @@ public class HttpErrorHandler {
     this.httpErrorsHandlingEntries = config.getHttpErrorHandlingEntries();
   }
 
-  public HttpErrorHandlingStrategy getErrorHandlingStrategy(int httpCode) {
+  public RetryableErrorHandling getErrorHandlingStrategy(int httpCode) {
     String httpCodeString = Integer.toString(httpCode);
 
     for (HttpErrorHandlerEntity httpErrorsHandlingEntry : httpErrorsHandlingEntries) {
@@ -46,6 +46,6 @@ public class HttpErrorHandler {
 
     LOG.warn(String.format("No error handling strategy defined for HTTP status code '%d'. " +
                              "Please correct httpErrorsHandling.", httpCode));
-    return HttpErrorHandlingStrategy.FAIL;
+    return RetryableErrorHandling.FAIL;
   }
 }

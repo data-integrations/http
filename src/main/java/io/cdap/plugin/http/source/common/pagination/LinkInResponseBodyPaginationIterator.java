@@ -16,8 +16,8 @@
 package io.cdap.plugin.http.source.common.pagination;
 
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
+import io.cdap.plugin.http.source.common.http.HttpResponse;
 import io.cdap.plugin.http.source.common.pagination.page.BasePage;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +40,7 @@ public class LinkInResponseBodyPaginationIterator extends BaseHttpPaginationIter
   }
 
   @Override
-  protected String getNextPageUrl(String body, CloseableHttpResponse response, BasePage page) {
+  protected String getNextPageUrl(HttpResponse response, BasePage page) {
     String urlString = page.getPrimitiveByPath(config.getNextPageFieldPath());
 
     if (urlString == null) {

@@ -25,9 +25,9 @@ import java.util.regex.Pattern;
  */
 public class HttpErrorHandlerEntity {
   private final Pattern pattern;
-  private final HttpErrorHandlingStrategy strategy;
+  private final RetryableErrorHandling strategy;
 
-  public HttpErrorHandlerEntity(Pattern pattern, HttpErrorHandlingStrategy strategy) {
+  public HttpErrorHandlerEntity(Pattern pattern, RetryableErrorHandling strategy) {
     this.pattern = pattern;
     this.strategy = strategy;
   }
@@ -36,7 +36,7 @@ public class HttpErrorHandlerEntity {
     return pattern;
   }
 
-  public HttpErrorHandlingStrategy getStrategy() {
+  public RetryableErrorHandling getStrategy() {
     return strategy;
   }
 

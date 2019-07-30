@@ -13,31 +13,27 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.cdap.plugin.http.source.common.pagination;
+package io.cdap.plugin.http.source.common.pagination.page;
 
+import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.source.common.http.HttpResponse;
-import io.cdap.plugin.http.source.common.pagination.page.BasePage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 /**
- * Returns a single page of data
+ * Iterates over every line of text page and returns them as structured records with a single string field.
  */
-public class NonePaginationIterator extends BaseHttpPaginationIterator {
-  private static final Logger LOG = LoggerFactory.getLogger(NonePaginationIterator.class);
+public class TextPage extends RecordPerLinePage {
 
-  public NonePaginationIterator(BaseHttpSourceConfig config) {
-    super(config);
+  TextPage(BaseHttpSourceConfig config, HttpResponse httpResponse) throws IOException {
+    super(config, httpResponse);
   }
 
   @Override
-  protected String getNextPageUrl(HttpResponse response, BasePage page) {
-    return null;
-  }
-
-  @Override
-  public boolean supportsSkippingPages() {
-    return false;
+  protected StructuredRecord getStructedRecordByString(String line) {
+    StructuredRecord.Builder builder = StructuredRecord.builder(schema);
+    builder.set(schema.getFields().get(0).getName(), line);
+    return builder.build();
   }
 }

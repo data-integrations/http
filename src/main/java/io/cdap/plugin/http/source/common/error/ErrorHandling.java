@@ -22,6 +22,8 @@ import io.cdap.plugin.http.source.common.EnumWithValue;
  */
 public enum ErrorHandling implements EnumWithValue {
 
+  SUCCESS("success"),
+
   SKIP("skipOnError"),
 
   SEND("sendToError"),
