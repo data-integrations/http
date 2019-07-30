@@ -16,10 +16,15 @@
 
 package io.cdap.plugin.http.source.common.pagination;
 
+import io.cdap.cdap.api.data.format.StructuredRecord;
+import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.http.source.batch.HttpBatchSourceConfig;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.source.common.http.HttpClient;
 import io.cdap.plugin.http.source.common.pagination.page.BasePage;
+import io.cdap.plugin.http.source.common.pagination.page.JSONUtil;
+import io.cdap.plugin.http.source.common.pagination.page.PageEntry;
+import io.cdap.plugin.http.source.common.pagination.page.PageFormat;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.StatusLine;
@@ -33,8 +38,6 @@ import org.mockito.stubbing.OngoingStubbing;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import javax.annotation.Nullable;
 
@@ -51,9 +54,10 @@ public class PaginationIteratorTest {
     }
 
     String[] responses = {"testResponse1"};
-    List<String> results =
-      getResultsFromIterator(getPaginationIterator(new TestConfig("testNonePagination"), responses));
-    assertResults(results, responses);
+    BaseHttpSourceConfig config = new TestConfig("testNonePagination");
+    List<StructuredRecord> results =
+      getResultsFromIterator(getPaginationIterator(config, responses));
+    assertResults(results, responses, config);
   }
 
   @Test
@@ -68,9 +72,10 @@ public class PaginationIteratorTest {
       }
     }
     String[] responses = {"testResponse1", "testResponse2", "testResponse3", "testResponse4", "testResponse5"};
-    List<String> results =
-      getResultsFromIterator(getPaginationIterator(new TestConfig("testIncrementAnIndex"), responses));
-    assertResults(results, responses);
+
+    BaseHttpSourceConfig config = new TestConfig("testIncrementAnIndex");
+    List<StructuredRecord> results = getResultsFromIterator(getPaginationIterator(config, responses));
+    assertResults(results, responses, config);
   }
 
   @Test
@@ -80,13 +85,17 @@ public class PaginationIteratorTest {
         super(referenceName);
         this.format = "json";
         this.paginationType = "Link in response body";
+        this.resultPath = "/";
         this.nextPageFieldPath = "/next";
       }
     }
-    String[] responses = {"testResponse1", "testResponse2", "testResponse3"};
-    List<String> results =
-      getResultsFromIterator(getPaginationIterator(new TestConfig("testLinkInResponseBody"), responses));
-    assertResults(results, responses);
+    String[] responses = {"{\"body\": \"testResponse1\", \"next\":\"p2\"}",
+      "{\"body\": \"testResponse2\", \"next\":\"p3\"}",
+      "{\"body\": \"testResponse3\"}"};
+
+    BaseHttpSourceConfig config = new TestConfig("testLinkInResponseBody");
+    List<StructuredRecord> results = getResultsFromIterator(getPaginationIterator(config, responses));
+    assertResults(results, responses, config);
   }
 
   @Test
@@ -94,14 +103,15 @@ public class PaginationIteratorTest {
     class TestConfig extends BaseTestConfig {
       TestConfig(String referenceName) {
         super(referenceName);
-        this.format = "json";
         this.resultPath = "/items";
         this.paginationType = "Link in response header";
       }
     }
     String[] responses = {"testResponse1", "testResponse2", "testResponse3"};
-    BaseHttpPaginationIterator paginationIterator = getPaginationIterator(
-      new TestConfig("testLinkInResponseHeader"), responses);
+
+    BaseHttpSourceConfig config = new TestConfig("testLinkInResponseHeader");
+    BaseHttpPaginationIterator paginationIterator = getPaginationIterator(config, responses);
+
     String value1 = "<https://api.github.com/search/code?q=Salesforce%2Buser%3Adata-integrations&page=2>; " +
       "rel=\"next\", <https://api.github.com/search/code?q=Salesforce%2Buser%3Adata-integrations&page=3>; " +
       "rel=\"last\"";
@@ -117,8 +127,8 @@ public class PaginationIteratorTest {
       .thenReturn(new BasicHeader("Link", value3))
       .thenThrow(new RuntimeException("No mock headers to return"));
 
-    List<String> results = getResultsFromIterator(paginationIterator);
-    assertResults(results, responses);
+    List<StructuredRecord> results = getResultsFromIterator(paginationIterator);
+    assertResults(results, responses, config);
   }
 
   @Test
@@ -126,16 +136,21 @@ public class PaginationIteratorTest {
     class TestConfig extends BaseTestConfig {
       TestConfig(String referenceName) {
         super(referenceName);
+        this.format = "json";
+        this.resultPath = "/";
         this.paginationType = "Token in response body";
         this.nextPageTokenPath = "/nextPageToken";
         this.nextPageUrlParameter = "pageToken";
       }
     }
 
-    String[] responses = {"testResponse1", "testResponse2", "testResponse3"};
-    List<String> results =
-      getResultsFromIterator(getPaginationIterator(new TestConfig("testTokenPagination"), responses));
-    assertResults(results, responses);
+    String[] responses = {"{\"body\": \"testResponse1\", \"nextPageToken\":\"p2\"}",
+      "{\"body\": \"testResponse2\", \"nextPageToken\":\"p3\"}",
+      "{\"body\": \"testResponse3\"}"};
+
+    BaseHttpSourceConfig config = new TestConfig("testTokenPagination");
+    List<StructuredRecord> results = getResultsFromIterator(getPaginationIterator(config, responses));
+    assertResults(results, responses, config);
   }
 
   @Test
@@ -144,6 +159,8 @@ public class PaginationIteratorTest {
       TestConfig(String referenceName) {
         super(referenceName);
         this.paginationType = "Custom";
+        this.format = "json";
+        this.resultPath = "/";
         this.customPaginationCode = "import json\n" +
           "\n" +
           "def get_next_page_url(url, page, headers):\n" +
@@ -167,13 +184,16 @@ public class PaginationIteratorTest {
       }
     }
 
-    String[] responses = {"{\"nextpage\": 1}", "{\"nextpage\": 2}", "{\"nextpage\": 3}"};
-    BaseHttpPaginationIterator paginationIterator =
-      getPaginationIterator(new TestConfig("testTokenPagination"), responses);
+    String[] responses = {"{\"body\": \"testResponse1\", \"nextpage\": 1}",
+      "{\"body\": \"testResponse2\", \"nextpage\": 2}",
+      "{\"body\": \"testResponse3\", \"nextpage\": 3}"};
+
+    BaseHttpSourceConfig config = new TestConfig("testTokenPagination");
+    BaseHttpPaginationIterator paginationIterator = getPaginationIterator(config, responses);
 
     Mockito.when(responseMock.getAllHeaders()).thenReturn(new Header[0]);
-    List<String> results = getResultsFromIterator(paginationIterator);
-    assertResults(results, responses);
+    List<StructuredRecord> results = getResultsFromIterator(paginationIterator);
+    assertResults(results, responses, config);
   }
 
   @Test(expected = IllegalStateException.class)
@@ -186,8 +206,8 @@ public class PaginationIteratorTest {
     }
 
     String[] responses = {"testResponse1"};
-    getResultsFromIterator(getPaginationIterator(new TestConfig("testTokenPagination"),
-                                                 responses, 400));
+    BaseHttpSourceConfig config = new TestConfig("testTokenPagination");
+    getResultsFromIterator(getPaginationIterator(config, responses, 400));
   }
 
   private BaseHttpPaginationIterator getPaginationIterator(BaseHttpSourceConfig config, String[] responses)
@@ -216,23 +236,29 @@ public class PaginationIteratorTest {
     Mockito.when(httpClientMock.executeHTTP(Mockito.anyString())).thenReturn(responseMock);
 
     BaseHttpPaginationIterator paginationIterator = Mockito.spy(PaginationIteratorFactory.createInstance(config));
-    Mockito.when(paginationIterator.getHttpClient()).thenReturn(httpClientMock); // TODO: change to doReturn
+    Mockito.when(paginationIterator.getHttpClient()).thenReturn(httpClientMock);
 
+    /*
+    HttpErrorHandler httpErrorHandler = new HttpErrorHandler(config);
     Iterator<String> iterator = Arrays.asList(responses).iterator();
-    Mockito.doAnswer((x) -> new MockPage(iterator.next(), !iterator.hasNext()))
-      .when(paginationIterator).createPageInstance(Mockito.any(), Mockito.anyString(), Mockito.any());
 
+    Mockito.doAnswer((x) -> new MockPage(config, httpErrorHandler, new HttpResponse(responseMock),
+                                         iterator.next(), !iterator.hasNext()))
+      .when(paginationIterator).createPageInstance(Mockito.any(), Mockito.any(), Mockito.any());
+    */
     return paginationIterator;
   }
 
   private static class MockPage implements BasePage {
     private final String value;
     private final boolean returnNullPath;
+    private final Schema schema;
     private boolean isReturned = false;
 
-    MockPage(String value, boolean returnNullPath) {
+    MockPage(BaseHttpSourceConfig config, String value, boolean returnNullPath) {
       this.value = value;
       this.returnNullPath = returnNullPath;
+      this.schema = config.getSchema();
     }
 
     @Nullable
@@ -250,33 +276,49 @@ public class PaginationIteratorTest {
     }
 
     @Override
-    public String next() {
+    public PageEntry next() {
+      StructuredRecord.Builder builder = StructuredRecord.builder(schema);
+      builder.set(schema.getFields().get(0).getName(), value);
       isReturned = true;
-      return value;
+      return new PageEntry(builder.build());
+    }
+
+    @Override
+    public void close() {
     }
   }
 
-  private void assertResults(List<String> results, String[] responses) {
+  private void assertResults(List<StructuredRecord> results, String[] responses, BaseHttpSourceConfig config) {
     Assert.assertEquals(responses.length, results.size());
-    Mockito.verify(responseMock, Mockito.times(responses.length)).getEntity();
+    Mockito.verify(responseMock, Mockito.times(responses.length)).getStatusLine();
 
     int i = 0;
-    for (String pageBody : results) {
-      Assert.assertEquals(responses[i++], pageBody);
+    for (StructuredRecord record : results) {
+      String text;
+      if (config.getFormat().equals(PageFormat.JSON)) {
+        text = JSONUtil.toJsonObject(responses[i++]).get("body").getAsString();
+      } else {
+        text = responses[i++];
+      }
+      Assert.assertEquals(text, record.get("body"));
     }
   }
 
-  private List<String> getResultsFromIterator(BaseHttpPaginationIterator paginationIterator) {
-    List<String> results = new ArrayList<>();
+  private List<StructuredRecord> getResultsFromIterator(BaseHttpPaginationIterator paginationIterator) {
+
+    List<StructuredRecord> results = new ArrayList<>();
 
     if (!paginationIterator.hasNext()) {
       Assert.fail(String.format("Expected results, but returned none."));
     }
 
     while (paginationIterator.hasNext()) {
-      PageEntry pageEntry = paginationIterator.next();
-      results.add(pageEntry.getBody());
-      // System.out.println(String.format("%d %s", pageEntry.getHttpCode(), pageEntry.getBody()));
+      BasePage page = paginationIterator.next();
+
+      while (page.hasNext()) {
+        PageEntry pageEntry = page.next();
+        results.add(pageEntry.getRecord());
+      }
     }
     return results;
   }
@@ -285,6 +327,8 @@ public class PaginationIteratorTest {
     BaseTestConfig(String referenceName) {
       super(referenceName);
 
+      this.schema = "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":" +
+        "[{\"name\":\"body\",\"type\":\"string\"}]}";
       this.url = "";
       this.httpMethod = "GET";
       this.oauth2Enabled = "false";

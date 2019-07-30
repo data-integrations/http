@@ -20,7 +20,7 @@ import io.cdap.plugin.http.source.common.EnumWithValue;
 /**
  * Indicates error handling strategy which will be used to handle unexpected http status codes.
  */
-public enum HttpErrorHandlingStrategy implements EnumWithValue {
+public enum RetryableErrorHandling implements EnumWithValue {
   SUCCESS("Success"),
   FAIL("Fail"),
   SKIP("Skip"),
@@ -31,7 +31,7 @@ public enum HttpErrorHandlingStrategy implements EnumWithValue {
 
   private final String value;
 
-  HttpErrorHandlingStrategy(String value) {
+  RetryableErrorHandling(String value) {
     this.value = value;
   }
 
@@ -49,16 +49,21 @@ public enum HttpErrorHandlingStrategy implements EnumWithValue {
     return (this.equals(RETRY_AND_FAIL) || this.equals(RETRY_AND_SKIP) || this.equals(RETRY_AND_SEND_TO_ERROR));
   }
 
-  public HttpErrorHandlingStrategy getAfterRetryStrategy() {
+  public ErrorHandling getAfterRetryStrategy() {
     switch (this) {
+      case SUCCESS:
+        return ErrorHandling.SUCCESS;
+      case FAIL:
       case RETRY_AND_FAIL:
-        return FAIL;
+        return ErrorHandling.STOP;
+      case SKIP:
       case RETRY_AND_SKIP:
-        return SKIP;
+        return ErrorHandling.SKIP;
+      case SEND_TO_ERROR:
       case RETRY_AND_SEND_TO_ERROR:
-        return SEND_TO_ERROR;
+        return ErrorHandling.SEND;
       default:
-        return this;
+        throw new IllegalArgumentException(String.format("Unexpected error handling: '%s'", this));
     }
   }
 }

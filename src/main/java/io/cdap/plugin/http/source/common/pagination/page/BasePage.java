@@ -15,13 +15,14 @@
  */
 package io.cdap.plugin.http.source.common.pagination.page;
 
+import java.io.Closeable;
 import java.util.Iterator;
 import javax.annotation.Nullable;
 
 /**
  * Iterates over the elements of a single page.
  */
-public interface BasePage extends Iterator<String> {
+public interface BasePage extends Closeable, Iterator<PageEntry> {
   @Nullable
   String getPrimitiveByPath(String path);
 }

@@ -31,16 +31,12 @@ import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSource;
 import io.cdap.cdap.etl.api.batch.BatchSourceContext;
 import io.cdap.plugin.common.LineageRecorder;
-import io.cdap.plugin.http.source.common.error.HttpErrorHandler;
-import io.cdap.plugin.http.source.common.error.HttpErrorHandlingStrategy;
-import io.cdap.plugin.http.source.common.record.BaseStringToRecordConverter;
-import io.cdap.plugin.http.source.common.record.StringToRecordConverterFactory;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.Text;
+import io.cdap.plugin.http.source.common.pagination.page.BasePage;
+import io.cdap.plugin.http.source.common.pagination.page.PageEntry;
+import org.apache.hadoop.io.NullWritable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.stream.Collectors;
 
 /**
@@ -49,19 +45,13 @@ import java.util.stream.Collectors;
 @Plugin(type = BatchSource.PLUGIN_TYPE)
 @Name(HttpBatchSource.NAME)
 @Description("Read data from HTTP endpoint.")
-public class HttpBatchSource extends BatchSource<IntWritable, Text, StructuredRecord> {
+public class HttpBatchSource extends BatchSource<NullWritable, BasePage, StructuredRecord> {
   static final String NAME = "HTTP";
+
   private static final Logger LOG = LoggerFactory.getLogger(HttpBatchSource.class);
-
-  private static final String ERROR_SCHEMA_BODY_PROPERTY = "body";
-
-  private static final Schema errorSchema = Schema.recordOf("error",
-    Schema.Field.of(ERROR_SCHEMA_BODY_PROPERTY, Schema.of(Schema.Type.STRING))
-  );
 
   private final HttpBatchSourceConfig config;
   private Schema schema;
-  private HttpErrorHandler httpErrorHandler;
 
   public HttpBatchSource(HttpBatchSourceConfig config) {
     this.config = config;
@@ -92,56 +82,36 @@ public class HttpBatchSource extends BatchSource<IntWritable, Text, StructuredRe
     context.setInput(Input.of(config.referenceName, new HttpInputFormatProvider(config)));
   }
 
-  private BaseStringToRecordConverter stringToRecordConverter;
-
   @Override
   public void initialize(BatchRuntimeContext context) throws Exception {
     this.schema = config.getSchema();
-    this.stringToRecordConverter = StringToRecordConverterFactory.createInstance(config, schema);
-    this.httpErrorHandler = new HttpErrorHandler(config);
-
     super.initialize(context);
   }
 
   @Override
-  public void transform(KeyValue<IntWritable, Text> input,
-                        Emitter<StructuredRecord> emitter) throws IOException {
-    String resultString = input.getValue().toString();
-    try {
-      int httpCode = input.getKey().get();
-      HttpErrorHandlingStrategy httpRetryStrategy = httpErrorHandler.getErrorHandlingStrategy(httpCode)
-        .getAfterRetryStrategy();
+  public void transform(KeyValue<NullWritable, BasePage> input, Emitter<StructuredRecord> emitter) {
+    BasePage page = input.getValue();
+    while (page.hasNext()) {
+      PageEntry pageEntry = page.next();
 
-      if (httpRetryStrategy.equals(HttpErrorHandlingStrategy.SEND_TO_ERROR)) {
-        emitter.emitError(buildError(httpCode, resultString,
-                                     String.format("Request failed with '%d' http status code", httpCode)));
-      } else if (httpRetryStrategy.equals(HttpErrorHandlingStrategy.SKIP)) {
-        return;
+      if (!pageEntry.isError()) {
+        emitter.emit(pageEntry.getRecord());
       } else {
-        StructuredRecord record = stringToRecordConverter.getRecord(resultString);
-        emitter.emit(record);
-      }
-    } catch (Exception ex) {
-      switch (config.getErrorHandling()) {
-        case SKIP:
-          LOG.warn("Cannot convert row '{}' to a record", resultString, ex);
-          break;
-        case SEND:
-          emitter.emitError(buildError(0, resultString,
-                                       ex.getClass().getName() + ": " + ex.getMessage()));
-          break;
-        case STOP:
-          throw ex;
-        default:
-          throw new UnexpectedFormatException(
-            String.format("Unknown error handling strategy '%s'", config.getErrorHandling()));
+        InvalidEntry<StructuredRecord> invalidEntry = pageEntry.getError();
+        switch (pageEntry.getErrorHandling()) {
+          case SKIP:
+            LOG.warn(invalidEntry.getErrorMsg());
+            break;
+          case SEND:
+            emitter.emitError(invalidEntry);
+            break;
+          case STOP:
+            throw new RuntimeException(invalidEntry.getErrorMsg());
+          default:
+            throw new UnexpectedFormatException(
+              String.format("Unknown error handling strategy '%s'", config.getErrorHandling()));
+        }
       }
     }
-  }
-
-  private InvalidEntry<StructuredRecord> buildError(int code, String recordBody, String errorText) {
-    StructuredRecord.Builder builder = StructuredRecord.builder(errorSchema);
-    builder.set(ERROR_SCHEMA_BODY_PROPERTY, recordBody);
-    return new InvalidEntry<>(code, errorText, builder.build());
   }
 }

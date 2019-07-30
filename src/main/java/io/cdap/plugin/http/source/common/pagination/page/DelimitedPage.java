@@ -13,31 +13,29 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.cdap.plugin.http.source.common.pagination;
 
+package io.cdap.plugin.http.source.common.pagination.page;
+
+import io.cdap.cdap.api.data.format.StructuredRecord;
+import io.cdap.cdap.format.StructuredRecordStringConverter;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.source.common.http.HttpResponse;
-import io.cdap.plugin.http.source.common.pagination.page.BasePage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 /**
- * Returns a single page of data
+ * Converts page lines of tsv and csv into structured records.
  */
-public class NonePaginationIterator extends BaseHttpPaginationIterator {
-  private static final Logger LOG = LoggerFactory.getLogger(NonePaginationIterator.class);
+public class DelimitedPage extends RecordPerLinePage {
+  private final String delimiter;
 
-  public NonePaginationIterator(BaseHttpSourceConfig config) {
-    super(config);
+  DelimitedPage(BaseHttpSourceConfig config, HttpResponse httpResponse, String delimiter) throws IOException {
+    super(config, httpResponse);
+    this.delimiter = delimiter;
   }
 
   @Override
-  protected String getNextPageUrl(HttpResponse response, BasePage page) {
-    return null;
-  }
-
-  @Override
-  public boolean supportsSkippingPages() {
-    return false;
+  protected StructuredRecord getStructedRecordByString(String line) {
+    return StructuredRecordStringConverter.fromDelimitedString(line, delimiter, schema);
   }
 }

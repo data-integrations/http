@@ -16,9 +16,9 @@
 package io.cdap.plugin.http.source.common.pagination;
 
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
+import io.cdap.plugin.http.source.common.http.HttpResponse;
 import io.cdap.plugin.http.source.common.pagination.page.BasePage;
 import org.apache.http.Header;
-import org.apache.http.client.methods.CloseableHttpResponse;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -38,14 +38,14 @@ public class CustomPaginationIterator extends BaseHttpPaginationIterator {
   }
 
   @Override
-  protected String getNextPageUrl(String body, CloseableHttpResponse response, BasePage page) {
+  protected String getNextPageUrl(HttpResponse response, BasePage page) {
     Map<String, String> headersMap = new HashMap<>();
     Header[] headers = response.getAllHeaders();
     for (Header header : headers) {
       headersMap.put(header.getName(), header.getValue());
     }
 
-    return pythonExecutor.getNextPageUrl(nextPageUrl, body, headersMap);
+    return pythonExecutor.getNextPageUrl(nextPageUrl, response.getBody(), headersMap);
   }
 
   @Override
