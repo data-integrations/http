@@ -1,4 +1,4 @@
-# HTTP Sink Plugin
+# HTTP
 
 [![cm-available](https://cdap-users.herokuapp.com/assets/cm-available.svg)](https://docs.cask.co/cdap/current/en/integrations/cask-market.html)
 ![cdap-batch-sink](https://cdap-users.herokuapp.com/assets/cdap-batch-sink.svg)
@@ -7,7 +7,7 @@
 
 Introduction
 ============
-Sink plugin to send the messages from the pipeline to an external http endpoint.
+A collection of HTTP Source and Sink Plugins.
 
 Getting Started
 ===============
@@ -18,10 +18,10 @@ CDAP version 4.0.x or higher.
 
 Building Plugins
 ----------------
-You get started with http sink plugin by building directly from the latest source code::
+You get started with http plugins by building directly from the latest source code::
 
-   git clone https://github.com/hydrator/http-sink.git
-   cd http-sink
+   git clone https://github.com/data-integrations/http.git
+   cd http
    mvn clean package
 
 After the build completes, you will have a JAR for each plugin under each
@@ -33,8 +33,8 @@ You can deploy a plugin using the CDAP CLI::
 
   > load artifact <target/plugin-jar> config-file <resources/plugin-config>
 
-  > load artifact target/http-sink-plugin-<version>.jar \
-         config-file target/http-sink-plugin-<version>.json
+  > load artifact target/http-plugin-<version>.jar \
+         config-file target/http-plugin-<version>.json
 
 You can build without running tests: ``mvn clean install -DskipTests``
 
