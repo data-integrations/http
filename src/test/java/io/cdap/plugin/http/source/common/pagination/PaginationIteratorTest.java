@@ -235,7 +235,7 @@ public class PaginationIteratorTest {
     HttpClient httpClientMock = Mockito.mock(HttpClient.class);
     Mockito.when(httpClientMock.executeHTTP(Mockito.anyString())).thenReturn(responseMock);
 
-    BaseHttpPaginationIterator paginationIterator = Mockito.spy(PaginationIteratorFactory.createInstance(config));
+    BaseHttpPaginationIterator paginationIterator = Mockito.spy(PaginationIteratorFactory.createInstance(config, null));
     Mockito.when(paginationIterator.getHttpClient()).thenReturn(httpClientMock);
 
     /*
@@ -249,13 +249,14 @@ public class PaginationIteratorTest {
     return paginationIterator;
   }
 
-  private static class MockPage implements BasePage {
+  private static class MockPage extends BasePage {
     private final String value;
     private final boolean returnNullPath;
     private final Schema schema;
     private boolean isReturned = false;
 
     MockPage(BaseHttpSourceConfig config, String value, boolean returnNullPath) {
+      super(null);
       this.value = value;
       this.returnNullPath = returnNullPath;
       this.schema = config.getSchema();

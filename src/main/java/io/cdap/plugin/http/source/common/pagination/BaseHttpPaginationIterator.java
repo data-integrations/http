@@ -24,6 +24,8 @@ import io.cdap.plugin.http.source.common.http.HttpClient;
 import io.cdap.plugin.http.source.common.http.HttpResponse;
 import io.cdap.plugin.http.source.common.pagination.page.BasePage;
 import io.cdap.plugin.http.source.common.pagination.page.PageFactory;
+import io.cdap.plugin.http.source.common.pagination.state.PaginationIteratorState;
+import io.cdap.plugin.http.source.common.pagination.state.UrlPaginationIteratorState;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 import org.awaitility.pollinterval.FixedPollInterval;
@@ -52,12 +54,13 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
   private final PollInterval pollInterval;
 
   protected String nextPageUrl;
+  private String currentPageUrl;
   private boolean currentPageReturned = true;
   private BasePage page;
   private Integer httpStatusCode;
   private HttpResponse response;
 
-  public BaseHttpPaginationIterator(BaseHttpSourceConfig config) {
+  public BaseHttpPaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state) {
     this.config = config;
     this.httpClient = new HttpClient(config);
     this.nextPageUrl = config.getUrl();
@@ -67,6 +70,10 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
       pollInterval = FixedPollInterval.fixed(config.getLinearRetryInterval(), TimeUnit.SECONDS);
     } else {
       pollInterval = IterativePollInterval.iterative(duration -> duration.multiply(2));
+    }
+
+    if (state != null) {
+      loadFromState(state);
     }
   }
 
@@ -79,6 +86,7 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
     }
 
     response = new HttpResponse(getHttpClient().executeHTTP(nextPageUrl));
+    currentPageUrl = nextPageUrl;
     httpStatusCode = response.getStatusCode();
     RetryableErrorHandling errorHandlingStrategy = httpErrorHandler.getErrorHandlingStrategy(httpStatusCode);
 
@@ -139,6 +147,10 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
     return page;
   }
 
+  public String getCurrentPageUrl() {
+    return currentPageUrl;
+  }
+
   /**
    * @return true if page still has elements to iterate. Otherwise it will load next page.
    * False if no more pages to load or the page loaded has no elements.
@@ -166,6 +178,14 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
                               ErrorHandling postRetryStrategy) throws IOException {
     return PageFactory.createInstance(config, httpResponse, httpErrorHandler,
                                       !postRetryStrategy.equals(ErrorHandling.SUCCESS));
+  }
+
+  public PaginationIteratorState getCurrentState() {
+    return new UrlPaginationIteratorState(currentPageUrl);
+  }
+
+  protected void loadFromState(PaginationIteratorState state) {
+    this.nextPageUrl = ((UrlPaginationIteratorState) state).getLastProcessedPageUrl();
   }
 
   @Override

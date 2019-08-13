@@ -18,6 +18,7 @@ package io.cdap.plugin.http.source.common.pagination;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.source.common.http.HttpResponse;
 import io.cdap.plugin.http.source.common.pagination.page.BasePage;
+import io.cdap.plugin.http.source.common.pagination.state.PaginationIteratorState;
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.slf4j.Logger;
@@ -33,8 +34,8 @@ public class LinkInResponseHeaderPaginationIterator extends BaseHttpPaginationIt
   private static final Logger LOG = LoggerFactory.getLogger(LinkInResponseHeaderPaginationIterator.class);
   private static final Pattern nextLinkPattern = Pattern.compile("<(.+)>; rel=next");
 
-  public LinkInResponseHeaderPaginationIterator(BaseHttpSourceConfig config) {
-    super(config);
+  public LinkInResponseHeaderPaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state) {
+    super(config, state);
   }
 
   @Override
