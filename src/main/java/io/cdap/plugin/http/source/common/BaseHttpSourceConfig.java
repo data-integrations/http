@@ -685,7 +685,8 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     // Validate HTTP Error Handling Map
     if (!containsMacro(PROPERTY_HTTP_ERROR_HANDLING)) {
       List<HttpErrorHandlerEntity> httpErrorsHandlingEntries = getHttpErrorHandlingEntries();
-      boolean supportsSkippingPages = PaginationIteratorFactory.createInstance(this).supportsSkippingPages();
+      boolean supportsSkippingPages = PaginationIteratorFactory
+        .createInstance(this, null).supportsSkippingPages();
 
       if (!supportsSkippingPages) {
         for (HttpErrorHandlerEntity httpErrorsHandlingEntry : httpErrorsHandlingEntries) {

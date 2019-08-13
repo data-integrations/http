@@ -15,14 +15,27 @@
  */
 package io.cdap.plugin.http.source.common.pagination.page;
 
+import io.cdap.plugin.http.source.common.http.HttpResponse;
+
 import java.io.Closeable;
+import java.util.Arrays;
 import java.util.Iterator;
 import javax.annotation.Nullable;
 
 /**
  * Iterates over the elements of a single page.
  */
-public interface BasePage extends Closeable, Iterator<PageEntry> {
+public abstract class BasePage implements Closeable, Iterator<PageEntry> {
+  protected final HttpResponse httpResponse;
+
+  protected BasePage(HttpResponse httpResponse) {
+    this.httpResponse = httpResponse;
+  }
+
   @Nullable
-  String getPrimitiveByPath(String path);
+  public abstract String getPrimitiveByPath(String path);
+
+  public int getHash() {
+    return Arrays.hashCode(httpResponse.getBytes());
+  }
 }

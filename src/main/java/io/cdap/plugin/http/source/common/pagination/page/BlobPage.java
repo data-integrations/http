@@ -25,15 +25,14 @@ import java.io.IOException;
 /**
  * Returns text as structured records with a single bytes field.
  */
-class BlobPage implements BasePage {
+class BlobPage extends BasePage {
   private final Schema schema;
   private final BaseHttpSourceConfig config;
-  private final HttpResponse httpResponse;
   private boolean isReturned = false;
 
   BlobPage(BaseHttpSourceConfig config, HttpResponse httpResponse) {
+    super(httpResponse);
     this.config = config;
-    this.httpResponse = httpResponse;
     this.schema = config.getSchema();
   }
 

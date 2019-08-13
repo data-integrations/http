@@ -52,7 +52,7 @@ public class HttpRecordReader extends RecordReader<NullWritable, BasePage> {
     Configuration conf = taskAttemptContext.getConfiguration();
     String configJson = conf.get(HttpInputFormatProvider.PROPERTY_CONFIG_JSON);
     HttpBatchSourceConfig httpBatchSourceConfig = gson.fromJson(configJson, HttpBatchSourceConfig.class);
-    httpPaginationIterator = PaginationIteratorFactory.createInstance(httpBatchSourceConfig);
+    httpPaginationIterator = PaginationIteratorFactory.createInstance(httpBatchSourceConfig, null);
   }
 
   @Override

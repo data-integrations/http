@@ -28,18 +28,17 @@ import java.util.NoSuchElementException;
 /**
  * Returns every row of document as a structured record.
  */
-abstract class RecordPerLinePage implements BasePage {
+abstract class RecordPerLinePage extends BasePage {
   private final BufferedReader bufferedReader;
   protected final Schema schema;
   private final BaseHttpSourceConfig config;
-  private final HttpResponse httpResponse;
   private boolean isLineRead;
   private String lastLine;
 
   RecordPerLinePage(BaseHttpSourceConfig config, HttpResponse httpResponse)
     throws IOException {
+    super(httpResponse);
     this.config = config;
-    this.httpResponse = httpResponse;
     this.schema = config.getSchema();
     this.bufferedReader = new BufferedReader(new InputStreamReader(httpResponse.getInputStream()));
   }

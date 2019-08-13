@@ -25,15 +25,14 @@ import io.cdap.plugin.http.source.common.http.HttpResponse;
 /**
  * Represents a page with an error
  */
-class HttpErrorPage implements BasePage {
+class HttpErrorPage extends BasePage {
   private final BaseHttpSourceConfig config;
-  private final HttpResponse httpResponse;
   private final HttpErrorHandler httpErrorHandler;
   private boolean isReturned = false;
 
   HttpErrorPage(BaseHttpSourceConfig config, HttpResponse httpResponse, HttpErrorHandler httpErrorHandler) {
+    super(httpResponse);
     this.config = config;
-    this.httpResponse = httpResponse;
     this.httpErrorHandler = httpErrorHandler;
   }
 

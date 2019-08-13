@@ -18,6 +18,8 @@ package io.cdap.plugin.http.source.common.pagination;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.source.common.http.HttpResponse;
 import io.cdap.plugin.http.source.common.pagination.page.BasePage;
+import io.cdap.plugin.http.source.common.pagination.state.IndexPaginationIteratorState;
+import io.cdap.plugin.http.source.common.pagination.state.PaginationIteratorState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,17 +30,22 @@ import org.slf4j.LoggerFactory;
 public class IncrementAnIndexPaginationIterator extends BaseHttpPaginationIterator {
   private static final Logger LOG = LoggerFactory.getLogger(IncrementAnIndexPaginationIterator.class);
   public static final String PAGINATION_INDEX_PLACEHOLDER_REGEX = "\\{pagination.index\\}";
-  public static final String PAGINATION_INDEX_PLACEHOLDER = "{pagination.index}";
+
+  private final Long indexIncrement;
+  private final Long maxIndex;
 
   private Long index;
-  private Long indexIncrement;
-  private Long maxIndex;
 
-  public IncrementAnIndexPaginationIterator(BaseHttpSourceConfig config) {
-    super(config);
+  public IncrementAnIndexPaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state) {
+    super(config, state);
     this.indexIncrement = config.getIndexIncrement();
     this.maxIndex = config.getMaxIndex();
-    this.index = config.getStartIndex() - this.indexIncrement;
+
+    // if loadFromState() hasn't already set it
+    if (index == null) {
+      this.index = config.getStartIndex() - this.indexIncrement;
+    }
+
     this.nextPageUrl = getNextPageUrl();
   }
 
@@ -60,5 +67,15 @@ public class IncrementAnIndexPaginationIterator extends BaseHttpPaginationIterat
   @Override
   public boolean supportsSkippingPages() {
     return true;
+  }
+
+  @Override
+  public PaginationIteratorState getCurrentState() {
+    return new IndexPaginationIteratorState(index);
+  }
+
+  @Override
+  protected void loadFromState(PaginationIteratorState state) {
+    this.index = ((IndexPaginationIteratorState) state).getIndex();
   }
 }

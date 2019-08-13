@@ -16,26 +16,27 @@
 package io.cdap.plugin.http.source.common.pagination;
 
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
+import io.cdap.plugin.http.source.common.pagination.state.PaginationIteratorState;
 
 /**
  * A factory which creates instance of {@BaseHttpPaginationIterator} in accordance to pagination type configured in
  * the input config.
  */
 public class PaginationIteratorFactory {
-  public static BaseHttpPaginationIterator createInstance(BaseHttpSourceConfig config) {
+  public static BaseHttpPaginationIterator createInstance(BaseHttpSourceConfig config, PaginationIteratorState state) {
     switch (config.getPaginationType()) {
       case NONE:
-        return new NonePaginationIterator(config);
+        return new NonePaginationIterator(config, state);
       case LINK_IN_RESPONSE_HEADER:
-        return new LinkInResponseHeaderPaginationIterator(config);
+        return new LinkInResponseHeaderPaginationIterator(config, state);
       case LINK_IN_RESPONSE_BODY:
-        return new LinkInResponseBodyPaginationIterator(config);
+        return new LinkInResponseBodyPaginationIterator(config, state);
       case TOKEN_IN_RESPONSE_BODY:
-        return new TokenPaginationIterator(config);
+        return new TokenPaginationIterator(config, state);
       case INCREMENT_AN_INDEX:
-        return new IncrementAnIndexPaginationIterator(config);
+        return new IncrementAnIndexPaginationIterator(config, state);
       case CUSTOM:
-        return new CustomPaginationIterator(config);
+        return new CustomPaginationIterator(config, state);
       default:
         throw new IllegalArgumentException(
           String.format("Unsupported pagination type: '%s'", config.getPaginationType()));

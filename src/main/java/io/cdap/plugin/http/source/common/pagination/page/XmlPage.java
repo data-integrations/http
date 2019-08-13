@@ -38,7 +38,7 @@ import javax.xml.xpath.XPathConstants;
  * If primitive is specified by XPath only inner value is returned.
  * If non-primitive text representation of xml for that XPath is returned.
  */
-class XmlPage implements BasePage {
+class XmlPage extends BasePage {
   private final Map<String, String> fieldsMapping;
   private final Iterator<JsonElement> iterator;
   private final Document document;
@@ -46,6 +46,7 @@ class XmlPage implements BasePage {
   private final BaseHttpSourceConfig config;
 
   XmlPage(BaseHttpSourceConfig config, HttpResponse httpResponse) {
+    super(httpResponse);
     this.config = config;
     this.fieldsMapping = config.getFullFieldsMapping();
     this.document = XmlUtil.createXmlDocument(httpResponse.getBody());

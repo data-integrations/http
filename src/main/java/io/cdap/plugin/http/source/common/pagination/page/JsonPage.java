@@ -31,18 +31,17 @@ import java.util.Map;
 /**
  * Returns elements from json one by one by given json path.
  */
-class JsonPage implements BasePage {
+class JsonPage extends BasePage {
   private final String insideElementJsonPathPart;
   private final Iterator<JsonElement> iterator;
   private final JsonObject json;
   private final Map<String, String> fieldsMapping;
   private final Schema schema;
   private final BaseHttpSourceConfig config;
-  private final HttpResponse httpResponse;
 
   JsonPage(BaseHttpSourceConfig config, HttpResponse httpResponse) {
+    super(httpResponse);
     this.config = config;
-    this.httpResponse = httpResponse;
     json = JSONUtil.toJsonObject(httpResponse.getBody());
     JSONUtil.JsonQueryResponse queryResponse = JSONUtil.getJsonElementByPath(json, config.getResultPath());
     insideElementJsonPathPart = queryResponse.getUnretrievedPath();
