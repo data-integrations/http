@@ -343,6 +343,11 @@
       <version>${jackson.version}</version>
     </dependency>
     <dependency>
+      <groupId>com.fasterxml.jackson.module</groupId>
+      <artifactId>jackson-module-scala_2.11</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
       <groupId>com.nerdforge</groupId>
       <artifactId>unxml</artifactId>
       <version>${unxml.version}</version>
