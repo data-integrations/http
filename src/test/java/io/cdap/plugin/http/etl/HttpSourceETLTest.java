@@ -16,17 +16,34 @@
 package io.cdap.plugin.http.etl;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.ImmutableMap;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.etl.mock.test.HydratorTestBase;
+import io.cdap.cdap.test.TestConfiguration;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
-public class HttpBatchSourceETLTest extends BaseHttpBatchSourceETLTest {
+public abstract class HttpSourceETLTest extends HydratorTestBase {
+  @ClassRule
+  public static final TestConfiguration CONFIG = new TestConfiguration("explore.enabled", false);
+  @Rule
+  public TestName testName = new TestName();
+  @Rule
+  public WireMockRule wireMockRule = new WireMockRule();
+
   @Test
   public void testIncrementAnIndex() throws Exception {
     Schema schema = Schema.recordOf("etlSchemaBody",
@@ -86,7 +103,7 @@ public class HttpBatchSourceETLTest extends BaseHttpBatchSourceETLTest {
                            .willReturn(WireMock.aResponse()
                                          .withBody(readResourceFile("testIncrementAnIndex4.txt"))));
 
-    List<StructuredRecord> records = getPipelineResults(properties);
+    List<StructuredRecord> records = getPipelineResults(properties, 8);
     Assert.assertEquals(8, records.size());
   }
 
@@ -145,7 +162,7 @@ public class HttpBatchSourceETLTest extends BaseHttpBatchSourceETLTest {
                            .willReturn(WireMock.aResponse()
                                          .withBody(readResourceFile("testIncrementAnIndexXml6.txt"))));
 
-    List<StructuredRecord> records = getPipelineResults(properties);
+    List<StructuredRecord> records = getPipelineResults(properties, 25);
     Assert.assertEquals(25, records.size());
   }
 
@@ -183,7 +200,7 @@ public class HttpBatchSourceETLTest extends BaseHttpBatchSourceETLTest {
                            .willReturn(WireMock.aResponse()
                                          .withBody(readResourceFile("testLinkInResponseBody3.txt"))));
 
-    List<StructuredRecord> records = getPipelineResults(properties);
+    List<StructuredRecord> records = getPipelineResults(properties, 6);
     Assert.assertEquals(6, records.size());
   }
 
@@ -246,7 +263,7 @@ public class HttpBatchSourceETLTest extends BaseHttpBatchSourceETLTest {
                                          .withBody(readResourceFile("testLinkInResponseHeader3.txt"))));
 
 
-    List<StructuredRecord> records = getPipelineResults(properties);
+    List<StructuredRecord> records = getPipelineResults(properties, 6);
     Assert.assertEquals(6, records.size());
   }
 
@@ -278,7 +295,7 @@ public class HttpBatchSourceETLTest extends BaseHttpBatchSourceETLTest {
                            .willReturn(WireMock.aResponse()
                                          .withBody(readResourceFile("testNonePagination1.txt"))));
 
-    List<StructuredRecord> records = getPipelineResults(properties);
+    List<StructuredRecord> records = getPipelineResults(properties, 9);
     Assert.assertEquals(9, records.size());
   }
 
@@ -301,7 +318,7 @@ public class HttpBatchSourceETLTest extends BaseHttpBatchSourceETLTest {
                            .willReturn(WireMock.aResponse()
                                          .withBody(readResourceFile("testNonePaginationBlob1.txt"))));
 
-    List<StructuredRecord> records = getPipelineResults(properties);
+    List<StructuredRecord> records = getPipelineResults(properties, 1);
     Assert.assertEquals(1, records.size());
   }
 
@@ -341,7 +358,7 @@ public class HttpBatchSourceETLTest extends BaseHttpBatchSourceETLTest {
                            .willReturn(WireMock.aResponse()
                                          .withBody(readResourceFile("testNonePaginationCSV1.txt"))));
 
-    List<StructuredRecord> records = getPipelineResults(properties);
+    List<StructuredRecord> records = getPipelineResults(properties, 13);
     Assert.assertEquals(13, records.size());
   }
 
@@ -363,10 +380,9 @@ public class HttpBatchSourceETLTest extends BaseHttpBatchSourceETLTest {
                            .willReturn(WireMock.aResponse()
                                          .withBody(readResourceFile("testNonePaginationText1.txt"))));
 
-    List<StructuredRecord> records = getPipelineResults(properties);
+    List<StructuredRecord> records = getPipelineResults(properties, 12);
     Assert.assertEquals(12, records.size());
   }
-
 
   @Test
   public void testNonePaginationXml() throws Exception {
@@ -392,7 +408,7 @@ public class HttpBatchSourceETLTest extends BaseHttpBatchSourceETLTest {
                            .willReturn(WireMock.aResponse()
                                          .withBody(readResourceFile("testNonePaginationXml1.txt"))));
 
-    List<StructuredRecord> records = getPipelineResults(properties);
+    List<StructuredRecord> records = getPipelineResults(properties, 5);
     Assert.assertEquals(5, records.size());
   }
 
@@ -428,7 +444,8 @@ public class HttpBatchSourceETLTest extends BaseHttpBatchSourceETLTest {
       "    if next_page_num == None or next_page_num > 3:\n" +
       "      return None\n" +
       "      \n" +
-      "    return \"https://searchcode.com/api/codesearch_I/?q=curl&per_page=2&p={}\".format(next_page_num)\n";
+      String.format("    return \"%s/api/codesearch_I/?q=curl&per_page=2&p={}\".format(next_page_num)\n",
+                    getServerAddress());
 
     Map<String, String> properties = new ImmutableMap.Builder<String, String>()
       // https://searchcode.com/api/codesearch_I/?q=cdap&per_page=2
@@ -447,21 +464,55 @@ public class HttpBatchSourceETLTest extends BaseHttpBatchSourceETLTest {
                                          .withBody(readResourceFile("testPaginationCustom1.txt"))));
 
     wireMockRule.stubFor(WireMock.get(
-      WireMock.urlEqualTo("https://searchcode.com/api/codesearch_I/?q=curl&per_page=2&p=1"))
+      WireMock.urlEqualTo("/api/codesearch_I/?q=curl&per_page=2&p=1"))
                            .willReturn(WireMock.aResponse()
                                          .withBody(readResourceFile("testPaginationCustom2.txt"))));
 
     wireMockRule.stubFor(WireMock.get(
-      WireMock.urlEqualTo("https://searchcode.com/api/codesearch_I/?q=curl&per_page=2&p=2"))
+      WireMock.urlEqualTo("/api/codesearch_I/?q=curl&per_page=2&p=2"))
                            .willReturn(WireMock.aResponse()
                                          .withBody(readResourceFile("testPaginationCustom3.txt"))));
 
     wireMockRule.stubFor(WireMock.get(
-      WireMock.urlEqualTo("https://searchcode.com/api/codesearch_I/?q=curl&per_page=2&p=3"))
+      WireMock.urlEqualTo("/api/codesearch_I/?q=curl&per_page=2&p=3"))
                            .willReturn(WireMock.aResponse()
                                          .withBody(readResourceFile("testPaginationCustom4.txt"))));
 
-    List<StructuredRecord> records = getPipelineResults(properties);
+    List<StructuredRecord> records = getPipelineResults(properties, 8);
     Assert.assertEquals(8, records.size());
+  }
+
+  protected Map<String, String> getProperties(Map<String, String> sourceProperties) {
+    return new ImmutableMap.Builder<String, String>()
+      .put("referenceName", testName.getMethodName())
+      .put(BaseHttpSourceConfig.PROPERTY_HTTP_METHOD, "GET")
+      .put(BaseHttpSourceConfig.PROPERTY_OAUTH2_ENABLED, "false")
+      .put(BaseHttpSourceConfig.PROPERTY_HTTP_ERROR_HANDLING, "2..:Success,.*:Fail")
+      .put(BaseHttpSourceConfig.PROPERTY_ERROR_HANDLING, "stopOnError")
+      .put(BaseHttpSourceConfig.PROPERTY_RETRY_POLICY, "linear")
+      .put(BaseHttpSourceConfig.PROPERTY_MAX_RETRY_DURATION, "10")
+      .put(BaseHttpSourceConfig.PROPERTY_LINEAR_RETRY_INTERVAL, "1")
+      .put(BaseHttpSourceConfig.PROPERTY_WAIT_TIME_BETWEEN_PAGES, "0")
+      .put(BaseHttpSourceConfig.PROPERTY_CONNECT_TIMEOUT, "60")
+      .put(BaseHttpSourceConfig.PROPERTY_READ_TIMEOUT, "120")
+      .put(BaseHttpSourceConfig.PROPERTY_VERIFY_HTTPS, "true")
+      .put(BaseHttpSourceConfig.PROPERTY_KEYSTORE_TYPE, "Java KeyStore (JKS)")
+      .put(BaseHttpSourceConfig.PROPERTY_TRUSTSTORE_TYPE, "Java KeyStore (JKS)")
+      .put(BaseHttpSourceConfig.PROPERTY_TRANSPORT_PROTOCOLS, "TLSv1.2")
+      .putAll(sourceProperties)
+      .build();
+  }
+
+  protected abstract List<StructuredRecord> getPipelineResults(Map<String, String> sourceProperties,
+                                                               int expectedRecordsCount) throws Exception;
+
+  protected String readResourceFile(String filename) throws URISyntaxException, IOException {
+    return new String(Files.readAllBytes(
+      Paths.get(getClass().getClassLoader().getResource(filename).toURI())));
+  }
+
+  protected String getServerAddress() {
+
+    return "http://localhost:" + wireMockRule.port();
   }
 }
