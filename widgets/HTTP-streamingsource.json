@@ -69,7 +69,8 @@
               "csv",
               "text",
               "blob"
-            ]
+            ],
+            "default": "json"
           }
         },
         {
@@ -103,6 +104,57 @@
               }
             ]
           }
+        }
+      ]
+    },
+    {
+      "label": "OAuth2",
+      "properties": [
+        {
+          "widget-type": "toggle",
+          "label": "OAuth2 Enabled",
+          "name": "oauth2Enabled",
+          "widget-attributes": {
+            "default": "false",
+            "on": {
+              "label": "True",
+              "value": "true"
+            },
+            "off": {
+              "label": "False",
+              "value": "false"
+            }
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Auth URL",
+          "name": "authUrl"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Token URL",
+          "name": "tokenUrl"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Client ID",
+          "name": "clientId"
+        },
+        {
+          "widget-type": "password",
+          "label": "Client Secret",
+          "name": "clientSecret"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Scopes",
+          "name": "scopes"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Refresh Token",
+          "name": "refreshToken"
         }
       ]
     },
@@ -324,79 +376,22 @@
       ]
     },
     {
-      "label": "OAuth2",
-      "properties": [
-        {
-          "widget-type": "radio-group",
-          "label": "OAuth2 Enabled",
-          "name": "oauth2Enabled",
-          "widget-attributes": {
-            "layout": "inline",
-            "default": "false",
-            "options": [
-              {
-                "id": "true",
-                "label": "true"
-              },
-              {
-                "id": "false",
-                "label": "false"
-              }
-            ]
-          }
-        },
-        {
-          "widget-type": "textbox",
-          "label": "Auth URL",
-          "name": "authUrl"
-        },
-        {
-          "widget-type": "textbox",
-          "label": "Token URL",
-          "name": "tokenUrl"
-        },
-        {
-          "widget-type": "textbox",
-          "label": "Client ID",
-          "name": "clientId"
-        },
-        {
-          "widget-type": "password",
-          "label": "Client Secret",
-          "name": "clientSecret"
-        },
-        {
-          "widget-type": "textbox",
-          "label": "Scopes",
-          "name": "scopes"
-        },
-        {
-          "widget-type": "textbox",
-          "label": "Refresh Token",
-          "name": "refreshToken"
-        }
-      ]
-    },
-    {
       "label": "SSL/TLS",
       "properties": [
         {
-          "widget-type": "radio-group",
+          "widget-type": "toggle",
           "label": "Verify HTTPS Trust Certificates",
           "name": "verifyHttps",
           "widget-attributes": {
-            "layout": "inline",
             "default": "true",
-            "options": [
-              {
-                "id": "true",
-                "label": "true"
-              },
-              {
-                "id": "false",
-                "label": "false"
-              }
-            ]
+            "on": {
+              "label": "True",
+              "value": "true"
+            },
+            "off": {
+              "label": "False",
+              "value": "false"
+            }
           }
         },
         {
@@ -501,6 +496,189 @@
         "schema-default-type": "string",
         "property-watch": "format"
       }
+    }
+  ],
+  "filters": [
+    {
+      "name": "Proxy authentication",
+      "condition": {
+        "property": "proxyUrl",
+        "operator": "exists",
+      },
+      "show": [
+        {
+          "name": "proxyUsername",
+          "type": "property"
+        },
+        {
+          "name": "proxyPassword",
+          "type": "property"
+        }
+      ]
+    },
+    {
+      "name": "Increment an index",
+      "condition": {
+        "property": "paginationType",
+        "operator": "equal to",
+        "value": "Increment an index"
+      },
+      "show": [
+        {
+          "name": "startIndex",
+          "type": "property"
+        },
+        {
+          "name": "maxIndex",
+          "type": "property"
+        },
+        {
+          "name": "indexIncrement",
+          "type": "property"
+        }
+      ]
+    },
+    {
+      "name": "Token in Response Body",
+      "condition": {
+        "property": "paginationType",
+        "operator": "equal to",
+        "value": "Token in response body"
+      },
+      "show": [
+        {
+          "name": "nextPageTokenPath",
+          "type": "property"
+        },
+        {
+          "name": "nextPageUrlParameter",
+          "type": "property"
+        }
+      ]
+    },
+    {
+      "name": "Link in response body",
+      "condition": {
+        "property": "paginationType",
+        "operator": "equal to",
+        "value": "Link in response body"
+      },
+      "show": [
+        {
+          "name": "nextPageFieldPath",
+          "type": "property"
+        }
+      ]
+    },
+    {
+      "name": "Custom pagination",
+      "condition": {
+        "property": "paginationType",
+        "operator": "equal to",
+        "value": "Custom"
+      },
+      "show": [
+        {
+          "name": "customPaginationCode",
+          "type": "property"
+        }
+      ]
+    },
+    {
+      "name": "Pagination none",
+      "condition": {
+        "property": "paginationType",
+        "operator": "equal to",
+        "value": "None"
+      },
+      "show": [
+        {
+          "name": "waitTimeBetweenPages",
+          "type": "property"
+        }
+      ]
+    },
+    {
+      "name": "OAuth 2 disabled",
+      "condition": {
+        "property": "oauth2Enabled",
+        "operator": "equal to",
+        "value": "false"
+      },
+      "show": [
+        {
+          "name": "username",
+          "type": "property"
+        },
+        {
+          "name": "password",
+          "type": "property"
+        }
+      ]
+    },
+    {
+      "name": "OAuth 2 enabled",
+      "condition": {
+        "property": "oauth2Enabled",
+        "operator": "equal to",
+        "value": "true"
+      },
+      "show": [
+        {
+          "name": "authUrl",
+          "type": "property"
+        },
+        {
+          "name": "tokenUrl",
+          "type": "property"
+        },
+        {
+          "name": "clientId",
+          "type": "property"
+        },
+        {
+          "name": "clientSecret",
+          "type": "property"
+        },
+        {
+          "name": "scopes",
+          "type": "property"
+        },
+        {
+          "name": "refreshToken",
+          "type": "property"
+        }
+      ]
+    },
+    {
+      "name": "JSON/XML Formatting",
+      "condition": {
+        "expression": "format == 'json' || format == 'xml'"
+      },
+      "show": [
+        {
+          "name": "resultPath",
+          "type": "property"
+        },
+        {
+          "name": "fieldsMapping",
+          "type": "property"
+        }
+      ]
+    },
+    {
+      "name": "CSV Formatting",
+      "condition": {
+        "property": "format",
+        "operator": "equal to",
+        "value": "csv"
+      },
+      "show": [
+        {
+          "name": "csvSkipFirstRow",
+          "type": "property"
+        }
+      ]
     }
   ]
 }
