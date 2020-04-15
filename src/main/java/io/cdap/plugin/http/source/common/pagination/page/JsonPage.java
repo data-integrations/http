@@ -15,6 +15,7 @@
  */
 package io.cdap.plugin.http.source.common.pagination.page;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.cdap.cdap.api.data.format.StructuredRecord;
@@ -42,18 +43,29 @@ class JsonPage extends BasePage {
   JsonPage(BaseHttpSourceConfig config, HttpResponse httpResponse) {
     super(httpResponse);
     this.config = config;
-    json = JSONUtil.toJsonObject(httpResponse.getBody());
-    JSONUtil.JsonQueryResponse queryResponse = JSONUtil.getJsonElementByPath(json, config.getResultPath());
-    insideElementJsonPathPart = queryResponse.getUnretrievedPath();
+    String body = httpResponse.getBody();
+    if (JSONUtil.isJsonObject(body)) {
+      json = JSONUtil.toJsonObject(body);
+      JSONUtil.JsonQueryResponse queryResponse = JSONUtil.getJsonElementByPath(json, config.getResultPath());
+      insideElementJsonPathPart = queryResponse.getUnretrievedPath();
 
-    JsonElement jsonElement = queryResponse.get();
-    if (jsonElement.isJsonArray()) {
-      iterator = queryResponse.getAsJsonArray().iterator();
-    } else if (jsonElement.isJsonObject()) {
-      iterator = Collections.singleton(jsonElement).iterator();
+      JsonElement jsonElement = queryResponse.get();
+      if (jsonElement.isJsonArray()) {
+        iterator = queryResponse.getAsJsonArray().iterator();
+      } else if (jsonElement.isJsonObject()) {
+        iterator = Collections.singleton(jsonElement).iterator();
+      } else {
+        throw new IllegalArgumentException(String.format("Element found by '%s' json path is expected to be an object " +
+                                                           "or an array. Primitive found", config.getResultPath()));
+      }
+    } else if (JSONUtil.isJsonArray(body)) {
+      json = new JsonObject();
+      JsonArray array = JSONUtil.toJsonArray(body);
+      json.add("array", array);
+      insideElementJsonPathPart = "/";
+      iterator = array.iterator();
     } else {
-      throw new IllegalArgumentException(String.format("Element found by '%s' json path is expected to be an object " +
-                                                         "or an array. Primitive found", config.getResultPath()));
+      throw new IllegalArgumentException("expected array or object");
     }
 
     fieldsMapping = config.getFullFieldsMapping();

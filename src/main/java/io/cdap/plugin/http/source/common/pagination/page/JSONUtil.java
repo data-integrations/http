@@ -38,6 +38,14 @@ public class JSONUtil {
     return parser.parse(text).getAsJsonArray();
   }
 
+  public static boolean isJsonObject(String text) {
+    return parser.parse(text).isJsonObject();
+  }
+
+  public static boolean isJsonArray(String text) {
+    return parser.parse(text).isJsonArray();
+  }
+
   /**
    * Find an element by jsonPath in given json object. If element not found, information about the search is returned.
    * Like until which element json path evaluation was successful.

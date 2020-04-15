@@ -694,7 +694,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
           if (postRetryStrategy.equals(ErrorHandling.SEND) ||
             postRetryStrategy.equals(ErrorHandling.SKIP)) {
             throw new InvalidConfigPropertyException(
-              String.format("Error handling strategy '%s' is not support in combination with pagination type",
+              String.format("Error handling strategy '%s' is not support in combination with pagination type %s",
                             httpErrorsHandlingEntry.getStrategy(), getPaginationType()), PROPERTY_HTTP_ERROR_HANDLING);
           }
         }
