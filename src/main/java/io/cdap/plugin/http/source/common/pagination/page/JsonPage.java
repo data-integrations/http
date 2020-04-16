@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Cask Data, Inc.
+ * Copyright © 2019-2020 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -19,13 +19,16 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.etl.api.InvalidEntry;
 import io.cdap.cdap.format.StructuredRecordStringConverter;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.source.common.http.HttpResponse;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -38,26 +41,29 @@ class JsonPage extends BasePage {
   private final Map<String, String> fieldsMapping;
   private final Schema schema;
   private final BaseHttpSourceConfig config;
+  private final List<String> optionalFields;
 
   JsonPage(BaseHttpSourceConfig config, HttpResponse httpResponse) {
     super(httpResponse);
     this.config = config;
-    json = JSONUtil.toJsonObject(httpResponse.getBody());
-    JSONUtil.JsonQueryResponse queryResponse = JSONUtil.getJsonElementByPath(json, config.getResultPath());
-    insideElementJsonPathPart = queryResponse.getUnretrievedPath();
+    this.json = JSONUtil.toJsonObject(httpResponse.getBody());
+    this.schema = config.getSchema();
+    this.optionalFields = getOptionalFields();
+    JSONUtil.JsonQueryResponse queryResponse =
+      JSONUtil.getJsonElementByPath(json, config.getResultPath(), optionalFields);
+    this.insideElementJsonPathPart = queryResponse.getUnretrievedPath();
 
     JsonElement jsonElement = queryResponse.get();
     if (jsonElement.isJsonArray()) {
-      iterator = queryResponse.getAsJsonArray().iterator();
+      this.iterator = queryResponse.getAsJsonArray().iterator();
     } else if (jsonElement.isJsonObject()) {
-      iterator = Collections.singleton(jsonElement).iterator();
+      this.iterator = Collections.singleton(jsonElement).iterator();
     } else {
       throw new IllegalArgumentException(String.format("Element found by '%s' json path is expected to be an object " +
                                                          "or an array. Primitive found", config.getResultPath()));
     }
 
-    fieldsMapping = config.getFullFieldsMapping();
-    schema = config.getSchema();
+    this.fieldsMapping = config.getFullFieldsMapping();
   }
 
   @Override
@@ -130,12 +136,17 @@ class JsonPage extends BasePage {
     JsonObject currentJsonObject = iterator.next().getAsJsonObject();
 
     JsonObject resultJson = new JsonObject();
+    int numPartiallyRetrieved = 0;
     for (Map.Entry<String, String> entry : fieldsMapping.entrySet()) {
       String schemaFieldName = entry.getKey();
       String fieldPath = insideElementJsonPathPart + "/" + StringUtils.stripStart(entry.getValue(), "/");
 
-      JSONUtil.JsonQueryResponse queryResponse = JSONUtil.getJsonElementByPath(currentJsonObject, fieldPath);
-      queryResponse.assertFullyRetrieved();
+      JSONUtil.JsonQueryResponse queryResponse =
+        JSONUtil.getJsonElementByPath(currentJsonObject, fieldPath, optionalFields);
+
+      if (!queryResponse.isFullyRetrieved()) {
+        numPartiallyRetrieved++;
+      }
 
       resultJson.add(schemaFieldName, queryResponse.get());
     }
@@ -143,10 +154,29 @@ class JsonPage extends BasePage {
     String jsonString = resultJson.toString();
     try {
       StructuredRecord record = StructuredRecordStringConverter.fromJsonString(jsonString, schema);
+      if (numPartiallyRetrieved > 0) {
+        InvalidEntry<StructuredRecord> error =
+          new InvalidEntry<>(1, "Couldn't find all required fields in the record", record);
+        return new PageEntry(error, config.getErrorHandling());
+      }
       return new PageEntry(record);
     } catch (Throwable e) {
       return new PageEntry(InvalidEntryCreator.buildStringError(jsonString, e), config.getErrorHandling());
     }
+  }
+
+  private List<String> getOptionalFields() {
+    List<String> optionalFields = new ArrayList<>();
+    List<Schema.Field> allFields = schema.getFields();
+    if (allFields == null) {
+      return optionalFields;
+    }
+    for (Schema.Field field : allFields) {
+      if (field.getSchema().isNullable()) {
+        optionalFields.add(field.getName());
+      }
+    }
+    return optionalFields;
   }
 
   /**
@@ -158,7 +188,7 @@ class JsonPage extends BasePage {
    */
   @Override
   public String getPrimitiveByPath(String path) {
-    JSONUtil.JsonQueryResponse queryResponse = JSONUtil.getJsonElementByPath(json, path);
+    JSONUtil.JsonQueryResponse queryResponse = JSONUtil.getJsonElementByPath(json, path, optionalFields);
 
     if (queryResponse.isFullyRetrieved()) {
       return queryResponse.getAsJsonPrimitive().getAsString();
