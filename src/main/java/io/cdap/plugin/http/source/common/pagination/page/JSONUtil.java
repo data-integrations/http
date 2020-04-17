@@ -86,17 +86,17 @@ public class JSONUtil {
    */
   public static class JsonQueryResponse {
     private final String[] unretrievedPathParts;
-    private final List<String> optionalPathParts;
+    private final List<String> optionalFields;
     private final String retrievedPath;
     private final String unretrievedPath;
     private final JsonElement result;
 
     private JsonQueryResponse(String[] retrievedPathParts, String[] unretrievedPathParts,
-                              List<String> optionalPathParts, JsonElement result) {
+                              List<String> optionalFields, JsonElement result) {
       this.unretrievedPathParts = unretrievedPathParts;
       this.retrievedPath = "/" + StringUtils.join(retrievedPathParts, '/');
       this.unretrievedPath = "/" + StringUtils.join(unretrievedPathParts, '/');
-      this.optionalPathParts = optionalPathParts;
+      this.optionalFields = optionalFields;
       this.result = result;
     }
 
@@ -118,7 +118,7 @@ public class JSONUtil {
      * @return true if the json path was fully successfully retrieved till the last element.
      */
     boolean isFullyRetrieved() {
-      return (unretrievedPathParts.length == 0) || optionalPathParts.containsAll(Arrays.asList(unretrievedPathParts));
+      return (unretrievedPathParts.length == 0) || optionalFields.containsAll(Arrays.asList(unretrievedPathParts));
     }
 
     /**
@@ -169,6 +169,7 @@ public class JSONUtil {
       return "JsonQueryResponse{" +
         "retrievedPath='" + retrievedPath + '\'' +
         ", unretrievedPath='" + unretrievedPath + '\'' +
+        ", optionalFields='" + optionalFields + '\'' +
         ", result=" + result +
         '}';
     }
