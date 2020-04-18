@@ -17,6 +17,7 @@ package io.cdap.plugin.http.source.common.pagination.page;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.InvalidEntry;
@@ -26,6 +27,7 @@ import io.cdap.plugin.http.source.common.http.HttpResponse;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -35,9 +37,10 @@ import java.util.Map;
  * Returns elements from json one by one by given json path.
  */
 class JsonPage extends BasePage {
+  private static final JsonParser JSON_PARSER = new JsonParser();
   private final String insideElementJsonPathPart;
   private final Iterator<JsonElement> iterator;
-  private final JsonObject json;
+//  private final JsonObject json;
   private final Map<String, String> fieldsMapping;
   private final Schema schema;
   private final BaseHttpSourceConfig config;
@@ -46,16 +49,18 @@ class JsonPage extends BasePage {
   JsonPage(BaseHttpSourceConfig config, HttpResponse httpResponse) {
     super(httpResponse);
     this.config = config;
-    this.json = JSONUtil.toJsonObject(httpResponse.getBody());
-    this.schema = config.getSchema();
     this.optionalFields = getOptionalFields();
-    JSONUtil.JsonQueryResponse queryResponse =
-      JSONUtil.getJsonElementByPath(json, config.getResultPath(), optionalFields);
-    this.insideElementJsonPathPart = queryResponse.getUnretrievedPath();
+    this.fieldsMapping = config.getFullFieldsMapping();
+    this.schema = config.getSchema();
 
-    JsonElement jsonElement = queryResponse.get();
+    JsonElement jsonElement = JSON_PARSER.parse(httpResponse.getBody());
+    if (jsonElement.isJsonObject()) {
+      JsonObject jsonObject = jsonElement.getAsJsonObject();
+      JsonQueryResponse queryResponse = getJsonElementByPath(jsonObject, config.getResultPath(), optionalFields);
+      jsonElement = queryResponse.get();
+    }
     if (jsonElement.isJsonArray()) {
-      this.iterator = queryResponse.getAsJsonArray().iterator();
+      this.iterator = jsonElement.getAsJsonArray().iterator();
     } else if (jsonElement.isJsonObject()) {
       this.iterator = Collections.singleton(jsonElement).iterator();
     } else {
@@ -63,7 +68,19 @@ class JsonPage extends BasePage {
                                                          "or an array. Primitive found", config.getResultPath()));
     }
 
-    this.fieldsMapping = config.getFullFieldsMapping();
+
+
+
+
+    if(!jsonElement.isJsonArray()) {
+      this.insideElementJsonPathPart = queryResponse.getUnretrievedPath();
+      jsonElement = queryResponse.get();
+    }
+
+
+
+
+    this.insideElementJsonPathPart = queryResponse.getUnretrievedPath();
   }
 
   @Override
@@ -141,8 +158,7 @@ class JsonPage extends BasePage {
       String schemaFieldName = entry.getKey();
       String fieldPath = insideElementJsonPathPart + "/" + StringUtils.stripStart(entry.getValue(), "/");
 
-      JSONUtil.JsonQueryResponse queryResponse =
-        JSONUtil.getJsonElementByPath(currentJsonObject, fieldPath, optionalFields);
+      JsonQueryResponse queryResponse = getJsonElementByPath(currentJsonObject, fieldPath, optionalFields);
 
       if (!queryResponse.isFullyRetrieved()) {
         numPartiallyRetrieved++;
@@ -188,7 +204,7 @@ class JsonPage extends BasePage {
    */
   @Override
   public String getPrimitiveByPath(String path) {
-    JSONUtil.JsonQueryResponse queryResponse = JSONUtil.getJsonElementByPath(json, path, optionalFields);
+    JsonQueryResponse queryResponse = getJsonElementByPath(json, path, optionalFields);
 
     if (queryResponse.isFullyRetrieved()) {
       return queryResponse.getAsJsonPrimitive().getAsString();
@@ -200,5 +216,45 @@ class JsonPage extends BasePage {
   @Override
   public void close() {
 
+  }
+
+  /**
+   * Find an element by jsonPath in given json object. If element not found, information about the search is returned.
+   * Like until which element json path evaluation was successful.
+   *
+   * @param jsonObject a jsonObject on which the search should be performed
+   * @param jsonPath a slash separated path. E.g. "/bookstore/books"
+   * @param optionalFields a list of fields that may or may not exist in the response
+   * @return an object containing information about search results, success/failure.
+   */
+  public JsonQueryResponse getJsonElementByPath(JsonObject jsonObject, String jsonPath, List<String> optionalFields) {
+    String stripped = StringUtils.strip(jsonPath.trim(), "/");
+    String[] pathParts = stripped.isEmpty() ? new String[0] : stripped.split("/");
+
+    JsonElement currentElement = jsonObject;
+    for (int i = 0; i < pathParts.length; i++) {
+      String pathPart = pathParts[i];
+
+      if (currentElement.isJsonObject()) {
+        jsonObject = currentElement.getAsJsonObject();
+      }
+
+      if (!currentElement.isJsonObject() || jsonObject.get(pathPart) == null) {
+        return new JsonQueryResponse(
+          Arrays.copyOfRange(pathParts, 0, i),
+          Arrays.copyOfRange(pathParts, i, pathParts.length),
+          optionalFields,
+          currentElement
+        );
+      }
+
+      currentElement = jsonObject.get(pathPart);
+    }
+    return new JsonQueryResponse(
+      Arrays.copyOfRange(pathParts, 0, pathParts.length),
+      new String[0],
+      optionalFields,
+      currentElement
+    );
   }
 }
