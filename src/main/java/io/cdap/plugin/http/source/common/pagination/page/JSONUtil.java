@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Cask Data, Inc.
+ * Copyright © 2019-2020 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -15,6 +15,7 @@
  */
 package io.cdap.plugin.http.source.common.pagination.page;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -23,19 +24,20 @@ import com.google.gson.JsonPrimitive;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Utility functions for working with JSON document.
  */
 public class JSONUtil {
-  private static final JsonParser parser = new JsonParser();
+  private static final JsonParser JSON_PARSER = new JsonParser();
 
   public static JsonObject toJsonObject(String text) {
-    return parser.parse(text).getAsJsonObject();
+    return JSON_PARSER.parse(text).getAsJsonObject();
   }
 
   public static JsonArray toJsonArray(String text) {
-    return parser.parse(text).getAsJsonArray();
+    return JSON_PARSER.parse(text).getAsJsonArray();
   }
 
   /**
@@ -44,16 +46,13 @@ public class JSONUtil {
    *
    * @param jsonObject a jsonObject on which the search should be performed
    * @param jsonPath a slash separated path. E.g. "/bookstore/books"
+   * @param optionalFields a list of fields that may or may not exist in the response
    * @return an object containing information about search results, success/failure.
    */
-  public static JsonQueryResponse getJsonElementByPath(JsonObject jsonObject, String jsonPath) {
+  public static JsonQueryResponse getJsonElementByPath(JsonObject jsonObject, String jsonPath,
+                                                       List<String> optionalFields) {
     String stripped = StringUtils.strip(jsonPath.trim(), "/");
-    String[] pathParts;
-    if (!stripped.isEmpty()) {
-      pathParts = stripped.split("/");
-    } else {
-      pathParts = new String[0];
-    }
+    String[] pathParts = stripped.isEmpty() ? new String[0] : stripped.split("/");
 
     JsonElement currentElement = jsonObject;
     for (int i = 0; i < pathParts.length; i++) {
@@ -67,6 +66,7 @@ public class JSONUtil {
         return new JsonQueryResponse(
           Arrays.copyOfRange(pathParts, 0, i),
           Arrays.copyOfRange(pathParts, i, pathParts.length),
+          optionalFields,
           currentElement
         );
       }
@@ -76,6 +76,7 @@ public class JSONUtil {
     return new JsonQueryResponse(
       Arrays.copyOfRange(pathParts, 0, pathParts.length),
       new String[0],
+      optionalFields,
       currentElement
     );
   }
@@ -84,17 +85,18 @@ public class JSONUtil {
    * A class which contains information regarding results of searching an element in json by json path.
    */
   public static class JsonQueryResponse {
-    private final String[] retrievedPathParts;
     private final String[] unretrievedPathParts;
+    private final List<String> optionalFields;
     private final String retrievedPath;
     private final String unretrievedPath;
     private final JsonElement result;
 
-    public JsonQueryResponse(String[] retrievedPathParts, String[] unretrievedPathParts, JsonElement result) {
-      this.retrievedPathParts = retrievedPathParts;
+    private JsonQueryResponse(String[] retrievedPathParts, String[] unretrievedPathParts,
+                              List<String> optionalFields, JsonElement result) {
       this.unretrievedPathParts = unretrievedPathParts;
       this.retrievedPath = "/" + StringUtils.join(retrievedPathParts, '/');
       this.unretrievedPath = "/" + StringUtils.join(unretrievedPathParts, '/');
+      this.optionalFields = optionalFields;
       this.result = result;
     }
 
@@ -115,19 +117,8 @@ public class JSONUtil {
     /**
      * @return true if the json path was fully successfully retrieved till the last element.
      */
-    public boolean isFullyRetrieved() {
-      return (unretrievedPathParts.length == 0);
-    }
-
-    /**
-     * Fails if json path was not fully successfully retrieved till the last element.
-     */
-    public void assertFullyRetrieved() {
-      if (!isFullyRetrieved()) {
-        throw new IllegalArgumentException(String.format(
-          "Cannot retrieve the path part '%s' of path '%s'. \nLast successfully retrieved part is: '%s'",
-          getUnretrievedPath(), getRetrievedPath() + getUnretrievedPath(), result.toString()));
-      }
+    boolean isFullyRetrieved() {
+      return (unretrievedPathParts.length == 0) || optionalFields.containsAll(Arrays.asList(unretrievedPathParts));
     }
 
     /**
@@ -137,7 +128,8 @@ public class JSONUtil {
      *
      * @return a retrieved part of path.
      */
-    public String getRetrievedPath() {
+    @VisibleForTesting
+    String getRetrievedPath() {
       return retrievedPath;
     }
 
@@ -177,6 +169,7 @@ public class JSONUtil {
       return "JsonQueryResponse{" +
         "retrievedPath='" + retrievedPath + '\'' +
         ", unretrievedPath='" + unretrievedPath + '\'' +
+        ", optionalFields='" + optionalFields + '\'' +
         ", result=" + result +
         '}';
     }
