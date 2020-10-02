@@ -31,12 +31,11 @@ import java.util.NoSuchElementException;
 abstract class RecordPerLinePage extends BasePage {
   private final BufferedReader bufferedReader;
   protected final Schema schema;
-  private final BaseHttpSourceConfig config;
-  private boolean isLineRead;
+  protected final BaseHttpSourceConfig config;
+  protected boolean isLineRead;
   private String lastLine;
 
-  RecordPerLinePage(BaseHttpSourceConfig config, HttpResponse httpResponse)
-    throws IOException {
+  RecordPerLinePage(BaseHttpSourceConfig config, HttpResponse httpResponse) throws IOException {
     super(httpResponse);
     this.config = config;
     this.schema = config.getSchema();
@@ -46,8 +45,7 @@ abstract class RecordPerLinePage extends BasePage {
   @Override
   public String getPrimitiveByPath(String path) {
     // this should never happen, since the validation of configs is done during pipeline deployment
-    throw new UnsupportedOperationException(String.format("Page format '%s' does not support searching by path",
-                                                  config.getFormat()));
+    throw new UnsupportedOperationException(String.format("Page format '%s' does not support searching by path", config.getFormat()));
   }
 
   @Override
