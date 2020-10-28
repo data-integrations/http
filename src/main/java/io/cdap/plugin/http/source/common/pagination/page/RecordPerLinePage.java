@@ -45,7 +45,8 @@ abstract class RecordPerLinePage extends BasePage {
   @Override
   public String getPrimitiveByPath(String path) {
     // this should never happen, since the validation of configs is done during pipeline deployment
-    throw new UnsupportedOperationException(String.format("Page format '%s' does not support searching by path", config.getFormat()));
+    throw new UnsupportedOperationException(String.format("Page format '%s' does not support searching by path",
+                                                          config.getFormat()));
   }
 
   @Override

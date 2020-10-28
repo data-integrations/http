@@ -34,7 +34,7 @@ public class DelimitedPage extends RecordPerLinePage {
   DelimitedPage(BaseHttpSourceConfig config, HttpResponse httpResponse, String delimiter) throws IOException {
     super(config, httpResponse);
     this.delimiter = delimiter;
-    this.isFirstRowSkipped =false;
+    this.isFirstRowSkipped = false;
   }
 
   @Override
@@ -45,11 +45,11 @@ public class DelimitedPage extends RecordPerLinePage {
   @Override
   public PageEntry next() {
     if (this.config.getCsvSkipFirstRow() && !isFirstRowSkipped) {
-      isFirstRowSkipped =true;
+      isFirstRowSkipped = true;
       if (!hasNext()) { // calling hasNext will also read the line;
         throw new NoSuchElementException();
       }
-      isLineRead=false;
+      isLineRead = false;
     }
     return super.next();
   }
