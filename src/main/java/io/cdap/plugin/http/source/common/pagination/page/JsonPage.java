@@ -37,7 +37,7 @@ import java.util.Map;
 class JsonPage extends BasePage {
   private final String insideElementJsonPathPart;
   private final Iterator<JsonElement> iterator;
-  private final JsonObject json;
+  private final JsonElement json;
   private final Map<String, String> fieldsMapping;
   private final Schema schema;
   private final BaseHttpSourceConfig config;
@@ -46,16 +46,22 @@ class JsonPage extends BasePage {
   JsonPage(BaseHttpSourceConfig config, HttpResponse httpResponse) {
     super(httpResponse);
     this.config = config;
-    this.json = JSONUtil.toJsonObject(httpResponse.getBody());
+    this.json = JSONUtil.toJsonElement(httpResponse.getBody());
     this.schema = config.getSchema();
     this.optionalFields = getOptionalFields();
-    JSONUtil.JsonQueryResponse queryResponse =
-      JSONUtil.getJsonElementByPath(json, config.getResultPath(), optionalFields);
-    this.insideElementJsonPathPart = queryResponse.getUnretrievedPath();
 
-    JsonElement jsonElement = queryResponse.get();
+    JsonElement jsonElement = json;
+    if (json.isJsonObject()) {
+      JSONUtil.JsonQueryResponse queryResponse =
+        JSONUtil.getJsonElementByPath(json.getAsJsonObject(), config.getResultPath(), optionalFields);
+      this.insideElementJsonPathPart = queryResponse.getUnretrievedPath();
+      jsonElement = queryResponse.get();
+    } else {
+      this.insideElementJsonPathPart = config.getResultPath() == null ? "" : config.getResultPath();
+    }
+
     if (jsonElement.isJsonArray()) {
-      this.iterator = queryResponse.getAsJsonArray().iterator();
+      this.iterator = jsonElement.getAsJsonArray().iterator();
     } else if (jsonElement.isJsonObject()) {
       this.iterator = Collections.singleton(jsonElement).iterator();
     } else {
@@ -188,13 +194,14 @@ class JsonPage extends BasePage {
    */
   @Override
   public String getPrimitiveByPath(String path) {
-    JSONUtil.JsonQueryResponse queryResponse = JSONUtil.getJsonElementByPath(json, path, optionalFields);
-
-    if (queryResponse.isFullyRetrieved()) {
-      return queryResponse.getAsJsonPrimitive().getAsString();
-    } else {
-      return null;
+    if (json.isJsonObject()) {
+      JSONUtil.JsonQueryResponse queryResponse = JSONUtil.getJsonElementByPath(json.getAsJsonObject(),
+                                                                               path, optionalFields);
+      if (queryResponse.isFullyRetrieved()) {
+        return queryResponse.getAsJsonPrimitive().getAsString();
+      }
     }
+    return null;
   }
 
   @Override
