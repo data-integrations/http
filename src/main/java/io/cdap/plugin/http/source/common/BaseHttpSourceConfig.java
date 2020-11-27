@@ -774,7 +774,9 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
       String reasonFormat = String.format("page format is '%s'", getFormat());
 
       if (getFormat().equals(PageFormat.JSON) || getFormat().equals(PageFormat.XML)) {
-        assertIsSet(getResultPath(), PROPERTY_RESULT_PATH, reasonFormat);
+        if (!getFormat().equals(PageFormat.JSON)) {
+          assertIsSet(getResultPath(), PROPERTY_RESULT_PATH, reasonFormat);
+        }
         getFullFieldsMapping(); // can be null, but call getter to verify correctness of regexps
       } else {
         assertIsNotSet(getResultPath(), PROPERTY_RESULT_PATH, reasonFormat);
