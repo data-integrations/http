@@ -1,5 +1,5 @@
 /*
- * Copyright © 2019 Cask Data, Inc.
+ * Copyright © 2019-2020 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -18,6 +18,8 @@ package io.cdap.plugin.http.source.common.pagination.page;
 import com.google.gson.JsonObject;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.ArrayList;
 
 public class JSONUtilTest {
   private static final String JSON = "\n" +
@@ -69,7 +71,8 @@ public class JSONUtilTest {
   @Test
   public void testRetrievePartial() {
     JsonObject jsonObject = JSONUtil.toJsonObject(JSON);
-    JSONUtil.JsonQueryResponse response = JSONUtil.getJsonElementByPath(jsonObject, "/items/snippet");
+    JSONUtil.JsonQueryResponse response = JSONUtil.getJsonElementByPath(jsonObject, "/items/snippet",
+                                                                        new ArrayList<>());
     Assert.assertEquals(response.getRetrievedPath(), "/items");
     Assert.assertEquals(response.getUnretrievedPath(), "/snippet");
     Assert.assertEquals("UCfkRcekMTa5GA2DdNKba7Jg", response.getAsJsonArray().get(0).getAsJsonObject()
@@ -79,7 +82,8 @@ public class JSONUtilTest {
   @Test
   public void testRetrievePrimitive() {
     JsonObject jsonObject = JSONUtil.toJsonObject(JSON);
-    JSONUtil.JsonQueryResponse response = JSONUtil.getJsonElementByPath(jsonObject, "/pageInfo/totalResults");
+    JSONUtil.JsonQueryResponse response = JSONUtil.getJsonElementByPath(jsonObject, "/pageInfo/totalResults",
+                                                                        new ArrayList<>());
     Assert.assertEquals("/pageInfo/totalResults", response.getRetrievedPath());
     Assert.assertEquals("/", response.getUnretrievedPath());
     Assert.assertEquals(208, response.getAsJsonPrimitive().getAsInt());
@@ -88,7 +92,8 @@ public class JSONUtilTest {
   @Test
   public void testRetrieveObject() {
     JsonObject jsonObject = JSONUtil.toJsonObject(JSON);
-    JSONUtil.JsonQueryResponse response = JSONUtil.getJsonElementByPath(jsonObject, "/pageInfo");
+    JSONUtil.JsonQueryResponse response = JSONUtil.getJsonElementByPath(jsonObject, "/pageInfo",
+                                                                        new ArrayList<>());
     Assert.assertEquals("/pageInfo", response.getRetrievedPath());
     Assert.assertEquals("/", response.getUnretrievedPath());
     Assert.assertEquals(2, response.getAsJsonObject().get("resultsPerPage").getAsInt());
