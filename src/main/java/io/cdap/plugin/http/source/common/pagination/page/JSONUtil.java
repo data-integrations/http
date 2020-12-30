@@ -25,6 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 import java.util.List;
+import javax.annotation.Nullable;
 
 /**
  * Utility functions for working with JSON document.
@@ -34,6 +35,10 @@ public class JSONUtil {
 
   public static JsonObject toJsonObject(String text) {
     return JSON_PARSER.parse(text).getAsJsonObject();
+  }
+
+  public static JsonElement toJsonElement(String text) {
+    return JSON_PARSER.parse(text);
   }
 
   public static JsonArray toJsonArray(String text) {
@@ -49,10 +54,13 @@ public class JSONUtil {
    * @param optionalFields a list of fields that may or may not exist in the response
    * @return an object containing information about search results, success/failure.
    */
-  public static JsonQueryResponse getJsonElementByPath(JsonObject jsonObject, String jsonPath,
+  public static JsonQueryResponse getJsonElementByPath(JsonObject jsonObject,  @Nullable String jsonPath,
                                                        List<String> optionalFields) {
-    String stripped = StringUtils.strip(jsonPath.trim(), "/");
-    String[] pathParts = stripped.isEmpty() ? new String[0] : stripped.split("/");
+    String[] pathParts = {};
+    if (jsonPath != null) {
+      String stripped = StringUtils.strip(jsonPath.trim(), "/");
+      pathParts = stripped.isEmpty() ? new String[0] : stripped.split("/");
+    }
 
     JsonElement currentElement = jsonObject;
     for (int i = 0; i < pathParts.length; i++) {
