@@ -20,9 +20,11 @@ Building Plugins
 ----------------
 You get started with http plugins by building directly from the latest source code::
 
+```
    git clone https://github.com/data-integrations/http.git
    cd http
    mvn clean package
+```
 
 After the build completes, you will have a JAR for each plugin under each
 ``<plugin-name>/target/`` directory.
