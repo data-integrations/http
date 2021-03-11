@@ -272,11 +272,13 @@ public class HTTPSinkConfig extends ReferencePluginConfig {
   }
 
   public void validate(FailureCollector collector) {
-    try {
-      new URL(url);
-    } catch (MalformedURLException e) {
-      collector.addFailure(String.format("URL '%s' is malformed: %s", url, e.getMessage()), null)
-        .withConfigProperty(URL);
+    if (!containsMacro(URL)) {
+      try {
+        new URL(url);
+      } catch (MalformedURLException e) {
+        collector.addFailure(String.format("URL '%s' is malformed: %s", url, e.getMessage()), null)
+          .withConfigProperty(URL);
+      }
     }
 
     if (!containsMacro(CONNECTION_TIMEOUT) && Objects.nonNull(connectTimeout) && connectTimeout < 0) {
