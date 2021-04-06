@@ -17,6 +17,7 @@
 package io.cdap.plugin.http.sink.batch;
 
 import io.cdap.cdap.etl.api.validation.CauseAttributes;
+import io.cdap.cdap.etl.api.validation.ValidationException;
 import io.cdap.cdap.etl.api.validation.ValidationFailure;
 import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
 import org.junit.Assert;
@@ -132,6 +133,17 @@ public class HTTPSinkConfigTest {
     MockFailureCollector failureCollector = new MockFailureCollector(MOCK_STAGE);
     config.validate(failureCollector);
     assertPropertyValidationFailed(failureCollector, HTTPSinkConfig.MESSAGE_FORMAT);
+  }
+
+  @Test(expected = ValidationException.class)
+  public void testHTTPSinkWithEmptyUrl() {
+    HTTPSinkConfig config = HTTPSinkConfig.newBuilder(VALID_CONFIG)
+      .setUrl("")
+      .build();
+
+    MockFailureCollector collector = new MockFailureCollector("httpsinkwithemptyurl");
+    config.validate(collector);
+    collector.getOrThrowException();
   }
 
   public static void assertPropertyValidationFailed(MockFailureCollector failureCollector, String paramName) {

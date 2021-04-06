@@ -23,6 +23,7 @@ import io.cdap.cdap.api.artifact.ArtifactSummary;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.api.dataset.table.Table;
+import io.cdap.cdap.common.utils.Tasks;
 import io.cdap.cdap.datapipeline.DataPipelineApp;
 import io.cdap.cdap.datapipeline.SmartWorkflow;
 import io.cdap.cdap.etl.api.batch.BatchSink;
@@ -58,7 +59,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import javax.ws.rs.HttpMethod;
 
 /**
@@ -173,5 +176,70 @@ public class HTTPSinkTest extends HydratorTestBase {
     Assert.assertEquals("cask cdap, hydrator tracker, ui cli", result.toString());
     urlConn.disconnect();
     return responseCode;
+  }
+
+  @Test
+  public void testHTTPSinkMacroUrl() throws Exception {
+    String inputDatasetName = "input-http-sink-with-macro";
+    ETLStage source = new ETLStage("source", MockSource.getPlugin(inputDatasetName));
+    Map<String, String> properties = new ImmutableMap.Builder<String, String>()
+      .put("url", "${url}")
+      .put("method", "PUT")
+      .put("messageFormat", "Custom")
+      .put("charset", "UTF-8")
+      .put("body", "cask cdap, hydrator tracker, ui cli")
+      .put("batchSize", "1")
+      .put("referenceName", "HTTPSinkReference")
+      .put("delimiterForMessages", "\n")
+      .put("numRetries", "3")
+      .put("followRedirects", "true")
+      .put("disableSSLValidation", "true")
+      .put("connectTimeout", "60000")
+      .put("readTimeout", "60000")
+      .put("failOnNon200Response", "true")
+      .build();
+
+    ImmutableMap<String, String> runtimeProperties =
+      ImmutableMap.of("url", baseURL + "/feeds/users");
+
+    ETLStage sink = new ETLStage("HTTP", new ETLPlugin("HTTP", BatchSink.PLUGIN_TYPE, properties, null));
+    ETLBatchConfig etlConfig = ETLBatchConfig.builder("* * * * *")
+      .addStage(source)
+      .addStage(sink)
+      .addConnection(source.getName(), sink.getName())
+      .build();
+
+    ApplicationManager appManager = deployETL(etlConfig, inputDatasetName);
+
+    DataSetManager<Table> inputManager = getDataset(inputDatasetName);
+    List<StructuredRecord> input = ImmutableList.of(
+      StructuredRecord.builder(inputSchema).set("id", "1").build()
+    );
+    MockSource.writeInput(inputManager, input);
+    // run the pipeline
+    runETLOnce(appManager, runtimeProperties);
+  }
+
+  /**
+   * Run the SmartWorkflow in the given ETL application for once and wait for the workflow's COMPLETED status
+   * with 5 minutes timeout.
+   *
+   * @param appManager the ETL application to run
+   * @param arguments  the arguments to be passed when running SmartWorkflow
+   */
+  protected WorkflowManager runETLOnce(ApplicationManager appManager, Map<String, String> arguments)
+    throws TimeoutException, InterruptedException, ExecutionException {
+    final WorkflowManager workflowManager = appManager.getWorkflowManager(SmartWorkflow.NAME);
+    int numRuns = workflowManager.getHistory().size();
+    workflowManager.start(arguments);
+    Tasks.waitFor(numRuns + 1, () -> workflowManager.getHistory().size(), 20, TimeUnit.SECONDS);
+    workflowManager.waitForStopped(5, TimeUnit.MINUTES);
+    return workflowManager;
+  }
+
+  protected ApplicationManager deployETL(ETLBatchConfig etlConfig, String appName) throws Exception {
+    AppRequest<ETLBatchConfig> appRequest = new AppRequest<>(BATCH_ARTIFACT, etlConfig);
+    ApplicationId appId = NamespaceId.DEFAULT.app(appName);
+    return deployApplication(appId, appRequest);
   }
 }
