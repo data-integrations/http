@@ -670,9 +670,13 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     return getListFromString(transportProtocols);
   }
 
-  public void validate() {
+  public void validate(){
+    validate(true);
+  }
+
+  public void validate(boolean validateURL) {
     // Validate URL
-    if (!containsMacro(PROPERTY_URL)) {
+    if (validateURL && !containsMacro(PROPERTY_URL)) {
       try {
         // replace with placeholder with anything just during pagination
         new URI(getUrl().replaceAll(PAGINATION_INDEX_PLACEHOLDER_REGEX, "0"));
