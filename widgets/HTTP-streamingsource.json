@@ -159,6 +159,80 @@
       ]
     },
     {
+      "label": "HAWK Authentication",
+      "properties": [
+        {
+          "widget-type": "toggle",
+          "label": "HAWK Authentication Enabled",
+          "name": "hawkAuthEnabled",
+          "widget-attributes": {
+            "default": "false",
+            "on": {
+              "label": "True",
+              "value": "true"
+            },
+            "off": {
+              "label": "False",
+              "value": "false"
+            }
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Hawk Auth ID",
+          "name": "hawkAuthID"
+        },
+        {
+          "widget-type": "password",
+          "label": "Hawk Auth Key",
+          "name": "hawkAuthKey"
+        },
+        {
+          "widget-type": "select",
+          "label": "Algorithm",
+          "name": "hawkAlgorithm",
+          "widget-attributes": {
+            "default": "sha256",
+            "values": [
+              "sha256",
+              "sha1"
+            ]
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "ext",
+          "name": "hawkExt"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "app",
+          "name": "hawkApp"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "dlg",
+          "name": "hawkDlg"
+        },
+        {
+          "widget-type": "toggle",
+          "label": "Include Payload Hash",
+          "name": "hawkPayloadHashEnabled",
+          "widget-attributes": {
+            "default": "false",
+            "on": {
+              "label": "True",
+              "value": "true"
+            },
+            "off": {
+              "label": "False",
+              "value": "false"
+            }
+          }
+        }
+      ]
+    },
+    {
       "label": "Basic Authentication",
       "properties": [
         {
@@ -503,7 +577,7 @@
       "name": "Proxy authentication",
       "condition": {
         "property": "proxyUrl",
-        "operator": "exists",
+        "operator": "exists"
       },
       "show": [
         {
@@ -597,15 +671,21 @@
           "type": "property"
         }
       ]
-    },
-    {
-      "name": "OAuth 2 disabled",
+    },{
+      "name": "OAuth 2 and HAWK disabled",
       "condition": {
-        "property": "oauth2Enabled",
-        "operator": "equal to",
-        "value": "false"
+        "expression": "oauth2Enabled == false && hawkAuthEnabled == false"
       },
       "show": [
+
+        {
+          "name": "oauth2Enabled",
+          "type": "property"
+        },
+        {
+          "name": "hawkAuthEnabled",
+          "type": "property"
+        },
         {
           "name": "username",
           "type": "property"
@@ -646,6 +726,48 @@
         },
         {
           "name": "refreshToken",
+          "type": "property"
+        }
+      ]
+    },
+    {
+      "name": "HAWK enabled",
+      "condition": {
+        "property": "hawkAuthEnabled",
+        "operator": "equal to",
+        "value": "true"
+      },
+      "show": [
+        {
+          "name": "hawkAuthEnabled",
+          "type": "property"
+        },
+        {
+          "name": "hawkAuthID",
+          "type": "property"
+        },
+        {
+          "name": "hawkAuthKey",
+          "type": "property"
+        },
+        {
+          "name": "hawkAlgorithm",
+          "type": "property"
+        },
+        {
+          "name": "hawkExt",
+          "type": "property"
+        },
+        {
+          "name": "hawkApp",
+          "type": "property"
+        },
+        {
+          "name": "hawkDlg",
+          "type": "property"
+        },
+        {
+          "name": "hawkPayloadHashEnabled",
           "type": "property"
         }
       ]
