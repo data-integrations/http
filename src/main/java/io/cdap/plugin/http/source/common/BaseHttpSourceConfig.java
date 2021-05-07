@@ -16,6 +16,7 @@
 package io.cdap.plugin.http.source.common;
 
 import com.google.common.base.Strings;
+import com.wealdtech.hawk.HawkCredentials;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
@@ -87,6 +88,14 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   public static final String PROPERTY_CLIENT_SECRET = "clientSecret";
   public static final String PROPERTY_SCOPES = "scopes";
   public static final String PROPERTY_REFRESH_TOKEN = "refreshToken";
+  public static final String PROPERTY_HAWK_AUTH_ENABLED = "hawkAuthEnabled";
+  public static final String PROPERTY_HAWK_AUTH_ID = "hawkAuthID";
+  public static final String PROPERTY_HAWK_AUTH_KEY = "hawkAuthKey";
+  public static final String PROPERTY_HAWK_AUTH_ALGORITHM = "hawkAlgorithm";
+  public static final String PROPERTY_HAWK_AUTH_EXT = "hawkExt";
+  public static final String PROPERTY_HAWK_AUTH_APP = "hawkApp";
+  public static final String PROPERTY_HAWK_AUTH_DLG = "hawkDlg";
+  public static final String PROPERTY_HAWK_PAYLOAD_HASH_ENABLED = "hawkPayloadHashEnabled";
   public static final String PROPERTY_VERIFY_HTTPS = "verifyHttps";
   public static final String PROPERTY_KEYSTORE_FILE = "keystoreFile";
   public static final String PROPERTY_KEYSTORE_TYPE = "keystoreType";
@@ -315,6 +324,56 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   @Description("Token used to receive accessToken, which is end product of OAuth2.")
   @Macro
   protected String refreshToken;
+
+  @Name(PROPERTY_HAWK_AUTH_ENABLED)
+  @Description("If true, plugin will perform OAuth2 authentication.")
+  protected String hawkAuthEnabled;
+
+  @Nullable
+  @Name(PROPERTY_HAWK_AUTH_ID)
+  @Description("The HAWK Authentication ID")
+  @Macro
+  protected String hawkAuthID;
+
+  @Nullable
+  @Name(PROPERTY_HAWK_AUTH_KEY)
+  @Description("The HAWK Authentication Key")
+  @Macro
+  protected String hawkAuthKey;
+
+  @Nullable
+  @Name(PROPERTY_HAWK_AUTH_ALGORITHM)
+  @Description("The HAWK Algorithm")
+  @Macro
+  protected String hawkAlgorithm;
+
+  @Nullable
+  @Name(PROPERTY_HAWK_AUTH_EXT)
+  @Description("Advanced parameter : Any application-specific information to be sent with the request. " +
+          "Ex: some-app-extra-data")
+  @Macro
+  protected String hawkExt;
+
+  @Nullable
+  @Name(PROPERTY_HAWK_AUTH_APP)
+  @Description("Advanced parameter : This provides binding between the credentials and the application " +
+          "in a way that prevents an attacker from ticking an application to use credentials issued to someone else.")
+  @Macro
+  protected String hawkApp;
+
+  @Nullable
+  @Name(PROPERTY_HAWK_AUTH_DLG)
+  @Description("Advanced parameter : The application id of the application the credentials were directly issued to.")
+  @Macro
+  protected String hawkDlg;
+
+  @Nullable
+  @Name(PROPERTY_HAWK_PAYLOAD_HASH_ENABLED)
+  @Description("Advanced parameter : HAWK authentication provides optional support for payload validation. " +
+          "If this option is selected, the payload hash will be calculated and included in MAC calculation " +
+          "and in Authorization header")
+  @Macro
+  protected String hawkPayloadHashEnabled;
 
   @Name(PROPERTY_VERIFY_HTTPS)
   @Description("If false, untrusted trust certificates (e.g. self signed), will not lead to an" +
@@ -563,6 +622,46 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     return refreshToken;
   }
 
+
+  public boolean getHawkAuthEnabled() {
+    return Boolean.parseBoolean(hawkAuthEnabled);
+  }
+
+  @Nullable
+  public String getHawkAuthID() {
+    return hawkAuthID;
+  }
+
+  @Nullable
+  public String getHawkAuthKey() {
+    return hawkAuthKey;
+  }
+
+  @Nullable
+  public HawkCredentials.Algorithm getHawkAlgorithm() {
+    return HawkCredentials.Algorithm.parse(hawkAlgorithm);
+  }
+
+  @Nullable
+  public String getHawkExt() {
+    return hawkExt;
+  }
+
+  @Nullable
+  public String getHawkApp() {
+    return hawkApp;
+  }
+
+  @Nullable
+  public String getHawkDlg() {
+    return hawkDlg;
+  }
+
+  @Nullable
+  public boolean getHawkPayloadHashEnabled() {
+    return Boolean.parseBoolean(hawkPayloadHashEnabled);
+  }
+
   public Boolean getVerifyHttps() {
     return Boolean.parseBoolean(verifyHttps);
   }
@@ -792,6 +891,14 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
       assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
       assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
       assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
+    }
+
+    // Validate HAWK auth properties
+    if (!containsMacro(PROPERTY_HAWK_AUTH_ENABLED) && this.getHawkAuthEnabled()) {
+      String reasonHAWK = "HAWK Authentication is enabled";
+      assertIsSet(getHawkAuthID(), PROPERTY_HAWK_AUTH_ID, reasonHAWK);
+      assertIsSet(getHawkAuthKey(), PROPERTY_HAWK_AUTH_KEY, reasonHAWK);
+      assertIsSet(getHawkAlgorithm(), PROPERTY_HAWK_AUTH_ALGORITHM, reasonHAWK);
     }
 
     if (!containsMacro(PROPERTY_VERIFY_HTTPS) && !getVerifyHttps()) {

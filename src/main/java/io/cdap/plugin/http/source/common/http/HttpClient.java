@@ -17,6 +17,7 @@ package io.cdap.plugin.http.source.common.http;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
+import com.wealdtech.hawk.HawkClient;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
@@ -48,6 +49,7 @@ public class HttpClient implements Closeable {
   private final BaseHttpSourceConfig config;
   private final StringEntity requestBody;
   private CloseableHttpClient httpClient;
+  private HawkClient hawkClient;
 
   public HttpClient(BaseHttpSourceConfig config) {
     this.config = config;
@@ -65,20 +67,43 @@ public class HttpClient implements Closeable {
    * Executes HTTP request with parameters configured in plugin config and returns response.
    * Is called to load every page by pagination iterator.
    *
-   * @param uri URI of resource
+   * @param uriStr URI of resource
    * @return a response object
    * @throws IOException in case of a problem or the connection was aborted
    */
-  public CloseableHttpResponse executeHTTP(String uri) throws IOException {
+  public CloseableHttpResponse executeHTTP(String uriStr) throws IOException {
     // lazy init. So we are able to initialize the class for different checks during validations etc.
     if (httpClient == null) {
       httpClient = createHttpClient();
     }
-
-    HttpEntityEnclosingRequestBase request = new HttpRequest(URI.create(uri), config.getHttpMethod());
+    URI uri = URI.create(uriStr);
+    HttpEntityEnclosingRequestBase request = new HttpRequest(uri, config.getHttpMethod());
 
     if (requestBody != null) {
       request.setEntity(requestBody);
+    }
+
+    if (config.getHawkAuthEnabled()) {
+      if (hawkClient == null) {
+        hawkClient = HawkUtil.createHawkClient(
+                config.getHawkAuthID(),
+                config.getHawkAuthKey(),
+                config.getHawkAlgorithm()
+        );
+      }
+
+      String authorizationHeader = HawkUtil.getAuthorizationHeader(
+              hawkClient,
+              requestBody,
+              uri,
+              request.getMethod(),
+              config.getHawkPayloadHashEnabled(),
+              config.getHawkExt(),
+              config.getHawkApp(),
+              config.getHawkDlg()
+
+      );
+      request.addHeader("Authorization", authorizationHeader);
     }
 
     return httpClient.execute(request);

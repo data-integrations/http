@@ -390,6 +390,24 @@ is stopped.
 
 **Refresh Token:** Token used to receive accessToken, which is end product of OAuth2.
 
+### Hawk Authentication
+
+**HAWK Authentication Enabled:** If true, plugin will perform HAWK authentication.
+
+**HAWK Auth ID:** HAWK Authentication ID
+
+**Hawk Auth Key:** HAWK Authentication Key
+
+**Algorithm:** Hash Algorithm used
+
+**ext:** Any application-specific information to be sent with the request. Ex: some-app-extra-data
+
+**app:** This provides binding between the credentials and the application in a way that prevents an attacker from ticking an application to use credentials issued to someone else.
+
+**dlg:** The application id of the application the credentials were directly issued to.
+
+**Include Payload Hash:** HAWK authentication provides optional support for payload validation. If this option is selected, the payload hash will be calculated and included in MAC calculation and in Authorization header
+
 ### SSL/TLS
 
 **Verify HTTPS Trust Certificates:** If false, untrusted trust certificates (e.g. self signed), will not lead to an
