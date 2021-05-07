@@ -154,7 +154,9 @@ class JsonPage extends BasePage {
         numPartiallyRetrieved++;
       }
 
-      resultJson.add(schemaFieldName, queryResponse.get());
+      if (!queryResponse.getRetrievedPath().equals("/")){
+        resultJson.add(schemaFieldName, queryResponse.get());
+      }
     }
 
     String jsonString = resultJson.toString();
