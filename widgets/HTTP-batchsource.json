@@ -154,6 +154,37 @@
       ]
     },
     {
+      "label": "OAuth2 Service Account",
+      "properties": [
+        {
+          "widget-type": "toggle",
+          "label": "OAuth2 Service Account Enabled",
+          "name": "serviceAccountEnabled",
+          "widget-attributes": {
+            "default": "false",
+            "on": {
+              "label": "True",
+              "value": "true"
+            },
+            "off": {
+              "label": "False",
+              "value": "false"
+            }
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Service Account key JSON",
+          "name": "serviceAccountJson"
+	},
+        {
+          "widget-type": "textbox",
+          "label": "Scopes",
+          "name": "serviceAccountScope"
+        }
+      ]
+    },
+    {
       "label": "Basic Authentication",
       "properties": [
         {
