@@ -2,7 +2,7 @@
 
 Description
 -----------
-This plugin reads data from HTTP/HTTPS page with an URL dynamically changing based on input data. 
+This plugin reads data from HTTP/HTTPS page with an URL dynamically changing based on input data.
 Paginated APIs are supported. For paginated APIs plugin reads available data and than waits for new pages to appear.
 Data in JSON, XML, CSV, TSV, TEXT and BLOB formats is supported.
 
@@ -21,6 +21,10 @@ The url must start with a protocol (e.g. http://).
 **Headers:** Headers to send with each HTTP request.
 
 **Request body:** Body to send with each HTTP request.
+
+**Reused Input Fields:** List of fields to retrieve from the input record. The output record will be a concatenation of fields from the response of the HTTP query and the fields from the input record specified here.
+
+**Rename Reused Input Fields:** Mapping to rename fields reused from the input record. It is not mandatory to rename a reused field but it can be usefull in case the input record and the response of the HTTP query have fields with the same name.
 
 ### Format
 
@@ -389,24 +393,6 @@ is stopped.
 **Scopes:** Scope of the access request, which might have multiple space-separated values.
 
 **Refresh Token:** Token used to receive accessToken, which is end product of OAuth2.
-
-### Hawk Authentication
-
-**HAWK Authentication Enabled:** If true, plugin will perform HAWK authentication.
-
-**HAWK Auth ID:** HAWK Authentication ID
-
-**Hawk Auth Key:** HAWK Authentication Key
-
-**Algorithm:** Hash Algorithm used
-
-**ext:** Any application-specific information to be sent with the request. Ex: some-app-extra-data
-
-**app:** This provides binding between the credentials and the application in a way that prevents an attacker from ticking an application to use credentials issued to someone else.
-
-**dlg:** The application id of the application the credentials were directly issued to.
-
-**Include Payload Hash:** HAWK authentication provides optional support for payload validation. If this option is selected, the payload hash will be calculated and included in MAC calculation and in Authorization header
 
 ### SSL/TLS
 

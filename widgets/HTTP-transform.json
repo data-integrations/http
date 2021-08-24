@@ -2,6 +2,7 @@
   "metadata": {
     "spec-version": "1.5"
   },
+  "display-name": "Multi HTTP",
   "configuration-groups": [
     {
       "label": "General",
@@ -28,6 +29,22 @@
           "widget-type": "keyvalue",
           "label": "URL Variables",
           "name": "urlVariables",
+          "widget-attributes": {
+            "showDelimiter": "false"
+          }
+        },
+        {
+          "widget-type": "input-field-selector",
+          "label": "Reused Input Fields",
+          "name": "reusedInputs",
+          "widget-attributes": {
+            "multiselect": "true"
+          }
+        },
+        {
+          "widget-type": "keyvalue",
+          "label": "Rename Reused Input Fields",
+          "name": "renameReusedInputs",
           "widget-attributes": {
             "showDelimiter": "false"
           }
@@ -628,58 +645,53 @@
       ]
     },
     {
-      "name": "OAuth 2 disabled",
-      "condition": {
-        "property": "oauth2Enabled",
-        "operator": "equal to",
-        "value": "false"
-      },
-      "show": [
+      "label": "OAuth2",
+      "properties": [
         {
-          "name": "username",
-          "type": "property"
-        },
-        {
-          "name": "password",
-          "type": "property"
-        }
-      ]
-    },
-    {
-      "name": "OAuth 2 enabled",
-      "condition": {
-        "property": "oauth2Enabled",
-        "operator": "equal to",
-        "value": "true"
-      },
-      "show": [
-        {
+          "widget-type": "toggle",
+          "label": "OAuth2 Enabled",
           "name": "oauth2Enabled",
-          "type": "property"
+          "widget-attributes": {
+            "default": "false",
+            "on": {
+              "label": "True",
+              "value": "true"
+            },
+            "off": {
+              "label": "False",
+              "value": "false"
+            }
+          }
         },
         {
-          "name": "authUrl",
-          "type": "property"
+          "widget-type": "textbox",
+          "label": "Auth URL",
+          "name": "authUrl"
         },
         {
-          "name": "tokenUrl",
-          "type": "property"
+          "widget-type": "textbox",
+          "label": "Token URL",
+          "name": "tokenUrl"
         },
         {
-          "name": "clientId",
-          "type": "property"
+          "widget-type": "textbox",
+          "label": "Client ID",
+          "name": "clientId"
         },
         {
-          "name": "clientSecret",
-          "type": "property"
+          "widget-type": "password",
+          "label": "Client Secret",
+          "name": "clientSecret"
         },
         {
-          "name": "scopes",
-          "type": "property"
+          "widget-type": "textbox",
+          "label": "Scopes",
+          "name": "scopes"
         },
         {
-          "name": "refreshToken",
-          "type": "property"
+          "widget-type": "textbox",
+          "label": "Refresh Token",
+          "name": "refreshToken"
         }
       ]
     },

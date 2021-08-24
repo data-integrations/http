@@ -670,11 +670,15 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     return getListFromString(transportProtocols);
   }
 
-  public void validate(){
-    validate(true);
+  public void validate() {
+    validate(true, true);
   }
 
   public void validate(boolean validateURL) {
+    validate(validateURL, true);
+  }
+
+  public void validate(boolean validateURL, boolean validateErrorHandling) {
     // Validate URL
     if (validateURL && !containsMacro(PROPERTY_URL)) {
       try {
@@ -687,7 +691,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     }
 
     // Validate HTTP Error Handling Map
-    if (!containsMacro(PROPERTY_HTTP_ERROR_HANDLING)) {
+    if (validateErrorHandling && !containsMacro(PROPERTY_HTTP_ERROR_HANDLING)) {
       List<HttpErrorHandlerEntity> httpErrorsHandlingEntries = getHttpErrorHandlingEntries();
       boolean supportsSkippingPages = PaginationIteratorFactory
         .createInstance(this, null).supportsSkippingPages();
@@ -778,9 +782,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
       String reasonFormat = String.format("page format is '%s'", getFormat());
 
       if (getFormat().equals(PageFormat.JSON) || getFormat().equals(PageFormat.XML)) {
-        if (!getFormat().equals(PageFormat.JSON)) {
-          assertIsSet(getResultPath(), PROPERTY_RESULT_PATH, reasonFormat);
-        }
+        assertIsSet(getResultPath(), PROPERTY_RESULT_PATH, reasonFormat);
         getFullFieldsMapping(); // can be null, but call getter to verify correctness of regexps
       } else {
         assertIsNotSet(getResultPath(), PROPERTY_RESULT_PATH, reasonFormat);
@@ -865,15 +867,20 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   }
 
   public static Map<String, String> getMapFromKeyValueString(String keyValueString) {
+    return getMapFromKeyValueString(keyValueString, ",", ":");
+  }
+
+    public static Map<String, String> getMapFromKeyValueString(String keyValueString, String delimiter,
+                                                               String kvDelimiter) {
     Map<String, String> result = new LinkedHashMap<>();
 
     if (Strings.isNullOrEmpty(keyValueString)) {
       return result;
     }
 
-    String[] mappings = keyValueString.split(",");
+    String[] mappings = keyValueString.split(delimiter);
     for (String map : mappings) {
-      String[] columns = map.split(":");
+      String[] columns = map.split(kvDelimiter);
       result.put(columns[0], columns[1]);
     }
     return result;
