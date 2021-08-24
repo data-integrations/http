@@ -171,12 +171,14 @@ public class DynamicHttpTransform extends Transform<StructuredRecord, Structured
         try {
             BasePage basePage = createPageInstance(config, httpResponse, postRetryStrategy);
 
-            PageEntry pageEntry = basePage.next();
+            while (basePage.hasNext()) {
+                PageEntry pageEntry = basePage.next();
 
-            if (!pageEntry.isError()) {
-                emitter.emit(pageEntry.getRecord());
-            } else {
-                emitter.emitError(pageEntry.getError());
+                if (!pageEntry.isError()) {
+                    emitter.emit(pageEntry.getRecord());
+                } else {
+                    emitter.emitError(pageEntry.getError());
+                }
             }
         }catch (IOException e){
             emitter.emitError(new InvalidEntry<>(
