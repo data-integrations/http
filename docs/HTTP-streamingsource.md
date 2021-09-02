@@ -207,6 +207,10 @@ can be omitted as long as the field is present in schema.
 
 **CSV Skip First Row:** Whether to skip the first row of the HTTP response. This is usually set if the first row is a header row.
 
+**Authorize Parsing of Objects to String:** Whether to allow the parsing of JSON Objects/Arrays to string.
+If set to true, every JSON Objects/Arrays in the record will be parsed as a string field if defined as string in the output schema.
+This option can be used to handle JSON that contain fields with dynamically changing schema
+
 ### Basic Authentication
 
 **Username:** Username for basic authentication.

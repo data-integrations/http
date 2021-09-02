@@ -98,6 +98,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   public static final String PROPERTY_TRUSTSTORE_KEY_ALGORITHM = "trustStoreKeyAlgorithm";
   public static final String PROPERTY_TRANSPORT_PROTOCOLS = "transportProtocols";
   public static final String PROPERTY_CIPHER_SUITES = "cipherSuites";
+  public static final String PROPERTY_AUTHORIZE_OBJECT_PARSING_TO_STRING = "authorizeParsingOfObjectToString";
   public static final String PROPERTY_SCHEMA = "schema";
 
   public static final String PAGINATION_INDEX_PLACEHOLDER_REGEX = "\\{pagination.index\\}";
@@ -384,6 +385,12 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   @Macro
   protected String cipherSuites;
 
+  @Name(PROPERTY_AUTHORIZE_OBJECT_PARSING_TO_STRING)
+  @Description("If set to true, the JSON Arrays and JSON Objects in data can be retrieved as strings field " +
+          "(if set as string in the output schema). This can be used to handle JSONs with dynamic schema. ")
+  @Macro
+  protected String authorizeParsingOfObjectToString;
+
   @Name(PROPERTY_SCHEMA)
   @Macro
   @Nullable
@@ -615,6 +622,10 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   @Nullable
   public String getCipherSuites() {
     return cipherSuites;
+  }
+
+  public Boolean isParsingOfObjectToStringEnabled() {
+    return Boolean.parseBoolean(authorizeParsingOfObjectToString);
   }
 
   @Nullable
