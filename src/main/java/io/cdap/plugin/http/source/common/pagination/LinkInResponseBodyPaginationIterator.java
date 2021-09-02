@@ -16,6 +16,7 @@
 package io.cdap.plugin.http.source.common.pagination;
 
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
+import io.cdap.plugin.http.source.common.http.HttpClient;
 import io.cdap.plugin.http.source.common.http.HttpResponse;
 import io.cdap.plugin.http.source.common.pagination.page.BasePage;
 import io.cdap.plugin.http.source.common.pagination.state.PaginationIteratorState;
@@ -34,8 +35,9 @@ public class LinkInResponseBodyPaginationIterator extends BaseHttpPaginationIter
 
   private final String address;
 
-  public LinkInResponseBodyPaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state) {
-    super(config, state);
+  public LinkInResponseBodyPaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state,
+                                              HttpClient httpClient) {
+    super(config, state, httpClient);
     URI uri = URI.create(config.getUrl());
     this.address = uri.getScheme() + "://" + uri.getAuthority();
   }

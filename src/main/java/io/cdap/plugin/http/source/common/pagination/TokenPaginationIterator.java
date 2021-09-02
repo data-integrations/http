@@ -16,6 +16,7 @@
 package io.cdap.plugin.http.source.common.pagination;
 
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
+import io.cdap.plugin.http.source.common.http.HttpClient;
 import io.cdap.plugin.http.source.common.http.HttpResponse;
 import io.cdap.plugin.http.source.common.pagination.page.BasePage;
 import io.cdap.plugin.http.source.common.pagination.state.PaginationIteratorState;
@@ -33,8 +34,8 @@ import java.net.URISyntaxException;
 public class TokenPaginationIterator extends BaseHttpPaginationIterator {
   private static final Logger LOG = LoggerFactory.getLogger(TokenPaginationIterator.class);
 
-  public TokenPaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state) {
-    super(config, state);
+  public TokenPaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state, HttpClient httpClient) {
+    super(config, state, httpClient);
   }
 
   @Override

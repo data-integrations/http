@@ -77,6 +77,22 @@ public class DynamicHttpTransformConfig extends BaseHttpSourceConfig {
     @Macro
     protected int maxCallPerSeconds;
 
+
+    // processedURL is static so that it does not appears in plugin configuration panel
+    private static String processedURL;
+
+    public String getBaseUrl() {
+        return url;
+    }
+    @Override
+    public String getUrl() {
+        return processedURL;
+    }
+
+    public void setProcessedURL(String processedURL) {
+        this.processedURL = processedURL;
+    }
+
     protected DynamicHttpTransformConfig(String referenceName) {
         super(referenceName);
     }

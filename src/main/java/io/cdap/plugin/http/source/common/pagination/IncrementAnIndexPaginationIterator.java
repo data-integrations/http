@@ -16,6 +16,7 @@
 package io.cdap.plugin.http.source.common.pagination;
 
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
+import io.cdap.plugin.http.source.common.http.HttpClient;
 import io.cdap.plugin.http.source.common.http.HttpResponse;
 import io.cdap.plugin.http.source.common.pagination.page.BasePage;
 import io.cdap.plugin.http.source.common.pagination.state.IndexPaginationIteratorState;
@@ -36,8 +37,9 @@ public class IncrementAnIndexPaginationIterator extends BaseHttpPaginationIterat
 
   private Long index;
 
-  public IncrementAnIndexPaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state) {
-    super(config, state);
+  public IncrementAnIndexPaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state,
+                                            HttpClient httpClient) {
+    super(config, state, httpClient);
     this.indexIncrement = config.getIndexIncrement();
     this.maxIndex = config.getMaxIndex();
 

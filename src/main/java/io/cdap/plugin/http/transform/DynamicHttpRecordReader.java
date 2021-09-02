@@ -13,20 +13,12 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.cdap.plugin.http.source.batch;
+package io.cdap.plugin.http.transform;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import io.cdap.plugin.http.source.common.http.HttpClient;
 import io.cdap.plugin.http.source.common.pagination.BaseHttpPaginationIterator;
 import io.cdap.plugin.http.source.common.pagination.PaginationIteratorFactory;
 import io.cdap.plugin.http.source.common.pagination.page.BasePage;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.hadoop.mapreduce.RecordReader;
-import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -34,28 +26,15 @@ import java.io.IOException;
  * RecordReader implementation, which reads text records representations and http codes
  * using {@link BaseHttpPaginationIterator} subclasses.
  */
-public class HttpRecordReader extends RecordReader<NullWritable, BasePage> {
-  private static final Logger LOG = LoggerFactory.getLogger(HttpRecordReader.class);
-  protected static final Gson GSON = new GsonBuilder().create();
-
+public class DynamicHttpRecordReader {
   protected BaseHttpPaginationIterator httpPaginationIterator;
   private BasePage value;
 
-  /**
-   * Initialize an iterator and config.
-   *
-   * @param inputSplit specifies batch details
-   * @param taskAttemptContext task context
-   */
-  @Override
-  public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext) {
-    Configuration conf = taskAttemptContext.getConfiguration();
-    String configJson = conf.get(HttpInputFormatProvider.PROPERTY_CONFIG_JSON);
-    HttpBatchSourceConfig httpBatchSourceConfig = GSON.fromJson(configJson, HttpBatchSourceConfig.class);
-    httpPaginationIterator = PaginationIteratorFactory.createInstance(httpBatchSourceConfig, null);
+  public DynamicHttpRecordReader(DynamicHttpTransformConfig dynamicHttpTransformConfig, HttpClient httpClient) {
+    httpPaginationIterator = PaginationIteratorFactory.createInstance(dynamicHttpTransformConfig, null,
+            true, httpClient);
   }
 
-  @Override
   public boolean nextKeyValue() {
     if (!httpPaginationIterator.hasNext()) {
       return false;
@@ -64,23 +43,10 @@ public class HttpRecordReader extends RecordReader<NullWritable, BasePage> {
     return true;
   }
 
-  @Override
-  public NullWritable getCurrentKey() {
-    return null;
-  }
-
-  @Override
   public BasePage getCurrentValue() {
     return value;
   }
 
-  @Override
-  public float getProgress() {
-    // progress is unknown
-    return 0.0f;
-  }
-
-  @Override
   public void close() throws IOException {
     if (httpPaginationIterator != null) {
       httpPaginationIterator.close();

@@ -16,6 +16,7 @@
 package io.cdap.plugin.http.source.common.pagination;
 
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
+import io.cdap.plugin.http.source.common.http.HttpClient;
 import io.cdap.plugin.http.source.common.http.HttpResponse;
 import io.cdap.plugin.http.source.common.pagination.page.BasePage;
 import io.cdap.plugin.http.source.common.pagination.state.PaginationIteratorState;
@@ -32,8 +33,8 @@ import java.util.Map;
 public class CustomPaginationIterator extends BaseHttpPaginationIterator {
   private final JythonPythonExecutor pythonExecutor;
 
-  public CustomPaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state) {
-    super(config, state);
+  public CustomPaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state, HttpClient httpClient) {
+    super(config, state, httpClient);
     pythonExecutor = new JythonPythonExecutor(config.getCustomPaginationCode());
     pythonExecutor.initialize();
   }

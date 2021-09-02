@@ -27,22 +27,13 @@ import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.Transform;
 import io.cdap.cdap.etl.api.TransformContext;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
-import io.cdap.plugin.http.source.common.RetryPolicy;
 import io.cdap.plugin.http.source.common.error.ErrorHandling;
 import io.cdap.plugin.http.source.common.error.HttpErrorHandler;
-import io.cdap.plugin.http.source.common.error.RetryableErrorHandling;
 import io.cdap.plugin.http.source.common.http.HttpClient;
 import io.cdap.plugin.http.source.common.http.HttpResponse;
 import io.cdap.plugin.http.source.common.pagination.page.BasePage;
 import io.cdap.plugin.http.source.common.pagination.page.PageEntry;
 import io.cdap.plugin.http.source.common.pagination.page.PageFactory;
-import org.apache.http.NoHttpResponseException;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.awaitility.Awaitility;
-import org.awaitility.core.ConditionTimeoutException;
-import org.awaitility.pollinterval.FixedPollInterval;
-import org.awaitility.pollinterval.IterativePollInterval;
-import org.awaitility.pollinterval.PollInterval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +41,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Plugin returns records from HTTP source specified by link. Pagination via APIs is supported.
@@ -65,11 +55,7 @@ public class DynamicHttpTransform extends Transform<StructuredRecord, Structured
     private final DynamicHttpTransformConfig config;
     private RateLimiter rateLimiter;
     private final HttpClient httpClient;
-    private HttpResponse httpResponse;
-    private final PollInterval pollInterval;
     private final HttpErrorHandler httpErrorHandler;
-    private String url;
-    private Integer httpStatusCode;
 
     private String prebuiltParameters;
 
@@ -105,17 +91,11 @@ public class DynamicHttpTransform extends Transform<StructuredRecord, Structured
      */
     public DynamicHttpTransform(DynamicHttpTransformConfig config, HttpClient httpClient) {
         this.config = config;
+        this.httpClient = httpClient;
         if (config.throttlingEnabled()) {
             this.rateLimiter = RateLimiter.create(this.config.maxCallPerSeconds);
         }
-        this.httpClient = httpClient;
         this.httpErrorHandler = new HttpErrorHandler(config);
-
-        if (config.getRetryPolicy().equals(RetryPolicy.LINEAR)) {
-            pollInterval = FixedPollInterval.fixed(config.getLinearRetryInterval(), TimeUnit.SECONDS);
-        } else {
-            pollInterval = IterativePollInterval.iterative(duration -> duration.multiply(2));
-        }
 
         this.reusedInputs = config.getReusedInputs();
         this.reusedInputsNameMap = config.getReusedInputsNameMap();
@@ -155,7 +135,7 @@ public class DynamicHttpTransform extends Transform<StructuredRecord, Structured
     @Override
     public void transform(StructuredRecord input, Emitter<StructuredRecord> emitter) {
         // Replace placeholders in URL
-        String url = config.getUrl();
+        String url = config.getBaseUrl();
         for (Map.Entry<String, String> e : config.getUrlVariablesMap().entrySet()) {
             String valueToUse = input.get(e.getValue());
             if (valueToUse != null) {
@@ -171,44 +151,20 @@ public class DynamicHttpTransform extends Transform<StructuredRecord, Structured
             }
         }
 
-        this.url = url + prebuiltParameters;
+        String processedURL = url + prebuiltParameters;
+
+        config.setProcessedURL(processedURL);
 
         if (config.throttlingEnabled()) {
             rateLimiter.acquire(); // Throttle
         }
 
-        long delay = (httpResponse == null || config.getWaitTimeBetweenPages() == null) ?
-                0L :
-                config.getWaitTimeBetweenPages();
+        DynamicHttpRecordReader reader = new DynamicHttpRecordReader(config, httpClient);
+        while (reader.nextKeyValue()) {
+            BasePage page = reader.getCurrentValue();
 
-        try {
-            Awaitility
-                    .await().with()
-                    .pollInterval(pollInterval)
-                    .pollDelay(delay, TimeUnit.MILLISECONDS)
-                    .timeout(config.getMaxRetryDuration(), TimeUnit.SECONDS)
-                    .until(this::sendGet);  // httpResponse is setup here
-        } catch (ConditionTimeoutException ex) {
-            // Retries failed. We don't need to do anything here. This will be handled using httpStatusCode below.
-        }
-
-        ErrorHandling postRetryStrategy = httpErrorHandler.getErrorHandlingStrategy(httpStatusCode)
-                .getAfterRetryStrategy();
-
-        switch (postRetryStrategy) {
-            case STOP:
-                throw new IllegalStateException(String.format(
-                        "Fetching from url '%s' returned status code '%d' and body '%s'",
-                        url, httpStatusCode, httpResponse.getBody()));
-            default:
-                break;
-        }
-
-        try {
-            BasePage basePage = createPageInstance(config, httpResponse, postRetryStrategy);
-
-            while (basePage.hasNext()) {
-                PageEntry pageEntry = basePage.next();
+            while (page.hasNext()) {
+                PageEntry pageEntry = page.next();
 
                 if (!pageEntry.isError()) {
                     StructuredRecord retrievedDataRecord = pageEntry.getRecord();
@@ -231,9 +187,6 @@ public class DynamicHttpTransform extends Transform<StructuredRecord, Structured
                     emitter.emitError(pageEntry.getError());
                 }
             }
-        } catch (IOException e) {
-            emitter.emitError(new InvalidEntry<>(
-                    -1, "Exception parsing HTTP Response : " + e.getMessage(), input));
         }
     }
 
@@ -241,21 +194,6 @@ public class DynamicHttpTransform extends Transform<StructuredRecord, Structured
                                 ErrorHandling postRetryStrategy) throws IOException {
         return PageFactory.createInstance(config, httpResponse, httpErrorHandler,
                 !postRetryStrategy.equals(ErrorHandling.SUCCESS));
-    }
-
-    // TODO : Handle in a better way the case where server is not available
-    private boolean sendGet() throws IOException {
-
-        try {
-            CloseableHttpResponse response = httpClient.executeHTTP(this.url);
-            this.httpResponse = new HttpResponse(response);
-            httpStatusCode = httpResponse.getStatusCode();
-        } catch (NoHttpResponseException e) {
-            httpStatusCode = 443;
-        }
-
-        RetryableErrorHandling errorHandlingStrategy = httpErrorHandler.getErrorHandlingStrategy(httpStatusCode);
-        return  !errorHandlingStrategy.shouldRetry();
     }
 
     /**

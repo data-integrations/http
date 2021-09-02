@@ -16,6 +16,7 @@
 package io.cdap.plugin.http.source.common.pagination;
 
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
+import io.cdap.plugin.http.source.common.http.HttpClient;
 import io.cdap.plugin.http.source.common.pagination.state.PaginationIteratorState;
 
 /**
@@ -23,23 +24,34 @@ import io.cdap.plugin.http.source.common.pagination.state.PaginationIteratorStat
  * the input config.
  */
 public class PaginationIteratorFactory {
-  public static BaseHttpPaginationIterator createInstance(BaseHttpSourceConfig config, PaginationIteratorState state) {
+  public static BaseHttpPaginationIterator createInstance(BaseHttpSourceConfig config, PaginationIteratorState state,
+                                                          boolean isMultiQuery,
+                                                          HttpClient httpClient) {
     switch (config.getPaginationType()) {
       case NONE:
-        return new NonePaginationIterator(config, state);
+        return new NonePaginationIterator(config, state, httpClient, isMultiQuery);
       case LINK_IN_RESPONSE_HEADER:
-        return new LinkInResponseHeaderPaginationIterator(config, state);
+        return new LinkInResponseHeaderPaginationIterator(config, state, httpClient);
       case LINK_IN_RESPONSE_BODY:
-        return new LinkInResponseBodyPaginationIterator(config, state);
+        return new LinkInResponseBodyPaginationIterator(config, state, httpClient);
       case TOKEN_IN_RESPONSE_BODY:
-        return new TokenPaginationIterator(config, state);
+        return new TokenPaginationIterator(config, state, httpClient);
       case INCREMENT_AN_INDEX:
-        return new IncrementAnIndexPaginationIterator(config, state);
+        return new IncrementAnIndexPaginationIterator(config, state, httpClient);
       case CUSTOM:
-        return new CustomPaginationIterator(config, state);
+        return new CustomPaginationIterator(config, state, httpClient);
       default:
         throw new IllegalArgumentException(
-          String.format("Unsupported pagination type: '%s'", config.getPaginationType()));
+                String.format("Unsupported pagination type: '%s'", config.getPaginationType()));
     }
+  }
+
+  public static BaseHttpPaginationIterator createInstance(BaseHttpSourceConfig config, PaginationIteratorState state,
+                                                          HttpClient httpClient) {
+    return createInstance(config, state, false, httpClient);
+  }
+
+  public static BaseHttpPaginationIterator createInstance(BaseHttpSourceConfig config, PaginationIteratorState state) {
+    return createInstance(config, state, false, new HttpClient(config));
   }
 }
