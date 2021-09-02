@@ -15,15 +15,20 @@
  */
 package io.cdap.plugin.http.source.common.pagination.page;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.InvalidEntry;
 import io.cdap.cdap.format.StructuredRecordStringConverter;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.source.common.http.HttpResponse;
+import io.cdap.plugin.http.source.common.pagination.BaseHttpPaginationIterator;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,6 +40,8 @@ import java.util.Map;
  * Returns elements from json one by one by given json path.
  */
 class JsonPage extends BasePage {
+  private static final Logger LOG = LoggerFactory.getLogger(BaseHttpPaginationIterator.class);
+
   private final String insideElementJsonPathPart;
   private final Iterator<JsonElement> iterator;
   private final JsonElement json;
@@ -157,6 +164,19 @@ class JsonPage extends BasePage {
       resultJson.add(schemaFieldName, queryResponse.get());
     }
 
+    if (config.isParsingOfObjectToStringEnabled()) {
+      JsonElement newResultJson = stringifyJsonObjectsIfNeeded(resultJson, schema);
+
+      if (newResultJson.isJsonPrimitive()) {
+        InvalidEntry<StructuredRecord> error =
+                new InvalidEntry<>(1, "Resulting JSON was a primitive and not a json object",
+                        null);
+        return new PageEntry(error, config.getErrorHandling());
+      }
+
+      resultJson = newResultJson.getAsJsonObject();
+    }
+
     String jsonString = resultJson.toString();
     try {
       StructuredRecord record = StructuredRecordStringConverter.fromJsonString(jsonString, schema);
@@ -170,6 +190,141 @@ class JsonPage extends BasePage {
       return new PageEntry(InvalidEntryCreator.buildStringError(jsonString, e), config.getErrorHandling());
     }
   }
+
+  /**
+   * In a JSONObject stringify all JSONArray and JSONObjects if they are defined as strings in the schema
+   *
+   * @param jsonObject the json object
+   * @param schema     the json schema
+   * @return the processed object
+   */
+  private JsonElement stringifyJsonObjectsIfNeeded(JsonObject jsonObject, Schema schema) {
+    if (!jsonObject.isJsonPrimitive()) {
+      if (schemaTypeEquals(schema, Schema.Type.STRING)) {
+        return new JsonPrimitive(jsonObject.toString());
+      }
+    } else {
+      return jsonObject;
+    }
+
+    JsonObject newJsonObject = new JsonObject();
+
+    for (Map.Entry<String, JsonElement> e : jsonObject.entrySet()) {
+      String fieldName = e.getKey();
+      JsonElement field = e.getValue();
+
+      Schema.Field fieldSchemaObj = getFieldSchema(schema, fieldName);
+
+      if (fieldSchemaObj != null) {
+        Schema fieldSchema = fieldSchemaObj.getSchema();
+
+        if (field.isJsonPrimitive()) {
+          newJsonObject.add(fieldName, field);
+        } else if (field.isJsonObject()) {
+          newJsonObject.add(fieldName, stringifyJsonObjectsIfNeeded(field.getAsJsonObject(), fieldSchema));
+        } else { // json array
+          newJsonObject.add(fieldName, stringifyJsonArraysIfNeeded(field.getAsJsonArray(), fieldSchema));
+        }
+      }
+    }
+
+    return newJsonObject;
+  }
+
+
+  /**
+   * In a JSONArray stringify all JSONArray and JSONObjects if they are defined as strings in the schema
+   *
+   * @param jsonArray the json array
+   * @param schema    the json schema
+   * @return the processed object
+   */
+  private JsonElement stringifyJsonArraysIfNeeded(JsonArray jsonArray, Schema schema) {
+    if (!jsonArray.isJsonPrimitive()) {
+      if (schemaTypeEquals(schema, Schema.Type.STRING)) {
+        return new JsonPrimitive(jsonArray.toString());
+      }
+    } else {
+      return jsonArray;
+    }
+
+    JsonArray newJsonArray = new JsonArray();
+
+    for (JsonElement je : jsonArray) {
+      if (je.isJsonPrimitive()) {
+        newJsonArray.add(je);
+      } else {
+        Schema componentSchema = getArrayComponentSchema(schema);
+        if (componentSchema == null) {
+          LOG.error("Trying to retrieve sub-schema of array " + jsonArray + " in schema but found " + schema);
+        } else {
+          if (je.isJsonObject()) {
+            newJsonArray.add(stringifyJsonObjectsIfNeeded(je.getAsJsonObject(), componentSchema));
+          } else { // json array
+            newJsonArray.add(stringifyJsonArraysIfNeeded(je.getAsJsonArray(), componentSchema));
+          }
+        }
+      }
+    }
+
+    return newJsonArray;
+  }
+
+  /**
+   * Return the ComponentSchema of an ARRAY or an UNION[NULL, ARRAY]
+   */
+  private Schema getArrayComponentSchema(Schema schema) {
+    if (schema.getType().equals(Schema.Type.ARRAY)) {
+      return schema.getComponentSchema();
+    }
+
+    if (schema.getType().equals(Schema.Type.UNION)) {
+      for (Schema unionSchema : schema.getUnionSchemas()) {
+        if (unionSchema.getType().equals(Schema.Type.ARRAY)) {
+          return unionSchema.getComponentSchema();
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Return the Schema of a field of a RECORD or an UNION[NULL, RECORD]
+   */
+  private Schema.Field getFieldSchema(Schema schema, String fieldName) {
+
+    if (schema.getType().equals(Schema.Type.RECORD)) {
+      return schema.getField(fieldName);
+    }
+
+    if (schema.getType().equals(Schema.Type.UNION)) {
+      for (Schema unionSchema : schema.getUnionSchemas()) {
+        if (unionSchema.getType().equals(Schema.Type.RECORD)) {
+          return unionSchema.getField(fieldName);
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Return true if Schema is of type 'type' or of type UNION[NULL, 'type']
+   */
+  private boolean schemaTypeEquals(Schema schema, Schema.Type type) {
+
+    if (schema.getType().equals(Schema.Type.UNION)) {
+      for (Schema unionSchema : schema.getUnionSchemas()) {
+        if (unionSchema.getType().equals(type)) {
+          return true;
+        }
+      }
+    }
+
+    return schema.getType().equals(type);
+  }
+
 
   private List<String> getOptionalFields() {
     List<String> optionalFields = new ArrayList<>();

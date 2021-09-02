@@ -99,6 +99,22 @@
               }
             ]
           }
+        },
+        {
+          "widget-type": "toggle",
+          "label": "Authorize Parsing of Objects to String",
+          "name": "authorizeParsingOfObjectToString",
+          "widget-attributes": {
+            "default": "false",
+            "on": {
+              "label": "True",
+              "value": "true"
+            },
+            "off": {
+              "label": "False",
+              "value": "false"
+            }
+          }
         }
       ]
     },
@@ -662,6 +678,20 @@
         },
         {
           "name": "fieldsMapping",
+          "type": "property"
+        }
+      ]
+    },
+    {
+      "name": "JSON Formatting",
+      "condition": {
+        "property": "format",
+        "operator": "equal to",
+        "value": "json"
+      },
+      "show": [
+        {
+          "name": "authorizeParsingOfObjectToString",
           "type": "property"
         }
       ]
