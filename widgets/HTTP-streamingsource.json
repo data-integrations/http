@@ -127,6 +127,18 @@
           }
         },
         {
+          "widget-type": "select",
+          "label": "Grant Type",
+          "name": "oauth2GrantType",
+          "widget-attributes": {
+            "values": [
+              "refresh_token",
+              "client_credentials"
+            ],
+            "default": "refresh_token"
+          }
+        },
+        {
           "widget-type": "textbox",
           "label": "Auth URL",
           "name": "authUrl"
@@ -625,7 +637,7 @@
       },
       "show": [
         {
-          "name": "authUrl",
+          "name": "oauth2GrantType",
           "type": "property"
         },
         {
@@ -642,6 +654,18 @@
         },
         {
           "name": "scopes",
+          "type": "property"
+        }
+      ]
+    },
+    {
+      "name": "OAuth 2 enabled and Grant Type = refresh_token",
+      "condition": {
+        "expression": "oauth2Enabled == true && oauth2GrantType == 'refresh_token'"
+      },
+      "show": [
+        {
+          "name": "authUrl",
           "type": "property"
         },
         {

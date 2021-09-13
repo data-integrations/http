@@ -385,6 +385,8 @@ is stopped.
 
 **OAuth2 Enabled:** If true, plugin will perform OAuth2 authentication.
 
+**Grant Type:** The OAuth2 authentication flow that will be used.
+
 **Auth URL:** Endpoint for the authorization server used to retrieve the authorization code.
 
 **Token URL:** Endpoint for the resource server, which exchanges the authorization code for an access token.
