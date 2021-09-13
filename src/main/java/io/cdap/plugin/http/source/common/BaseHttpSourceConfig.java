@@ -27,6 +27,7 @@ import io.cdap.plugin.http.source.common.error.ErrorHandling;
 import io.cdap.plugin.http.source.common.error.HttpErrorHandlerEntity;
 import io.cdap.plugin.http.source.common.error.RetryableErrorHandling;
 import io.cdap.plugin.http.source.common.http.KeyStoreType;
+import io.cdap.plugin.http.source.common.http.OAuthGrantType;
 import io.cdap.plugin.http.source.common.pagination.PaginationIteratorFactory;
 import io.cdap.plugin.http.source.common.pagination.PaginationType;
 import io.cdap.plugin.http.source.common.pagination.page.PageFormat;
@@ -81,6 +82,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   public static final String PROPERTY_CUSTOM_PAGINATION_CODE = "customPaginationCode";
   public static final String PROPERTY_WAIT_TIME_BETWEEN_PAGES = "waitTimeBetweenPages";
   public static final String PROPERTY_OAUTH2_ENABLED = "oauth2Enabled";
+  public static final String PROPERTY_OAUTH2_GRANT_TYPE = "oauth2GrantType";
   public static final String PROPERTY_AUTH_URL = "authUrl";
   public static final String PROPERTY_TOKEN_URL = "tokenUrl";
   public static final String PROPERTY_CLIENT_ID = "clientId";
@@ -279,6 +281,12 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   @Name(PROPERTY_OAUTH2_ENABLED)
   @Description("If true, plugin will perform OAuth2 authentication.")
   protected String oauth2Enabled;
+
+  @Nullable
+  @Name(PROPERTY_OAUTH2_GRANT_TYPE)
+  @Description("Which Oauth2 credential flow is used.")
+  @Macro
+  protected String oauth2GrantType;
 
   @Nullable
   @Name(PROPERTY_AUTH_URL)
@@ -531,6 +539,11 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
 
   public Boolean getOauth2Enabled() {
     return Boolean.parseBoolean(oauth2Enabled);
+  }
+
+  @Nullable
+  public OAuthGrantType getOauth2GrantType() {
+    return getEnumValueByString(OAuthGrantType.class, oauth2GrantType, PROPERTY_OAUTH2_GRANT_TYPE);
   }
 
   @Nullable
@@ -787,11 +800,23 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     // Validate OAuth2 properties
     if (!containsMacro(PROPERTY_OAUTH2_ENABLED) && this.getOauth2Enabled()) {
       String reasonOauth2 = "OAuth2 is enabled";
-      assertIsSet(getAuthUrl(), PROPERTY_AUTH_URL, reasonOauth2);
-      assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
-      assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
-      assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
-      assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
+      String reasonOauth2GrantType = reasonOauth2 + " and grant type is " + getOauth2GrantType().getValue();
+
+      switch (getOauth2GrantType()) {
+        case CLIENT_CREDENTIALS:
+          assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2GrantType);
+          assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2GrantType);
+          assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2GrantType);
+          break;
+        case REFRESH_TOKEN:
+
+          assertIsSet(getAuthUrl(), PROPERTY_AUTH_URL, reasonOauth2GrantType);
+          assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2GrantType);
+          assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2GrantType);
+          assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2GrantType);
+          assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2GrantType);
+          break;
+      }
     }
 
     if (!containsMacro(PROPERTY_VERIFY_HTTPS) && !getVerifyHttps()) {
