@@ -31,10 +31,6 @@ public class NonePaginationIterator extends BaseHttpPaginationIterator {
 
   boolean isMultiQuery;
 
-  public NonePaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state, HttpClient httpClient) {
-    this(config, state, httpClient, false);
-  }
-
   public NonePaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state, HttpClient httpClient,
                                 boolean isMultiQuery) {
     super(config, state, httpClient);

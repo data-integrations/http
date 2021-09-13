@@ -33,9 +33,9 @@ public class PaginationIteratorFactory {
       case LINK_IN_RESPONSE_HEADER:
         return new LinkInResponseHeaderPaginationIterator(config, state, httpClient);
       case LINK_IN_RESPONSE_BODY:
-        return new LinkInResponseBodyPaginationIterator(config, state, httpClient);
+        return new LinkInResponseBodyPaginationIterator(config, state, httpClient, isMultiQuery);
       case TOKEN_IN_RESPONSE_BODY:
-        return new TokenPaginationIterator(config, state, httpClient);
+        return new TokenPaginationIterator(config, state, httpClient, isMultiQuery);
       case INCREMENT_AN_INDEX:
         return new IncrementAnIndexPaginationIterator(config, state, httpClient);
       case CUSTOM:

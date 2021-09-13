@@ -35,11 +35,13 @@ public class LinkInResponseBodyPaginationIterator extends BaseHttpPaginationIter
 
   private final String address;
 
+  boolean isMultiQuery;
   public LinkInResponseBodyPaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state,
-                                              HttpClient httpClient) {
+                                              HttpClient httpClient, boolean isMultiQuery) {
     super(config, state, httpClient);
     URI uri = URI.create(config.getUrl());
     this.address = uri.getScheme() + "://" + uri.getAuthority();
+    this.isMultiQuery = isMultiQuery;
   }
 
   @Override
@@ -64,6 +66,6 @@ public class LinkInResponseBodyPaginationIterator extends BaseHttpPaginationIter
 
   @Override
   public boolean supportsSkippingPages() {
-    return false;
+    return isMultiQuery;
   }
 }
