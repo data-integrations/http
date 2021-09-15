@@ -87,6 +87,9 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   public static final String PROPERTY_CLIENT_SECRET = "clientSecret";
   public static final String PROPERTY_SCOPES = "scopes";
   public static final String PROPERTY_REFRESH_TOKEN = "refreshToken";
+  public static final String PROPERTY_SERVICE_ACCOUNT_ENABLED = "serviceAccountEnabled";
+  public static final String PROPERTY_SERVICE_ACCOUNT_SCOPE = "serviceAccountScopes";
+  public static final String PROPERTY_SERVICE_ACCOUNT_PRIVATE_KEY_JSON = "serviceAccountPrivateKeyJson";
   public static final String PROPERTY_VERIFY_HTTPS = "verifyHttps";
   public static final String PROPERTY_KEYSTORE_FILE = "keystoreFile";
   public static final String PROPERTY_KEYSTORE_TYPE = "keystoreType";
@@ -315,6 +318,22 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   @Description("Token used to receive accessToken, which is end product of OAuth2.")
   @Macro
   protected String refreshToken;
+
+  @Name(PROPERTY_SERVICE_ACCOUNT_ENABLED)
+  @Description("If true, plugin will perform service account authentication.")
+  protected String serviceAccountEnabled;
+
+  @Nullable
+  @Name(PROPERTY_SERVICE_ACCOUNT_SCOPE)
+  @Description("The scope used to retrieve service account access token")
+  @Macro
+  protected String serviceAccountScope;
+
+  @Nullable
+  @Name(PROPERTY_SERVICE_ACCOUNT_PRIVATE_KEY_JSON)
+  @Description("Service account json private key")
+  @Macro
+  protected String serviceAccountPrivateKeyJson;
 
   @Name(PROPERTY_VERIFY_HTTPS)
   @Description("If false, untrusted trust certificates (e.g. self signed), will not lead to an" +
@@ -563,6 +582,20 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     return refreshToken;
   }
 
+  public boolean getServiceAccountEnabled() {
+    return Boolean.parseBoolean(serviceAccountEnabled);
+  }
+
+  @Nullable
+  public String getServiceAccountScope() {
+    return serviceAccountScope;
+  }
+
+  @Nullable
+  public String getServiceAccountPrivateKeyJson() {
+    return serviceAccountPrivateKeyJson;
+  }
+
   public Boolean getVerifyHttps() {
     return Boolean.parseBoolean(verifyHttps);
   }
@@ -792,6 +825,13 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
       assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
       assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
       assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
+    }
+
+    // Validate service account auth properties
+    if (!containsMacro(PROPERTY_SERVICE_ACCOUNT_PRIVATE_KEY_JSON) && this.getServiceAccountEnabled()) {
+      String reasonSA = "Service Account Authentication is enabled";
+      //assertIsSet(getServiceAccountScope(), PROPERTY_SERVICE_ACCOUNT_SCOPE, reasonSA);
+      assertIsSet(getServiceAccountPrivateKeyJson(), PROPERTY_SERVICE_ACCOUNT_PRIVATE_KEY_JSON, reasonSA);
     }
 
     if (!containsMacro(PROPERTY_VERIFY_HTTPS) && !getVerifyHttps()) {

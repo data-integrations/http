@@ -374,6 +374,14 @@ def get_next_page_url(url, page, headers):
 The above code iterates over first five pages of searchcode.com results. When 'None' is returned the iteration
 is stopped.
 
+### Service Account
+
+**Service Account Enabled:** If true, plugin will perform OAuth2 authentication.
+
+**JSON Private Key:** The JSON Private Key of the Service Account.
+
+**Scopes:** Scope of the access request, which might have multiple space-separated values.
+
 ### OAuth2
 
 **OAuth2 Enabled:** If true, plugin will perform OAuth2 authentication.

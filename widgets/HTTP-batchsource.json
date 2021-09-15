@@ -103,6 +103,37 @@
       ]
     },
     {
+      "label": "Service Account Authentication",
+      "properties": [
+        {
+          "widget-type": "toggle",
+          "label": "Service Account Enabled",
+          "name": "serviceAccountEnabled",
+          "widget-attributes": {
+            "default": "false",
+            "on": {
+              "label": "True",
+              "value": "true"
+            },
+            "off": {
+              "label": "False",
+              "value": "false"
+            }
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "JSON Private Key",
+          "name": "serviceAccountPrivateKeyJson"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Scopes",
+          "name": "serviceAccountScopes"
+        }
+      ]
+    },
+    {
       "label": "OAuth2",
       "properties": [
         {
@@ -599,19 +630,19 @@
       ]
     },
     {
-      "name": "OAuth 2 disabled",
+      "name": "Service Account enabled",
       "condition": {
-        "property": "oauth2Enabled",
+        "property": "serviceAccountEnabled",
         "operator": "equal to",
-        "value": "false"
+        "value": "true"
       },
       "show": [
         {
-          "name": "username",
+          "name": "serviceAccountPrivateKeyJson",
           "type": "property"
         },
         {
-          "name": "password",
+          "name": "serviceAccountScopes",
           "type": "property"
         }
       ]

@@ -87,6 +87,7 @@ public abstract class BaseHttpBatchSourceETLTest extends HydratorTestBase {
       .put("referenceName", name.getMethodName())
       .put(BaseHttpSourceConfig.PROPERTY_HTTP_METHOD, "GET")
       .put(BaseHttpSourceConfig.PROPERTY_OAUTH2_ENABLED, "false")
+      .put(BaseHttpSourceConfig.PROPERTY_SERVICE_ACCOUNT_ENABLED, "false")
       .put(BaseHttpSourceConfig.PROPERTY_HTTP_ERROR_HANDLING, "2..:Success,.*:Fail")
       .put(BaseHttpSourceConfig.PROPERTY_ERROR_HANDLING, "stopOnError")
       .put(BaseHttpSourceConfig.PROPERTY_RETRY_POLICY, "linear")

@@ -32,6 +32,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -49,6 +51,10 @@ public class HttpClient implements Closeable {
   private final StringEntity requestBody;
   private CloseableHttpClient httpClient;
 
+  private ServiceAccountTokenHandler serviceAccountTokenHandler;
+
+  private static final Logger LOG = LoggerFactory.getLogger(HttpClient.class);
+
   public HttpClient(BaseHttpSourceConfig config) {
     this.config = config;
     this.headers = config.getHeadersMap();
@@ -59,29 +65,63 @@ public class HttpClient implements Closeable {
     } else {
       requestBody = null;
     }
+
+    if (config.getServiceAccountEnabled()) { // Service account authent used
+      try {
+        serviceAccountTokenHandler = new ServiceAccountTokenHandler(
+                config.getServiceAccountScope(),
+                config.getServiceAccountPrivateKeyJson()
+        );
+      } catch (Exception e) {
+        LOG.error("Error while getting Service Account Access token " + e);
+      }
+    }
+  }
+
+  public CloseableHttpResponse executeHTTP(String uriStr) throws IOException {
+    return executeHTTP(uriStr, 1);
   }
 
   /**
    * Executes HTTP request with parameters configured in plugin config and returns response.
    * Is called to load every page by pagination iterator.
    *
-   * @param uri URI of resource
+   * @param uriStr URI of resource
+   * @param retries Number of retries in case of error
    * @return a response object
    * @throws IOException in case of a problem or the connection was aborted
    */
-  public CloseableHttpResponse executeHTTP(String uri) throws IOException {
+  public CloseableHttpResponse executeHTTP(String uriStr, int retries) throws IOException {
     // lazy init. So we are able to initialize the class for different checks during validations etc.
     if (httpClient == null) {
       httpClient = createHttpClient();
+    } else {
+      if (config.getServiceAccountEnabled()) { // Service account authent used
+        if (serviceAccountTokenHandler.tokenExpireSoon()) {
+          httpClient = createHttpClient(); // Recreate client with fresh token
+        }
+      }
     }
 
-    HttpEntityEnclosingRequestBase request = new HttpRequest(URI.create(uri), config.getHttpMethod());
+    URI uri = URI.create(uriStr);
+
+    HttpEntityEnclosingRequestBase request = new HttpRequest(uri, config.getHttpMethod());
 
     if (requestBody != null) {
       request.setEntity(requestBody);
     }
 
-    return httpClient.execute(request);
+    CloseableHttpResponse response = httpClient.execute(request);
+
+    if (retries > 0 && config.getServiceAccountEnabled()) {
+      HttpResponse httpResponse = new HttpResponse(response);
+      if (httpResponse.getStatusCode() == 401) { // If 'Unhauthorized' error, recreate client with fresh token
+        httpClient = createHttpClient();
+        response = executeHTTP(uriStr, retries--);
+      }
+    }
+
+    return response;
   }
 
   @Override
