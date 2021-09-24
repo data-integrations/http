@@ -2,6 +2,7 @@
   "metadata": {
     "spec-version": "1.5"
   },
+  "display-name": "Multi HTTP",
   "configuration-groups": [
     {
       "label": "General",
@@ -15,6 +16,14 @@
           "widget-type": "textbox",
           "label": "URL",
           "name": "url"
+        },
+        {
+          "widget-type": "keyvalue",
+          "label": "URL Variables",
+          "name": "urlVariables",
+          "widget-attributes": {
+            "showDelimiter": "false"
+          }
         },
         {
           "widget-type": "select",
@@ -46,11 +55,35 @@
           "widget-attributes": {
             "rows": "5"
           }
+        }
+      ]
+    }, {
+      "label": "Multi-HTTP",
+      "properties": [
+        {
+          "widget-type": "input-field-selector",
+          "label": "Reused Input Fields",
+          "name": "reusedInputs",
+          "widget-attributes": {
+            "multiselect": "true"
+          }
         },
         {
-          "widget-type": "textbox",
-          "label": "Max Pages Per Fetch",
-          "name": "maxPagesPerFetch"
+          "widget-type": "keyvalue",
+          "label": "Rename Reused Input Fields",
+          "name": "renameReusedInputs",
+          "widget-attributes": {
+            "showDelimiter": "false"
+          }
+        },
+        {
+          "widget-type": "number",
+          "label": "Max calls per seconds",
+          "name": "maxCallPerSeconds",
+          "widget-attributes": {
+            "min": "0",
+            "default": "0"
+          }
         }
       ]
     },
@@ -207,8 +240,10 @@
               "Success",
               "Fail",
               "Skip",
+              "Send to error",
               "Retry and fail",
-              "Retry and skip"
+              "Retry and skip",
+              "Retry and send to error"
             ],
             "key-placeholder": "HTTP Status Code Regex"
           }
@@ -224,6 +259,10 @@
               {
                 "id": "stopOnError",
                 "label": "Stop on error"
+              },
+              {
+                "id": "sendToError",
+                "label": "Send to error"
               },
               {
                 "id": "skipOnError",
@@ -434,7 +473,6 @@
           "widget-type": "select",
           "label": "TrustStore Type",
           "name": "trustStoreType",
-
           "widget-attributes": {
             "default": "Java KeyStore (JKS)",
             "values": [
@@ -585,68 +623,53 @@
       ]
     },
     {
-      "name": "Pagination none",
-      "condition": {
-        "property": "paginationType",
-        "operator": "equal to",
-        "value": "None"
-      },
-      "show": [
+      "label": "OAuth2",
+      "properties": [
         {
-          "name": "waitTimeBetweenPages",
-          "type": "property"
-        }
-      ]
-    },
-    {
-      "name": "OAuth 2 disabled",
-      "condition": {
-        "property": "oauth2Enabled",
-        "operator": "equal to",
-        "value": "false"
-      },
-      "show": [
-        {
-          "name": "username",
-          "type": "property"
+          "widget-type": "toggle",
+          "label": "OAuth2 Enabled",
+          "name": "oauth2Enabled",
+          "widget-attributes": {
+            "default": "false",
+            "on": {
+              "label": "True",
+              "value": "true"
+            },
+            "off": {
+              "label": "False",
+              "value": "false"
+            }
+          }
         },
         {
-          "name": "password",
-          "type": "property"
-        }
-      ]
-    },
-    {
-      "name": "OAuth 2 enabled",
-      "condition": {
-        "property": "oauth2Enabled",
-        "operator": "equal to",
-        "value": "true"
-      },
-      "show": [
-        {
-          "name": "authUrl",
-          "type": "property"
+          "widget-type": "textbox",
+          "label": "Auth URL",
+          "name": "authUrl"
         },
         {
-          "name": "tokenUrl",
-          "type": "property"
+          "widget-type": "textbox",
+          "label": "Token URL",
+          "name": "tokenUrl"
         },
         {
-          "name": "clientId",
-          "type": "property"
+          "widget-type": "textbox",
+          "label": "Client ID",
+          "name": "clientId"
         },
         {
-          "name": "clientSecret",
-          "type": "property"
+          "widget-type": "password",
+          "label": "Client Secret",
+          "name": "clientSecret"
         },
         {
-          "name": "scopes",
-          "type": "property"
+          "widget-type": "textbox",
+          "label": "Scopes",
+          "name": "scopes"
         },
         {
-          "name": "refreshToken",
-          "type": "property"
+          "widget-type": "textbox",
+          "label": "Refresh Token",
+          "name": "refreshToken"
         }
       ]
     },

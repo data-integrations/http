@@ -60,9 +60,9 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
   private Integer httpStatusCode;
   private HttpResponse response;
 
-  public BaseHttpPaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state) {
+  public BaseHttpPaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state, HttpClient httpClient) {
     this.config = config;
-    this.httpClient = new HttpClient(config);
+    this.httpClient = httpClient;
     this.nextPageUrl = config.getUrl();
     this.httpErrorHandler = new HttpErrorHandler(config);
 

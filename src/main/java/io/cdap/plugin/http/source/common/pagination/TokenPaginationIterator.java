@@ -16,6 +16,7 @@
 package io.cdap.plugin.http.source.common.pagination;
 
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
+import io.cdap.plugin.http.source.common.http.HttpClient;
 import io.cdap.plugin.http.source.common.http.HttpResponse;
 import io.cdap.plugin.http.source.common.pagination.page.BasePage;
 import io.cdap.plugin.http.source.common.pagination.state.PaginationIteratorState;
@@ -33,8 +34,12 @@ import java.net.URISyntaxException;
 public class TokenPaginationIterator extends BaseHttpPaginationIterator {
   private static final Logger LOG = LoggerFactory.getLogger(TokenPaginationIterator.class);
 
-  public TokenPaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state) {
-    super(config, state);
+  boolean isMultiQuery;
+
+  public TokenPaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state, HttpClient httpClient
+          , boolean isMultiQuery) {
+    super(config, state, httpClient);
+    this.isMultiQuery = isMultiQuery;
   }
 
   @Override
@@ -56,6 +61,6 @@ public class TokenPaginationIterator extends BaseHttpPaginationIterator {
 
   @Override
   public boolean supportsSkippingPages() {
-    return false;
+    return isMultiQuery;
   }
 }

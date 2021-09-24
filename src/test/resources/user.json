@@ -1,0 +1,221 @@
+{
+  "_id": "the_id_value",
+  "mail": "toto.tata@tutu.com",
+  "firstName": "toto",
+  "lastName": "tata",
+  "assignedPrograms": 11,
+  "averageScore": 75.2,
+  "paths": [
+    "RATkiller 🐭",
+    "Bienvenue 🙋",
+    "Pro amiante"
+  ],
+  "certifications": [
+    {
+      "_id": "someId1",
+      "name": "La circulation au travail",
+      "date": "2021-02-24T14:44:08.000Z"
+    },
+    {
+      "_id": "someId2",
+      "name": "Évaluation d'accueil sécurité métier du déchet",
+      "date": "2020-10-20T08:18:55.000Z"
+    },
+    {
+      "_id": "someId3",
+      "name": "Acciline + Module gestion des évènements",
+      "date": "2020-10-15T16:41:24.000Z"
+    },
+    {
+      "_id": "someId4",
+      "name": "Connaissances approfondies AMIANTE",
+      "date": "2020-09-29T08:39:03.000Z"
+    },
+    {
+      "_id": "someId15",
+      "name": "Pass Compliance - Anti corruption",
+      "date": "2020-09-28T08:39:46.000Z"
+    },
+    {
+      "_id": "someId6",
+      "name": "Mes réflexes santé",
+      "date": "2020-05-11T20:26:24.000Z"
+    },
+    {
+      "_id": "someId7",
+      "name": "Mes réflexes santé",
+      "date": "2020-05-02T09:25:23.000Z"
+    }
+  ],
+  "championAchievements": {
+    "coursesPublished": [
+      "Champion",
+      "Guide",
+      "Modèle"
+    ],
+    "authoringToolExplored": [
+      "Apprenti Champion"
+    ],
+    "repliesOnOwnActivitiesGiven": [
+      "Pédagogue",
+      "Instituteur"
+    ],
+    "positiveReactionsOnOwnContent": [
+      "Reconnu(e)",
+      "Renommé(e)",
+      "Acclamé(e)",
+      "Illustre"
+    ]
+  },
+  "comments": 93,
+  "completedPrograms": 25,
+  "groups": [
+    {
+      "_id": "someId1",
+      "name": "Learning@Veolia",
+      "public": false
+    },
+    {
+      "_id": "someId2",
+      "name": "VEOLIA MIB",
+      "public": false,
+      "parent": "someId1"
+    },
+    {
+      "_id": "someId3",
+      "name": "SARP - SESAME",
+      "public": false,
+      "parent": "someId2"
+    },
+    {
+      "_id": "someId4",
+      "name": "VEOLIA Energie France",
+      "public": false,
+      "parent": "someId2"
+    },
+    {
+      "_id": "someId5",
+      "name": "Grands Comptes",
+      "public": false,
+      "parent": "someId3"
+    }
+  ],
+  "imageUrl": "https://veolialearning.360learning.com/api/medias/user/the_id_value",
+  "labels": [
+    "[BU] SARP",
+    "SARP SIEGE",
+    "SARP SA",
+    "[ZONE] MIB",
+    "Manager"
+  ],
+  "lastLoginAt": "2021-04-10T19:43:18.977Z",
+  "championStatus": "champion",
+  "learnerAchievements": {
+    "reactionsGiven": [
+      "Membre de la communauté",
+      "Supporter"
+    ],
+    "repliesGiven": [
+      "Main tendue",
+      "Contributeur(trice)",
+      "Pilier"
+    ],
+    "coursesPlayed": [
+      "Curieux(se)",
+      "Assidu(e)"
+    ]
+  },
+  "managers": [],
+  "messages": 95,
+  "publications": 0,
+  "reactions": 104,
+  "skills": [
+    {
+      "_id": "5e53c15ab7004c4dfbc90fe6",
+      "name": "Conformité",
+      "assessmentScore": "",
+      "averageScore": 96,
+      "eLearningScore": 96
+    },
+    {
+      "_id": "5e53c16c0cc7e84db3c1c93c",
+      "name": "Anti corruption",
+      "assessmentScore": "",
+      "averageScore": 100,
+      "eLearningScore": 100
+    },
+    {
+      "_id": "59e8527ec6daad12ee0a860d",
+      "name": "Santé sécurité",
+      "assessmentScore": "",
+      "averageScore": 100,
+      "eLearningScore": 100
+    },
+    {
+      "_id": "5b3f4a973cb0111d4c2e02f8",
+      "name": "Standard sécurité",
+      "assessmentScore": "",
+      "averageScore": 100,
+      "eLearningScore": 100
+    },
+    {
+      "_id": "5b3f4a973cb0111d4c2e02d7",
+      "name": "Prévention des risques",
+      "assessmentScore": "",
+      "averageScore": 100,
+      "eLearningScore": 100
+    },
+    {
+      "_id": "5e71f3c6dd2b1734b380e040",
+      "name": "Suivi & reporting",
+      "assessmentScore": "",
+      "averageScore": 100,
+      "eLearningScore": 100
+    },
+    {
+      "_id": "5b3f4a963cb0111d4c2e026d",
+      "name": "Analyse de risques",
+      "assessmentScore": "",
+      "averageScore": 100,
+      "eLearningScore": 100
+    },
+    {
+      "_id": "5e71f35ef55a8837e4803d86",
+      "name": "Langage Preventeo",
+      "assessmentScore": "",
+      "averageScore": 100,
+      "eLearningScore": 100
+    },
+    {
+      "_id": "5e71f36b1602f434c12da815",
+      "name": "Fonctions Preventeo",
+      "assessmentScore": "",
+      "averageScore": 100,
+      "eLearningScore": 100
+    },
+    {
+      "_id": "5e71f377f55a8837e4803d88",
+      "name": "Veille réglementaire",
+      "assessmentScore": "",
+      "averageScore": 100,
+      "eLearningScore": 100
+    },
+    {
+      "_id": "59e85261c6daad12ee0a860a",
+      "name": "Management & Leadership",
+      "assessmentScore": "",
+      "averageScore": 100,
+      "eLearningScore": 100
+    },
+    {
+      "_id": "5d238c1fe451727e3a270a83",
+      "name": "Veolia",
+      "assessmentScore": "",
+      "averageScore": 100,
+      "eLearningScore": 100
+    }
+  ],
+  "subordinates": [],
+  "toDeactivateAt": "",
+  "totalTimeSpentInMinutes": 914
+}
