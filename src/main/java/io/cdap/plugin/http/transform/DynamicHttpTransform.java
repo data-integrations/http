@@ -57,8 +57,6 @@ public class DynamicHttpTransform extends Transform<StructuredRecord, Structured
     private final HttpClient httpClient;
     private final HttpErrorHandler httpErrorHandler;
 
-    private String prebuiltParameters;
-
     private List<String> reusedInputs;
 
     private Map<String, String> reusedInputsNameMap;
@@ -117,18 +115,6 @@ public class DynamicHttpTransform extends Transform<StructuredRecord, Structured
 
     @Override
     public void initialize(TransformContext context) throws Exception {
-        StringBuilder parametersBuilder = new StringBuilder();
-
-        Map<String, String> queryParameters = config.getQueryParametersMap();
-        if (queryParameters.size() > 0) {
-            parametersBuilder.append("?");
-            for (Map.Entry<String, String> e : queryParameters.entrySet()) {
-                parametersBuilder.append(e.getKey() + "=" + e.getValue() + "&");
-            }
-        }
-        this.prebuiltParameters = parametersBuilder.toString();
-        // Yes there is a '&' at the end of tURL but the url is still valid ;)
-
         super.initialize(context);
     }
 
@@ -151,9 +137,7 @@ public class DynamicHttpTransform extends Transform<StructuredRecord, Structured
             }
         }
 
-        String processedURL = url + prebuiltParameters;
-
-        config.setProcessedURL(processedURL);
+        config.setProcessedURL(url);
 
         if (config.throttlingEnabled()) {
             rateLimiter.acquire(); // Throttle

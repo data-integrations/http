@@ -19,32 +19,8 @@
         },
         {
           "widget-type": "keyvalue",
-          "label": "Query Parameters",
-          "name": "queryParameters",
-          "widget-attributes": {
-            "showDelimiter": "false"
-          }
-        },
-        {
-          "widget-type": "keyvalue",
           "label": "URL Variables",
           "name": "urlVariables",
-          "widget-attributes": {
-            "showDelimiter": "false"
-          }
-        },
-        {
-          "widget-type": "input-field-selector",
-          "label": "Reused Input Fields",
-          "name": "reusedInputs",
-          "widget-attributes": {
-            "multiselect": "true"
-          }
-        },
-        {
-          "widget-type": "keyvalue",
-          "label": "Rename Reused Input Fields",
-          "name": "renameReusedInputs",
           "widget-attributes": {
             "showDelimiter": "false"
           }
@@ -82,8 +58,24 @@
         }
       ]
     }, {
-      "label": "Throttling",
+      "label": "Multi-HTTP",
       "properties": [
+        {
+          "widget-type": "input-field-selector",
+          "label": "Reused Input Fields",
+          "name": "reusedInputs",
+          "widget-attributes": {
+            "multiselect": "true"
+          }
+        },
+        {
+          "widget-type": "keyvalue",
+          "label": "Rename Reused Input Fields",
+          "name": "renameReusedInputs",
+          "widget-attributes": {
+            "showDelimiter": "false"
+          }
+        },
         {
           "widget-type": "number",
           "label": "Max calls per seconds",
@@ -626,20 +618,6 @@
       "show": [
         {
           "name": "customPaginationCode",
-          "type": "property"
-        }
-      ]
-    },
-    {
-      "name": "Pagination none",
-      "condition": {
-        "property": "paginationType",
-        "operator": "equal to",
-        "value": "None"
-      },
-      "show": [
-        {
-          "name": "waitTimeBetweenPages",
           "type": "property"
         }
       ]

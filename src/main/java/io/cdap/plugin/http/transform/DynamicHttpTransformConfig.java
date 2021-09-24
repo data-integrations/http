@@ -34,7 +34,6 @@ import javax.annotation.Nullable;
  */
 public class DynamicHttpTransformConfig extends BaseHttpSourceConfig {
     public static final String PROPERTY_URL_VARIABLES = "urlVariables";
-    public static final String PROPERTY_QUERY_PARAMETERS = "queryParameters";
     public static final String PROPERTY_REUSED_INPUTS = "reusedInputs";
     public static final String PROPERTY_RENAME_REUSED_INPUTS = "renameReusedInputs";
     public static final String PROPERTY_MAX_CALL_PER_SECONDS = "maxCallPerSeconds";
@@ -45,14 +44,6 @@ public class DynamicHttpTransformConfig extends BaseHttpSourceConfig {
             "Use the placeholder name as Key, and the field from input schema you want to use as Value.")
     @Macro
     protected String urlVariables;
-
-    @Nullable
-    @Name(PROPERTY_QUERY_PARAMETERS)
-    @Description("Query parameters that will be append to the URL. For the URL http://my/url.com/, it will give : " +
-       "http://my/url.com/?[QueryParametersKey1]=[QueryParametersValue1]&" +
-            "[QueryParametersKey2]=[QueryParametersValue2] etc...")
-    @Macro
-    protected String queryParameters;
 
     @Nullable
     @Name(PROPERTY_REUSED_INPUTS)
@@ -137,10 +128,6 @@ public class DynamicHttpTransformConfig extends BaseHttpSourceConfig {
 
     public boolean throttlingEnabled() {
         return maxCallPerSeconds > 0;
-    }
-
-    public Map<String, String> getQueryParametersMap() {
-        return getMapFromKeyValueString(queryParameters, ",", ":");
     }
 
 

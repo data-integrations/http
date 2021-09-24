@@ -75,13 +75,12 @@ public class DynamicHttpTransformTest {
     }
 
     static class BaseTestConfigHttp extends DynamicHttpTransformConfig {
-        BaseTestConfigHttp(String outputSchema, String referenceName, String url, String queryParameters,
+        BaseTestConfigHttp(String outputSchema, String referenceName, String url,
                            String urlVariables, int maxCallPerSeconds, String reusedInputs, String renameReusedInputs) {
             super(referenceName);
 
             this.schema = outputSchema;
             this.url = url;
-            this.queryParameters = queryParameters;
             this.urlVariables = urlVariables;
             this.reusedInputs = reusedInputs;
             this.renameReusedInputs = renameReusedInputs;
@@ -134,14 +133,11 @@ public class DynamicHttpTransformTest {
         HttpEntity mockEntity = Mockito.mock(HttpEntity.class);
         StatusLine statusLine = Mockito.mock(StatusLine.class);
 
-        String baseURL = "myfakeurl.com/{id}";
-        Map<String, String> urlParameters = new HashMap<>();
-        urlParameters.put("company", "xx");
-        urlParameters.put("apiKey", "XX");
+        String baseURL = "myfakeurl.com/{id}?apiKey=XX&company=xx";
         Map<String, String> urlVariables = new HashMap<>();
         urlVariables.put("id", "_id");
         String idValue = "the_id_value";
-        String targetURL = "myfakeurl.com/the_id_value?apiKey=XX&company=xx&";
+        String targetURL = "myfakeurl.com/the_id_value?apiKey=XX&company=xx";
         Mockito.when(mockHttpClient.executeHTTP(targetURL/*Mockito.any()*/)).thenReturn(mockHttpResponse);
         Mockito.when(mockHttpResponse.getEntity()).thenReturn(mockEntity);
         Mockito.when(mockHttpResponse.getStatusLine()).thenReturn(statusLine);
@@ -152,7 +148,6 @@ public class DynamicHttpTransformTest {
                 OUTPUT_SCHEMA,
                 "HttpDynamicTransform-transform",
                 baseURL,
-                Joiner.on(",").withKeyValueSeparator(":").join(urlParameters),
                 Joiner.on(",").withKeyValueSeparator(":").join(urlVariables),
                 10,
                 "",
@@ -192,7 +187,6 @@ public class DynamicHttpTransformTest {
         BaseTestConfigHttp config = new BaseTestConfigHttp(
                 OUTPUT_SCHEMA_WITH_REUSED,
                 "HttpDynamicTransform-transform",
-                "",
                 "",
                 "",
                 10,
