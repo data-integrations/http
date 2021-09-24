@@ -585,20 +585,6 @@
       ]
     },
     {
-      "name": "Pagination none",
-      "condition": {
-        "property": "paginationType",
-        "operator": "equal to",
-        "value": "None"
-      },
-      "show": [
-        {
-          "name": "waitTimeBetweenPages",
-          "type": "property"
-        }
-      ]
-    },
-    {
       "name": "OAuth 2 disabled",
       "condition": {
         "property": "oauth2Enabled",
