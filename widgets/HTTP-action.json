@@ -7,6 +7,11 @@
       "label": "General",
       "properties": [
         {
+          "widget-type": "hidden",
+          "name": "alwaysHidden",
+          "default": "true"
+        },
+        {
           "widget-type": "textbox",
           "label": "URL",
           "name": "url"
@@ -144,7 +149,6 @@
               "Success",
               "Fail",
               "Skip",
-              "Send to error",
               "Retry and fail",
               "Retry and skip",
               "Retry and send to error"
@@ -316,38 +320,6 @@
       ]
     },
     {
-      "name": "Token in Response Body",
-      "condition": {
-        "property": "paginationType",
-        "operator": "equal to",
-        "value": "Token in response body"
-      },
-      "show": [
-        {
-          "name": "nextPageTokenPath",
-          "type": "property"
-        },
-        {
-          "name": "nextPageUrlParameter",
-          "type": "property"
-        }
-      ]
-    },
-    {
-      "name": "Link in response body",
-      "condition": {
-        "property": "paginationType",
-        "operator": "equal to",
-        "value": "Link in response body"
-      },
-      "show": [
-        {
-          "name": "nextPageFieldPath",
-          "type": "property"
-        }
-      ]
-    },
-    {
       "name": "OAuth 2 disabled",
       "condition": {
         "property": "oauth2Enabled",
@@ -361,6 +333,24 @@
         },
         {
           "name": "password",
+          "type": "property"
+        }
+      ]
+    },
+    {
+      "name": "Hide properties",
+      "condition": {
+        "property": "alwaysHidden",
+        "operator": "equals to",
+        "value": "false"
+      },
+      "show": [
+        {
+          "name": "httpErrorsHandling",
+          "type": "property"
+        },
+        {
+          "name": "errorHandling",
           "type": "property"
         }
       ]
@@ -421,20 +411,6 @@
         },
         {
           "name": "trustStoreKeyAlgorithm",
-          "type": "property"
-        }
-      ]
-    },
-    {
-      "name": "CSV Formatting",
-      "condition": {
-        "property": "format",
-        "operator": "equal to",
-        "value": "csv"
-      },
-      "show": [
-        {
-          "name": "csvSkipFirstRow",
           "type": "property"
         }
       ]

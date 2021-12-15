@@ -42,9 +42,8 @@ import java.util.concurrent.TimeUnit;
  */
 @Plugin(type = Action.PLUGIN_TYPE)
 @Name(HttpConstants.HTTP_PLUGIN_NAME)
-@Description("Action that runs a MySQL command")
+@Description("Action that runs a HTTP command")
 public class HttpAction extends Action {
-
   private final HttpActionConfig config;
 
   public HttpAction(HttpActionConfig config) {

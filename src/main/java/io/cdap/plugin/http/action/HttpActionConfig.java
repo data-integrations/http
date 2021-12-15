@@ -41,6 +41,10 @@ import javax.annotation.Nullable;
  */
 public class HttpActionConfig extends PluginConfig implements IHttpConfig {
 
+  @Name("alwaysHidden")
+  @Description("")
+  protected String alwaysHidden;
+
   @Name(HttpConstants.PROPERTY_URL)
   @Description("Url to fetch to the first page. The url must start with a protocol (e.g. http://).")
   @Macro
