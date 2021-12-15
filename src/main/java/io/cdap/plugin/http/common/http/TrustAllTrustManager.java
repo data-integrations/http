@@ -13,15 +13,24 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.cdap.plugin.http.source.batch;
 
-import io.cdap.plugin.http.common.BaseHttpSourceConfig;
+package io.cdap.plugin.http.common.http;
+
+import java.security.cert.X509Certificate;
+import javax.net.ssl.X509TrustManager;
 
 /**
- * Provides all the configurations required for configuring the {@link HttpBatchSource} plugin.
+ * A trust manager which blindly trusts all certificates.
  */
-public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
-  protected HttpBatchSourceConfig(String referenceName) {
-    super(referenceName);
+public class TrustAllTrustManager implements X509TrustManager {
+
+  public X509Certificate[] getAcceptedIssuers() {
+    return null;
+  }
+
+  public void checkClientTrusted(X509Certificate[] chain, String authType) {
+  }
+
+  public void checkServerTrusted(X509Certificate[] chain, String authType) {
   }
 }

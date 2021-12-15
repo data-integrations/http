@@ -22,7 +22,7 @@ import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.mock.test.HydratorTestBase;
 import io.cdap.cdap.test.TestConfiguration;
-import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
+import io.cdap.plugin.http.common.BaseHttpSourceConfig;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;

@@ -31,8 +31,9 @@ import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSource;
 import io.cdap.cdap.etl.api.batch.BatchSourceContext;
 import io.cdap.plugin.common.LineageRecorder;
-import io.cdap.plugin.http.source.common.pagination.page.BasePage;
-import io.cdap.plugin.http.source.common.pagination.page.PageEntry;
+import io.cdap.plugin.http.common.http.HttpConstants;
+import io.cdap.plugin.http.common.pagination.page.BasePage;
+import io.cdap.plugin.http.common.pagination.page.PageEntry;
 import org.apache.hadoop.io.NullWritable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,11 +44,9 @@ import java.util.stream.Collectors;
  * Plugin returns records from HTTP source specified by link. Pagination via APIs is supported.
  */
 @Plugin(type = BatchSource.PLUGIN_TYPE)
-@Name(HttpBatchSource.NAME)
+@Name(HttpConstants.HTTP_PLUGIN_NAME)
 @Description("Read data from HTTP endpoint.")
 public class HttpBatchSource extends BatchSource<NullWritable, BasePage, StructuredRecord> {
-  static final String NAME = "HTTP";
-
   private static final Logger LOG = LoggerFactory.getLogger(HttpBatchSource.class);
 
   private final HttpBatchSourceConfig config;

@@ -13,15 +13,36 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.cdap.plugin.http.source.batch;
+package io.cdap.plugin.http.common.error;
 
-import io.cdap.plugin.http.common.BaseHttpSourceConfig;
+import io.cdap.plugin.http.common.EnumWithValue;
 
 /**
- * Provides all the configurations required for configuring the {@link HttpBatchSource} plugin.
+ * Indicates error handling strategy which will be used during reading HTTP records.
  */
-public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
-  protected HttpBatchSourceConfig(String referenceName) {
-    super(referenceName);
+public enum ErrorHandling implements EnumWithValue {
+
+  SUCCESS("success"),
+
+  SKIP("skipOnError"),
+
+  SEND("sendToError"),
+
+  STOP("stopOnError");
+
+  private final String value;
+
+  ErrorHandling(String value) {
+    this.value = value;
+  }
+
+  @Override
+  public String getValue() {
+    return value;
+  }
+
+  @Override
+  public String toString() {
+    return this.getValue();
   }
 }

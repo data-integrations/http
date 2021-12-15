@@ -13,15 +13,34 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.cdap.plugin.http.source.batch;
+package io.cdap.plugin.http.common.http;
 
-import io.cdap.plugin.http.common.BaseHttpSourceConfig;
+import io.cdap.plugin.http.common.EnumWithValue;
 
 /**
- * Provides all the configurations required for configuring the {@link HttpBatchSource} plugin.
+ * An enum which represent a type of keystore or truststore.
  */
-public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
-  protected HttpBatchSourceConfig(String referenceName) {
-    super(referenceName);
+public enum KeyStoreType implements EnumWithValue {
+
+  JKS("Java KeyStore (JKS)"),
+
+  JCEKS("Java Cryptography Extension KeyStore (JCEKS)"),
+
+  PKCS12("PKCS #12");
+
+  private final String value;
+
+  KeyStoreType(String value) {
+    this.value = value;
+  }
+
+  @Override
+  public String getValue() {
+    return value;
+  }
+
+  @Override
+  public String toString() {
+    return this.getValue();
   }
 }
