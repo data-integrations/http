@@ -15,7 +15,6 @@
  */
 package io.cdap.plugin.http.common.error;
 
-import io.cdap.plugin.http.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.common.http.IHttpConfig;
 
 import org.slf4j.Logger;
@@ -31,23 +30,31 @@ public class HttpErrorHandler {
   private static final Logger LOG = LoggerFactory.getLogger(HttpErrorHandler.class);
 
   private List<HttpErrorHandlerEntity> httpErrorsHandlingEntries;
+  private boolean showWarnings = true;
 
   public HttpErrorHandler(IHttpConfig config) {
     this.httpErrorsHandlingEntries = config.getHttpErrorHandlingEntries();
   }
 
+  public HttpErrorHandler(IHttpConfig config, boolean showWarnings) {
+    this.httpErrorsHandlingEntries = config.getHttpErrorHandlingEntries();
+    this.showWarnings = showWarnings;
+  }
+
   public RetryableErrorHandling getErrorHandlingStrategy(int httpCode) {
     String httpCodeString = Integer.toString(httpCode);
 
-    for (HttpErrorHandlerEntity httpErrorsHandlingEntry : httpErrorsHandlingEntries) {
+    for (HttpErrorHandlerEntity httpErrorsHandlingEntry: httpErrorsHandlingEntries) {
       Matcher matcher = httpErrorsHandlingEntry.getPattern().matcher(httpCodeString);
       if (matcher.matches()) {
         return httpErrorsHandlingEntry.getStrategy();
       }
     }
 
-    LOG.warn(String.format("No error handling strategy defined for HTTP status code '%d'. " +
-                             "Please correct httpErrorsHandling.", httpCode));
+    if (showWarnings) {
+      LOG.warn(String.format("No error handling strategy defined for HTTP status code '%d'. " +
+              "Please correct httpErrorsHandling.", httpCode));
+    }
     return RetryableErrorHandling.FAIL;
   }
 }

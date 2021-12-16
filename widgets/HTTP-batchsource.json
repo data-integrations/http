@@ -508,7 +508,7 @@
       "name": "Proxy authentication",
       "condition": {
         "property": "proxyUrl",
-        "operator": "exists",
+        "operator": "exists"
       },
       "show": [
         {

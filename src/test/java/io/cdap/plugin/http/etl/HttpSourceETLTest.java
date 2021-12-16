@@ -23,6 +23,7 @@ import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.mock.test.HydratorTestBase;
 import io.cdap.cdap.test.TestConfiguration;
 import io.cdap.plugin.http.common.BaseHttpSourceConfig;
+import io.cdap.plugin.http.common.http.HttpConstants;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -70,7 +71,7 @@ public abstract class HttpSourceETLTest extends HydratorTestBase {
 
     );
     Map<String, String> properties = new ImmutableMap.Builder<String, String>()
-      .put(BaseHttpSourceConfig.PROPERTY_URL,
+      .put(HttpConstants.PROPERTY_URL,
            getServerAddress() + "/rest/api/2/search?maxResults=2&startAt={pagination.index}")
            //"https://issues.cask.co/rest/api/2/search?maxResults=2&startAt={pagination.index}")
       .put(BaseHttpSourceConfig.PROPERTY_FORMAT, "json")
@@ -79,7 +80,7 @@ public abstract class HttpSourceETLTest extends HydratorTestBase {
            "type:/fields/issuetype/name,description:/fields/description," +
              "projectCategory:/fields/project/projectCategory/name,isSubtask:/fields/issuetype/subtask," +
              "fixVersions:/fields/fixVersions")
-      .put(BaseHttpSourceConfig.PROPERTY_SCHEMA, schema.toString())
+      .put(HttpConstants.PROPERTY_SCHEMA, schema.toString())
       .put(BaseHttpSourceConfig.PROPERTY_PAGINATION_TYPE, "Increment an index")
       .put(BaseHttpSourceConfig.PROPERTY_START_INDEX, "0")
       .put(BaseHttpSourceConfig.PROPERTY_INDEX_INCREMENT, "2")
@@ -124,14 +125,14 @@ public abstract class HttpSourceETLTest extends HydratorTestBase {
     // https://services.odata.org
     // /V3/Northwind/Northwind.svc/Customers?$inlinecount=allpages&$top=5&$skip={pagination.index}
     Map<String, String> properties = new ImmutableMap.Builder<String, String>()
-      .put(BaseHttpSourceConfig.PROPERTY_URL, getServerAddress() + "/V3/Northwind/Northwind.svc" +
+      .put(HttpConstants.PROPERTY_URL, getServerAddress() + "/V3/Northwind/Northwind.svc" +
         "/Customers?$inlinecount=allpages&$top=5&$skip={pagination.index}")
       .put(BaseHttpSourceConfig.PROPERTY_FORMAT, "xml")
       .put(BaseHttpSourceConfig.PROPERTY_RESULT_PATH, "/feed/entry")
       .put(BaseHttpSourceConfig.PROPERTY_FIELDS_MAPPING,
            "companyName:content/properties/CompanyName,postalCode:content/properties/PostalCode," +
              "country:content/properties/Country,phone:content/properties/Phone,fax:content/properties/Fax/text()")
-      .put(BaseHttpSourceConfig.PROPERTY_SCHEMA, schema.toString())
+      .put(HttpConstants.PROPERTY_SCHEMA, schema.toString())
       .put(BaseHttpSourceConfig.PROPERTY_PAGINATION_TYPE, "Increment an index")
       .put(BaseHttpSourceConfig.PROPERTY_START_INDEX, "0")
       .put(BaseHttpSourceConfig.PROPERTY_INDEX_INCREMENT, "20")
@@ -177,12 +178,12 @@ public abstract class HttpSourceETLTest extends HydratorTestBase {
                                                     Schema.of(Schema.Type.STRING))
     );
     Map<String, String> properties = new ImmutableMap.Builder<String, String>()
-      .put(BaseHttpSourceConfig.PROPERTY_URL,
+      .put(HttpConstants.PROPERTY_URL,
            // http://confluence.atlassian.com/rest/api/space/ADMINJIRASERVER0710/content/page?limit=100&start=0
            getServerAddress() + "/rest/api/space/ADMINJIRASERVER0710/content/page?limit=2&start=0")
       .put(BaseHttpSourceConfig.PROPERTY_FORMAT, "json")
       .put(BaseHttpSourceConfig.PROPERTY_RESULT_PATH, "/results")
-      .put(BaseHttpSourceConfig.PROPERTY_SCHEMA, schema.toString())
+      .put(HttpConstants.PROPERTY_SCHEMA, schema.toString())
       .put(BaseHttpSourceConfig.PROPERTY_PAGINATION_TYPE, "Link in response body")
       .put(BaseHttpSourceConfig.PROPERTY_NEXT_PAGE_FIELD_PATH, "/_links/next")
       .build();
@@ -222,13 +223,13 @@ public abstract class HttpSourceETLTest extends HydratorTestBase {
                                                     ))
     );
     Map<String, String> properties = new ImmutableMap.Builder<String, String>()
-      .put(BaseHttpSourceConfig.PROPERTY_URL,
+      .put(HttpConstants.PROPERTY_URL,
            //"https://api.github.com/search/code?q=Salesforce+user:data-integrations")
            getServerAddress() + "/search/code?q=Salesforce+user:data-integrations&per_page=2")
       .put(BaseHttpSourceConfig.PROPERTY_FORMAT, "json")
       .put(BaseHttpSourceConfig.PROPERTY_RESULT_PATH, "/items")
       .put(BaseHttpSourceConfig.PROPERTY_FIELDS_MAPPING, "path:/path,score:/score,repository:/repository")
-      .put(BaseHttpSourceConfig.PROPERTY_SCHEMA, schema.toString())
+      .put(HttpConstants.PROPERTY_SCHEMA, schema.toString())
       .put(BaseHttpSourceConfig.PROPERTY_PAGINATION_TYPE, "Link in response header")
       .build();
 
@@ -282,11 +283,11 @@ public abstract class HttpSourceETLTest extends HydratorTestBase {
 
     Map<String, String> properties = new ImmutableMap.Builder<String, String>()
       // https://searchcode.com/api/codesearch_I/?q=cdap
-      .put(BaseHttpSourceConfig.PROPERTY_URL, getServerAddress() + "/api/codesearch_I/?q=cdap")
+      .put(HttpConstants.PROPERTY_URL, getServerAddress() + "/api/codesearch_I/?q=cdap")
       .put(BaseHttpSourceConfig.PROPERTY_FORMAT, "json")
       .put(BaseHttpSourceConfig.PROPERTY_RESULT_PATH, "/results")
       .put(BaseHttpSourceConfig.PROPERTY_FIELDS_MAPPING, "repo:repo,language:/language,file:/filename,url:/url")
-      .put(BaseHttpSourceConfig.PROPERTY_SCHEMA, schema.toString())
+      .put(HttpConstants.PROPERTY_SCHEMA, schema.toString())
       .put(BaseHttpSourceConfig.PROPERTY_PAGINATION_TYPE, "None")
       .build();
 
@@ -307,9 +308,9 @@ public abstract class HttpSourceETLTest extends HydratorTestBase {
     );
 
     Map<String, String> properties = new ImmutableMap.Builder<String, String>()
-      .put(BaseHttpSourceConfig.PROPERTY_URL, getServerAddress() + "/blob")
+      .put(HttpConstants.PROPERTY_URL, getServerAddress() + "/blob")
       .put(BaseHttpSourceConfig.PROPERTY_FORMAT, "blob")
-      .put(BaseHttpSourceConfig.PROPERTY_SCHEMA, schema.toString())
+      .put(HttpConstants.PROPERTY_SCHEMA, schema.toString())
       .put(BaseHttpSourceConfig.PROPERTY_PAGINATION_TYPE, "None")
       .build();
 
@@ -347,9 +348,9 @@ public abstract class HttpSourceETLTest extends HydratorTestBase {
 
     Map<String, String> properties = new ImmutableMap.Builder<String, String>()
       // https://s3.theeventscalendar.com/uploads/2014/09/test-data-venues11.csv
-      .put(BaseHttpSourceConfig.PROPERTY_URL, getServerAddress() + "/uploads/2014/09/test-data-venues11.csv")
+      .put(HttpConstants.PROPERTY_URL, getServerAddress() + "/uploads/2014/09/test-data-venues11.csv")
       .put(BaseHttpSourceConfig.PROPERTY_FORMAT, "csv")
-      .put(BaseHttpSourceConfig.PROPERTY_SCHEMA, schema.toString())
+      .put(HttpConstants.PROPERTY_SCHEMA, schema.toString())
       .put(BaseHttpSourceConfig.PROPERTY_PAGINATION_TYPE, "None")
       .build();
 
@@ -370,9 +371,9 @@ public abstract class HttpSourceETLTest extends HydratorTestBase {
     );
     //"http://www.columbia.edu/~fdc/sample.html")
     Map<String, String> properties = new ImmutableMap.Builder<String, String>()
-      .put(BaseHttpSourceConfig.PROPERTY_URL, getServerAddress() + "/sample.html")
+      .put(HttpConstants.PROPERTY_URL, getServerAddress() + "/sample.html")
       .put(BaseHttpSourceConfig.PROPERTY_FORMAT, "text")
-      .put(BaseHttpSourceConfig.PROPERTY_SCHEMA, schema.toString())
+      .put(HttpConstants.PROPERTY_SCHEMA, schema.toString())
       .put(BaseHttpSourceConfig.PROPERTY_PAGINATION_TYPE, "None")
       .build();
 
@@ -395,11 +396,11 @@ public abstract class HttpSourceETLTest extends HydratorTestBase {
 
     Map<String, String> properties = new ImmutableMap.Builder<String, String>()
       // https://www.w3.org/2003/05/soap-envelope/
-      .put(BaseHttpSourceConfig.PROPERTY_URL, getServerAddress() + "/2003/05/soap-envelope/")
+      .put(HttpConstants.PROPERTY_URL, getServerAddress() + "/2003/05/soap-envelope/")
       .put(BaseHttpSourceConfig.PROPERTY_FORMAT, "xml")
       .put(BaseHttpSourceConfig.PROPERTY_RESULT_PATH, "/schema/complexType[@name='Fault']/sequence/element")
       .put(BaseHttpSourceConfig.PROPERTY_FIELDS_MAPPING, "name:@name,type:@type")
-      .put(BaseHttpSourceConfig.PROPERTY_SCHEMA, schema.toString())
+      .put(HttpConstants.PROPERTY_SCHEMA, schema.toString())
       .put(BaseHttpSourceConfig.PROPERTY_PAGINATION_TYPE, "None")
       .build();
 
@@ -449,11 +450,11 @@ public abstract class HttpSourceETLTest extends HydratorTestBase {
 
     Map<String, String> properties = new ImmutableMap.Builder<String, String>()
       // https://searchcode.com/api/codesearch_I/?q=cdap&per_page=2
-      .put(BaseHttpSourceConfig.PROPERTY_URL, getServerAddress() + "/api/codesearch_I/?q=cdap&per_page=2")
+      .put(HttpConstants.PROPERTY_URL, getServerAddress() + "/api/codesearch_I/?q=cdap&per_page=2")
       .put(BaseHttpSourceConfig.PROPERTY_FORMAT, "json")
       .put(BaseHttpSourceConfig.PROPERTY_RESULT_PATH, "/results")
       .put(BaseHttpSourceConfig.PROPERTY_FIELDS_MAPPING, "repo:repo,language:/language,file:/filename,url:/url")
-      .put(BaseHttpSourceConfig.PROPERTY_SCHEMA, schema.toString())
+      .put(HttpConstants.PROPERTY_SCHEMA, schema.toString())
       .put(BaseHttpSourceConfig.PROPERTY_PAGINATION_TYPE, "Custom")
       .put(BaseHttpSourceConfig.PROPERTY_CUSTOM_PAGINATION_CODE, paginationCode)
       .build();
@@ -485,20 +486,20 @@ public abstract class HttpSourceETLTest extends HydratorTestBase {
   protected Map<String, String> getProperties(Map<String, String> sourceProperties) {
     return new ImmutableMap.Builder<String, String>()
       .put("referenceName", testName.getMethodName())
-      .put(BaseHttpSourceConfig.PROPERTY_HTTP_METHOD, "GET")
-      .put(BaseHttpSourceConfig.PROPERTY_OAUTH2_ENABLED, "false")
-      .put(BaseHttpSourceConfig.PROPERTY_HTTP_ERROR_HANDLING, "2..:Success,.*:Fail")
-      .put(BaseHttpSourceConfig.PROPERTY_ERROR_HANDLING, "stopOnError")
-      .put(BaseHttpSourceConfig.PROPERTY_RETRY_POLICY, "linear")
+      .put(HttpConstants.PROPERTY_HTTP_METHOD, "GET")
+      .put(HttpConstants.PROPERTY_OAUTH2_ENABLED, "false")
+      .put(HttpConstants.PROPERTY_HTTP_ERROR_HANDLING, "2..:Success,.*:Fail")
+      .put(HttpConstants.PROPERTY_ERROR_HANDLING, "stopOnError")
+      .put(HttpConstants.PROPERTY_RETRY_POLICY, "linear")
       .put(BaseHttpSourceConfig.PROPERTY_MAX_RETRY_DURATION, "10")
       .put(BaseHttpSourceConfig.PROPERTY_LINEAR_RETRY_INTERVAL, "1")
       .put(BaseHttpSourceConfig.PROPERTY_WAIT_TIME_BETWEEN_PAGES, "0")
-      .put(BaseHttpSourceConfig.PROPERTY_CONNECT_TIMEOUT, "60")
-      .put(BaseHttpSourceConfig.PROPERTY_READ_TIMEOUT, "120")
-      .put(BaseHttpSourceConfig.PROPERTY_VERIFY_HTTPS, "true")
-      .put(BaseHttpSourceConfig.PROPERTY_KEYSTORE_TYPE, "Java KeyStore (JKS)")
-      .put(BaseHttpSourceConfig.PROPERTY_TRUSTSTORE_TYPE, "Java KeyStore (JKS)")
-      .put(BaseHttpSourceConfig.PROPERTY_TRANSPORT_PROTOCOLS, "TLSv1.2")
+      .put(HttpConstants.PROPERTY_CONNECT_TIMEOUT, "60")
+      .put(HttpConstants.PROPERTY_READ_TIMEOUT, "120")
+      .put(HttpConstants.PROPERTY_VERIFY_HTTPS, "true")
+      .put(HttpConstants.PROPERTY_KEYSTORE_TYPE, "Java KeyStore (JKS)")
+      .put(HttpConstants.PROPERTY_TRUSTSTORE_TYPE, "Java KeyStore (JKS)")
+      .put(HttpConstants.PROPERTY_TRANSPORT_PROTOCOLS, "TLSv1.2")
       .putAll(sourceProperties)
       .build();
   }

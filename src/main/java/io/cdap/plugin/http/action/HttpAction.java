@@ -32,6 +32,8 @@ import org.awaitility.core.ConditionTimeoutException;
 import org.awaitility.pollinterval.FixedPollInterval;
 import org.awaitility.pollinterval.IterativePollInterval;
 import org.awaitility.pollinterval.PollInterval;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -44,6 +46,8 @@ import java.util.concurrent.TimeUnit;
 @Name(HttpConstants.HTTP_PLUGIN_NAME)
 @Description("Action that runs a HTTP command")
 public class HttpAction extends Action {
+
+  private static final Logger LOG = LoggerFactory.getLogger(HttpAction.class);
   private final HttpActionConfig config;
 
   public HttpAction(HttpActionConfig config) {
@@ -51,11 +55,24 @@ public class HttpAction extends Action {
   }
 
     private boolean makeRequest(HttpClient httpClient, String uri, HttpErrorHandler errorHandler) throws IOException {
-    HttpResponse response = new HttpResponse(httpClient.executeHTTP(uri));
-    RetryableErrorHandling errorHandlingStrategy = errorHandler.getErrorHandlingStrategy(response.getStatusCode());
+      try (HttpResponse response = new HttpResponse(httpClient.executeHTTP(uri))) {
+        RetryableErrorHandling errorHandlingStrategy = errorHandler.getErrorHandlingStrategy(response.getStatusCode());
 
-    response.close();
-    return !errorHandlingStrategy.shouldRetry();
+        if (errorHandlingStrategy == RetryableErrorHandling.FAIL) {
+          String body = "null";
+          try {
+            body = response.getBody();
+          } catch (Exception ignore) {
+          }
+          LOG.warn(
+            String.format("Request to the url '%s' failed with error code %s and message: %s",
+                    uri,
+                    response.getStatusCode(),
+                    body
+          ));
+        }
+        return !errorHandlingStrategy.shouldRetry();
+      }
   }
 
   @Override
@@ -71,7 +88,8 @@ public class HttpAction extends Action {
         .pollInterval(pollInterval)
         .timeout(config.getMaxRetryDuration(), TimeUnit.SECONDS)
         .until(() -> makeRequest(httpClient, config.getUrl(), httpErrorHandler));
-    } catch (ConditionTimeoutException ignored) {
+    } catch (ConditionTimeoutException e) {
+      LOG.warn(String.format("Request to the url '%s' failed due to timeout", config.getUrl()));
     }
   }
 

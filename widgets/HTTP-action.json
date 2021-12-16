@@ -7,11 +7,6 @@
       "label": "General",
       "properties": [
         {
-          "widget-type": "hidden",
-          "name": "alwaysHidden",
-          "default": "true"
-        },
-        {
           "widget-type": "textbox",
           "label": "URL",
           "name": "url"
@@ -147,11 +142,7 @@
             "showDelimiter": "false",
             "dropdownOptions": [
               "Success",
-              "Fail",
-              "Skip",
-              "Retry and fail",
-              "Retry and skip",
-              "Retry and send to error"
+              "Fail"
             ],
             "key-placeholder": "HTTP Status Code Regex"
           }
@@ -167,14 +158,6 @@
               {
                 "id": "stopOnError",
                 "label": "Stop on error"
-              },
-              {
-                "id": "sendToError",
-                "label": "Send to error"
-              },
-              {
-                "id": "skipOnError",
-                "label": "Skip on error"
               }
             ]
           }
@@ -333,24 +316,6 @@
         },
         {
           "name": "password",
-          "type": "property"
-        }
-      ]
-    },
-    {
-      "name": "Hide properties",
-      "condition": {
-        "property": "alwaysHidden",
-        "operator": "equals to",
-        "value": "false"
-      },
-      "show": [
-        {
-          "name": "httpErrorsHandling",
-          "type": "property"
-        },
-        {
-          "name": "errorHandling",
           "type": "property"
         }
       ]

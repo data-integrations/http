@@ -38,6 +38,7 @@ import io.cdap.cdap.test.DataSetManager;
 import io.cdap.cdap.test.TestConfiguration;
 import io.cdap.cdap.test.WorkflowManager;
 import io.cdap.plugin.http.common.BaseHttpSourceConfig;
+import io.cdap.plugin.http.common.http.HttpConstants;
 import io.cdap.plugin.http.source.batch.HttpBatchSource;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -79,26 +80,26 @@ public abstract class BaseHttpBatchSourceETLTest extends HydratorTestBase {
     // this will make our plugins available.
     addPluginArtifact(NamespaceId.DEFAULT.artifact("example-plugins", "1.0.0"),
                       parentArtifact,
-                      HttpBatchSource.class);
+                      HttpBatchSource.class);qqq
   }
 
   public List<StructuredRecord> getPipelineResults(Map<String, String> sourceProperties) throws Exception {
     Map<String, String> allProperties = new ImmutableMap.Builder<String, String>()
       .put("referenceName", name.getMethodName())
-      .put(BaseHttpSourceConfig.PROPERTY_HTTP_METHOD, "GET")
-      .put(BaseHttpSourceConfig.PROPERTY_OAUTH2_ENABLED, "false")
-      .put(BaseHttpSourceConfig.PROPERTY_HTTP_ERROR_HANDLING, "2..:Success,.*:Fail")
-      .put(BaseHttpSourceConfig.PROPERTY_ERROR_HANDLING, "stopOnError")
-      .put(BaseHttpSourceConfig.PROPERTY_RETRY_POLICY, "linear")
+      .put(HttpConstants.PROPERTY_HTTP_METHOD, "GET")
+      .put(HttpConstants.PROPERTY_OAUTH2_ENABLED, "false")
+      .put(HttpConstants.PROPERTY_HTTP_ERROR_HANDLING, "2..:Success,.*:Fail")
+      .put(HttpConstants.PROPERTY_ERROR_HANDLING, "stopOnError")
+      .put(HttpConstants.PROPERTY_RETRY_POLICY, "linear")
       .put(BaseHttpSourceConfig.PROPERTY_MAX_RETRY_DURATION, "10")
       .put(BaseHttpSourceConfig.PROPERTY_LINEAR_RETRY_INTERVAL, "1")
       .put(BaseHttpSourceConfig.PROPERTY_WAIT_TIME_BETWEEN_PAGES, "0")
-      .put(BaseHttpSourceConfig.PROPERTY_CONNECT_TIMEOUT, "60")
-      .put(BaseHttpSourceConfig.PROPERTY_READ_TIMEOUT, "120")
-      .put(BaseHttpSourceConfig.PROPERTY_VERIFY_HTTPS, "true")
-      .put(BaseHttpSourceConfig.PROPERTY_KEYSTORE_TYPE, "Java KeyStore (JKS)")
-      .put(BaseHttpSourceConfig.PROPERTY_TRUSTSTORE_TYPE, "Java KeyStore (JKS)")
-      .put(BaseHttpSourceConfig.PROPERTY_TRANSPORT_PROTOCOLS, "TLSv1.2")
+      .put(HttpConstants.PROPERTY_CONNECT_TIMEOUT, "60")
+      .put(HttpConstants.PROPERTY_READ_TIMEOUT, "120")
+      .put(HttpConstants.PROPERTY_VERIFY_HTTPS, "true")
+      .put(HttpConstants.PROPERTY_KEYSTORE_TYPE, "Java KeyStore (JKS)")
+      .put(HttpConstants.PROPERTY_TRUSTSTORE_TYPE, "Java KeyStore (JKS)")
+      .put(HttpConstants.PROPERTY_TRANSPORT_PROTOCOLS, "TLSv1.2")
       .putAll(sourceProperties)
       .build();
 

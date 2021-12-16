@@ -26,6 +26,7 @@ import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.http.common.error.ErrorHandling;
 import io.cdap.plugin.http.common.error.HttpErrorHandlerEntity;
 import io.cdap.plugin.http.common.error.RetryableErrorHandling;
+import io.cdap.plugin.http.common.http.HttpConstants;
 import io.cdap.plugin.http.common.http.IHttpConfig;
 import io.cdap.plugin.http.common.http.KeyStoreType;
 import io.cdap.plugin.http.common.pagination.PaginationIteratorFactory;
@@ -51,26 +52,12 @@ import javax.annotation.Nullable;
  * Base configuration for HTTP Streaming and Batch plugins.
  */
 public abstract class BaseHttpSourceConfig extends ReferencePluginConfig implements IHttpConfig {
-  public static final String PROPERTY_URL = "url";
-  public static final String PROPERTY_HTTP_METHOD = "httpMethod";
-  public static final String PROPERTY_HEADERS = "headers";
-  public static final String PROPERTY_REQUEST_BODY = "requestBody";
   public static final String PROPERTY_FORMAT = "format";
   public static final String PROPERTY_RESULT_PATH = "resultPath";
   public static final String PROPERTY_FIELDS_MAPPING = "fieldsMapping";
   public static final String PROPERTY_CSV_SKIP_FIRST_ROW = "csvSkipFirstRow";
-  public static final String PROPERTY_USERNAME = "username";
-  public static final String PROPERTY_PASSWORD = "password";
-  public static final String PROPERTY_PROXY_URL = "proxyUrl";
-  public static final String PROPERTY_PROXY_USERNAME = "proxyUsername";
-  public static final String PROPERTY_PROXY_PASSWORD = "proxyPassword";
-  public static final String PROPERTY_HTTP_ERROR_HANDLING = "httpErrorsHandling";
-  public static final String PROPERTY_ERROR_HANDLING = "errorHandling";
-  public static final String PROPERTY_RETRY_POLICY = "retryPolicy";
   public static final String PROPERTY_LINEAR_RETRY_INTERVAL = "linearRetryInterval";
   public static final String PROPERTY_MAX_RETRY_DURATION = "maxRetryDuration";
-  public static final String PROPERTY_CONNECT_TIMEOUT = "connectTimeout";
-  public static final String PROPERTY_READ_TIMEOUT = "readTimeout";
   public static final String PROPERTY_PAGINATION_TYPE = "paginationType";
   public static final String PROPERTY_START_INDEX = "startIndex";
   public static final String PROPERTY_MAX_INDEX = "maxIndex";
@@ -80,49 +67,27 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig impleme
   public static final String PROPERTY_NEXT_PAGE_URL_PARAMETER = "nextPageUrlParameter";
   public static final String PROPERTY_CUSTOM_PAGINATION_CODE = "customPaginationCode";
   public static final String PROPERTY_WAIT_TIME_BETWEEN_PAGES = "waitTimeBetweenPages";
-  public static final String PROPERTY_OAUTH2_ENABLED = "oauth2Enabled";
-  public static final String PROPERTY_AUTH_URL = "authUrl";
-  public static final String PROPERTY_TOKEN_URL = "tokenUrl";
-  public static final String PROPERTY_CLIENT_ID = "clientId";
-  public static final String PROPERTY_CLIENT_SECRET = "clientSecret";
-  public static final String PROPERTY_SCOPES = "scopes";
-  public static final String PROPERTY_REFRESH_TOKEN = "refreshToken";
-  public static final String PROPERTY_VERIFY_HTTPS = "verifyHttps";
-  public static final String PROPERTY_KEYSTORE_FILE = "keystoreFile";
-  public static final String PROPERTY_KEYSTORE_TYPE = "keystoreType";
-  public static final String PROPERTY_KEYSTORE_PASSWORD = "keystorePassword";
-  public static final String PROPERTY_KEYSTORE_KEY_ALGORITHM = "keystoreKeyAlgorithm";
-  public static final String PROPERTY_TRUSTSTORE_FILE = "trustStoreFile";
-  public static final String PROPERTY_TRUSTSTORE_TYPE = "trustStoreType";
-  public static final String PROPERTY_TRUSTSTORE_PASSWORD = "trustStorePassword";
-  public static final String PROPERTY_TRUSTSTORE_KEY_ALGORITHM = "trustStoreKeyAlgorithm";
-  public static final String PROPERTY_TRANSPORT_PROTOCOLS = "transportProtocols";
-  public static final String PROPERTY_CIPHER_SUITES = "cipherSuites";
-  public static final String PROPERTY_SCHEMA = "schema";
-
-  public static final String PROPERTY_KEYSTORE_CERT_ALIAS = "keystoreCertAlias";
-
   public static final String PAGINATION_INDEX_PLACEHOLDER_REGEX = "\\{pagination.index\\}";
   public static final String PAGINATION_INDEX_PLACEHOLDER = "{pagination.index}";
 
-  @Name(PROPERTY_URL)
+  @Name(HttpConstants.PROPERTY_URL)
   @Description("Url to fetch to the first page. The url must start with a protocol (e.g. http://).")
   @Macro
   protected String url;
 
-  @Name(PROPERTY_HTTP_METHOD)
+  @Name(HttpConstants.PROPERTY_HTTP_METHOD)
   @Description("HTTP request method.")
   @Macro
   protected String httpMethod;
 
-  @Name(PROPERTY_HEADERS)
+  @Name(HttpConstants.PROPERTY_HEADERS)
   @Nullable
   @Description("Headers to send with each HTTP request.")
   @Macro
   protected String headers;
 
   @Nullable
-  @Name(PROPERTY_REQUEST_BODY)
+  @Name(HttpConstants.PROPERTY_REQUEST_BODY)
   @Description("Body to send with each HTTP request.")
   @Macro
   protected String requestBody;
@@ -155,48 +120,48 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig impleme
   protected String csvSkipFirstRow;
 
   @Nullable
-  @Name(PROPERTY_USERNAME)
+  @Name(HttpConstants.PROPERTY_USERNAME)
   @Description("Username for basic authentication.")
   @Macro
   protected String username;
 
   @Nullable
-  @Name(PROPERTY_PASSWORD)
+  @Name(HttpConstants.PROPERTY_PASSWORD)
   @Description("Password for basic authentication.")
   @Macro
   protected String password;
 
   @Nullable
-  @Name(PROPERTY_PROXY_URL)
+  @Name(HttpConstants.PROPERTY_PROXY_URL)
   @Description("Proxy URL. Must contain a protocol, address and port.")
   @Macro
   protected String proxyUrl;
 
   @Nullable
-  @Name(PROPERTY_PROXY_USERNAME)
+  @Name(HttpConstants.PROPERTY_PROXY_USERNAME)
   @Description("Proxy username.")
   @Macro
   protected String proxyUsername;
 
   @Nullable
-  @Name(PROPERTY_PROXY_PASSWORD)
+  @Name(HttpConstants.PROPERTY_PROXY_PASSWORD)
   @Description("Proxy password.")
   @Macro
   protected String proxyPassword;
 
   @Nullable
-  @Name(PROPERTY_HTTP_ERROR_HANDLING)
+  @Name(HttpConstants.PROPERTY_HTTP_ERROR_HANDLING)
   @Description("Defines the error handling strategy to use for certain HTTP response codes." +
     "The left column contains a regular expression for HTTP status code. The right column contains an action which" +
     "is done in case of match. If HTTP status code matches multiple regular expressions, " +
     "the first specified in mapping is matched.")
   protected String httpErrorsHandling;
 
-  @Name(PROPERTY_ERROR_HANDLING)
+  @Name(HttpConstants.PROPERTY_ERROR_HANDLING)
   @Description("Error handling strategy to use when the HTTP response cannot be transformed to an output record.")
   protected String errorHandling;
 
-  @Name(PROPERTY_RETRY_POLICY)
+  @Name(HttpConstants.PROPERTY_RETRY_POLICY)
   @Description("Policy used to calculate delay between retries.")
   protected String retryPolicy;
 
@@ -211,12 +176,12 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig impleme
   @Macro
   protected Long maxRetryDuration;
 
-  @Name(PROPERTY_CONNECT_TIMEOUT)
+  @Name(HttpConstants.PROPERTY_CONNECT_TIMEOUT)
   @Description("Maximum time in seconds connection initialization is allowed to take.")
   @Macro
   protected Integer connectTimeout;
 
-  @Name(PROPERTY_READ_TIMEOUT)
+  @Name(HttpConstants.PROPERTY_READ_TIMEOUT)
   @Description("Maximum time in seconds fetching data from the server is allowed to take.")
   @Macro
   protected Integer readTimeout;
@@ -278,47 +243,47 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig impleme
   @Macro
   protected Long waitTimeBetweenPages;
 
-  @Name(PROPERTY_OAUTH2_ENABLED)
+  @Name(HttpConstants.PROPERTY_OAUTH2_ENABLED)
   @Description("If true, plugin will perform OAuth2 authentication.")
   protected String oauth2Enabled;
 
   @Nullable
-  @Name(PROPERTY_AUTH_URL)
+  @Name(HttpConstants.PROPERTY_AUTH_URL)
   @Description("Endpoint for the authorization server used to retrieve the authorization code.")
   @Macro
   protected String authUrl;
 
   @Nullable
-  @Name(PROPERTY_TOKEN_URL)
+  @Name(HttpConstants.PROPERTY_TOKEN_URL)
   @Description("Endpoint for the resource server, which exchanges the authorization code for an access token.")
   @Macro
   protected String tokenUrl;
 
   @Nullable
-  @Name(PROPERTY_CLIENT_ID)
+  @Name(HttpConstants.PROPERTY_CLIENT_ID)
   @Description("Client identifier obtained during the Application registration process.")
   @Macro
   protected String clientId;
 
   @Nullable
-  @Name(PROPERTY_CLIENT_SECRET)
+  @Name(HttpConstants.PROPERTY_CLIENT_SECRET)
   @Description("Client secret obtained during the Application registration process.")
   @Macro
   protected String clientSecret;
 
   @Nullable
-  @Name(PROPERTY_SCOPES)
+  @Name(HttpConstants.PROPERTY_SCOPES)
   @Description("Scope of the access request, which might have multiple space-separated values.")
   @Macro
   protected String scopes;
 
   @Nullable
-  @Name(PROPERTY_REFRESH_TOKEN)
+  @Name(HttpConstants.PROPERTY_REFRESH_TOKEN)
   @Description("Token used to receive accessToken, which is end product of OAuth2.")
   @Macro
   protected String refreshToken;
 
-  @Name(PROPERTY_VERIFY_HTTPS)
+  @Name(HttpConstants.PROPERTY_VERIFY_HTTPS)
   @Description("If false, untrusted trust certificates (e.g. self signed), will not lead to an" +
     "error. Do not disable this in production environment on a network you do not entirely trust. " +
     "Especially public internet.")
@@ -326,73 +291,73 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig impleme
   protected String verifyHttps;
 
   @Nullable
-  @Name(PROPERTY_KEYSTORE_FILE)
+  @Name(HttpConstants.PROPERTY_KEYSTORE_FILE)
   @Description("A path to a file which contains keystore.")
   @Macro
   protected String keystoreFile;
 
   @Nullable
-  @Name(PROPERTY_KEYSTORE_TYPE)
+  @Name(HttpConstants.PROPERTY_KEYSTORE_TYPE)
   @Description("Format of a keystore.")
   @Macro
   protected String keystoreType;
 
   @Nullable
-  @Name(PROPERTY_KEYSTORE_PASSWORD)
+  @Name(HttpConstants.PROPERTY_KEYSTORE_PASSWORD)
   @Description("Password for a keystore. If a keystore is not password protected leave it empty.")
   @Macro
   protected String keystorePassword;
 
   @Nullable
-  @Name(PROPERTY_KEYSTORE_KEY_ALGORITHM)
+  @Name(HttpConstants.PROPERTY_KEYSTORE_KEY_ALGORITHM)
   @Description("An algorithm used for keystore.")
   @Macro
   protected String keystoreKeyAlgorithm;
 
   @Nullable
-  @Name(PROPERTY_TRUSTSTORE_FILE)
+  @Name(HttpConstants.PROPERTY_TRUSTSTORE_FILE)
   @Description("A path to a file which contains truststore.")
   @Macro
   protected String trustStoreFile;
 
   @Nullable
-  @Name(PROPERTY_TRUSTSTORE_TYPE)
+  @Name(HttpConstants.PROPERTY_TRUSTSTORE_TYPE)
   @Description("Format of a truststore.")
   @Macro
   protected String trustStoreType;
 
   @Nullable
-  @Name(PROPERTY_TRUSTSTORE_PASSWORD)
+  @Name(HttpConstants.PROPERTY_TRUSTSTORE_PASSWORD)
   @Description("Password for a truststore. If a truststore is not password protected leave it empty.")
   @Macro
   protected String trustStorePassword;
 
   @Nullable
-  @Name(PROPERTY_TRUSTSTORE_KEY_ALGORITHM)
+  @Name(HttpConstants.PROPERTY_TRUSTSTORE_KEY_ALGORITHM)
   @Description("An algorithm used for truststore.")
   @Macro
   protected String trustStoreKeyAlgorithm;
 
   @Nullable
-  @Name(PROPERTY_TRANSPORT_PROTOCOLS)
+  @Name(HttpConstants.PROPERTY_TRANSPORT_PROTOCOLS)
   @Description("Transport protocols which are allowed for connection.")
   @Macro
   protected String transportProtocols;
 
   @Nullable
-  @Name(PROPERTY_CIPHER_SUITES)
+  @Name(HttpConstants.PROPERTY_CIPHER_SUITES)
   @Description("Cipher suites which are allowed for connection. " +
     "Colons, commas or spaces are also acceptable separators.")
   @Macro
   protected String cipherSuites;
 
-  @Name(PROPERTY_SCHEMA)
+  @Name(HttpConstants.PROPERTY_SCHEMA)
   @Macro
   @Nullable
   @Description("Output schema. Is required to be set.")
   protected String schema;
 
-  @Name(PROPERTY_KEYSTORE_CERT_ALIAS)
+  @Name(HttpConstants.PROPERTY_KEYSTORE_CERT_ALIAS)
   @Macro
   @Nullable
   @Description("Alias of the key in the keystore to be used for communication")
@@ -469,11 +434,11 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig impleme
   }
 
   public ErrorHandling getErrorHandling() {
-    return getEnumValueByString(ErrorHandling.class, errorHandling, PROPERTY_ERROR_HANDLING);
+    return getEnumValueByString(ErrorHandling.class, errorHandling, HttpConstants.PROPERTY_ERROR_HANDLING);
   }
 
   public RetryPolicy getRetryPolicy() {
-    return getEnumValueByString(RetryPolicy.class, retryPolicy, PROPERTY_RETRY_POLICY);
+    return getEnumValueByString(RetryPolicy.class, retryPolicy, HttpConstants.PROPERTY_RETRY_POLICY);
   }
 
   @Nullable
@@ -582,7 +547,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig impleme
 
   @Nullable
   public KeyStoreType getKeystoreType() {
-    return getEnumValueByString(KeyStoreType.class, keystoreType, PROPERTY_KEYSTORE_TYPE);
+    return getEnumValueByString(KeyStoreType.class, keystoreType, HttpConstants.PROPERTY_KEYSTORE_TYPE);
   }
 
   @Nullable
@@ -602,7 +567,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig impleme
 
   @Nullable
   public KeyStoreType getTrustStoreType() {
-    return getEnumValueByString(KeyStoreType.class, trustStoreType, PROPERTY_TRUSTSTORE_TYPE);
+    return getEnumValueByString(KeyStoreType.class, trustStoreType, HttpConstants.PROPERTY_TRUSTSTORE_TYPE);
   }
 
   @Nullable
@@ -631,7 +596,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig impleme
       return Strings.isNullOrEmpty(schema) ? null : Schema.parseJson(schema);
     } catch (IOException e) {
       throw new InvalidConfigPropertyException("Unable to parse output schema: " +
-                                                 schema, e, PROPERTY_SCHEMA);
+                                                 schema, e, HttpConstants.PROPERTY_SCHEMA);
     }
   }
 
@@ -654,12 +619,13 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig impleme
       try {
         results.add(new HttpErrorHandlerEntity(Pattern.compile(regex),
                    getEnumValueByString(RetryableErrorHandling.class,
-                                        entry.getValue(), PROPERTY_HTTP_ERROR_HANDLING)));
+                                        entry.getValue(), HttpConstants.PROPERTY_HTTP_ERROR_HANDLING)));
       } catch (PatternSyntaxException e) {
         // We embed causing exception message into this one. Since this message is shown on UI when validation fails.
         throw new InvalidConfigPropertyException(
-          String.format(
-            "Error handling regex '%s' is not valid. %s", regex, e.getMessage()), PROPERTY_HTTP_ERROR_HANDLING);
+          String.format("Error handling regex '%s' is not valid. %s", regex, e.getMessage()),
+                HttpConstants.PROPERTY_HTTP_ERROR_HANDLING
+        );
       }
     }
     return results;
@@ -685,18 +651,18 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig impleme
 
   public void validate() {
     // Validate URL
-    if (!containsMacro(PROPERTY_URL)) {
+    if (!containsMacro(HttpConstants.PROPERTY_URL)) {
       try {
         // replace with placeholder with anything just during pagination
         new URI(getUrl().replaceAll(PAGINATION_INDEX_PLACEHOLDER_REGEX, "0"));
       } catch (URISyntaxException e) {
         throw new InvalidConfigPropertyException(
-          String.format("URL value is not valid: '%s'", getUrl()), e, PROPERTY_URL);
+          String.format("URL value is not valid: '%s'", getUrl()), e, HttpConstants.PROPERTY_URL);
       }
     }
 
     // Validate HTTP Error Handling Map
-    if (!containsMacro(PROPERTY_HTTP_ERROR_HANDLING)) {
+    if (!containsMacro(HttpConstants.PROPERTY_HTTP_ERROR_HANDLING)) {
       List<HttpErrorHandlerEntity> httpErrorsHandlingEntries = getHttpErrorHandlingEntries();
       boolean supportsSkippingPages = PaginationIteratorFactory
         .createInstance(this, null).supportsSkippingPages();
@@ -708,7 +674,8 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig impleme
             postRetryStrategy.equals(ErrorHandling.SKIP)) {
             throw new InvalidConfigPropertyException(
               String.format("Error handling strategy '%s' is not support in combination with pagination type",
-                            httpErrorsHandlingEntry.getStrategy(), getPaginationType()), PROPERTY_HTTP_ERROR_HANDLING);
+                            httpErrorsHandlingEntry.getStrategy(), getPaginationType()
+              ), HttpConstants.PROPERTY_HTTP_ERROR_HANDLING);
           }
         }
       }
@@ -716,7 +683,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig impleme
 
 
     // Validate Linear Retry Interval
-    if (!containsMacro(PROPERTY_RETRY_POLICY) && getRetryPolicy() == RetryPolicy.LINEAR) {
+    if (!containsMacro(HttpConstants.PROPERTY_RETRY_POLICY) && getRetryPolicy() == RetryPolicy.LINEAR) {
       assertIsSet(getLinearRetryInterval(), PROPERTY_LINEAR_RETRY_INTERVAL, "retry policy is linear");
     }
 
@@ -758,7 +725,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig impleme
             throw new InvalidConfigPropertyException(
               String.format("Url '%s' must contain '%s' placeholder when pagination type is '%s'", getUrl(),
                             PAGINATION_INDEX_PLACEHOLDER, getPaginationType()),
-              PROPERTY_URL);
+                    HttpConstants.PROPERTY_URL);
           }
           break;
         case CUSTOM:
@@ -798,18 +765,21 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig impleme
     }
 
     // Validate OAuth2 properties
-    if (!containsMacro(PROPERTY_OAUTH2_ENABLED) && this.getOauth2Enabled()) {
+    if (!containsMacro(HttpConstants.PROPERTY_OAUTH2_ENABLED) && this.getOauth2Enabled()) {
       String reasonOauth2 = "OAuth2 is enabled";
-      assertIsSet(getAuthUrl(), PROPERTY_AUTH_URL, reasonOauth2);
-      assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
-      assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
-      assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
-      assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
+      assertIsSet(getAuthUrl(), HttpConstants.PROPERTY_AUTH_URL, reasonOauth2);
+      assertIsSet(getTokenUrl(), HttpConstants.PROPERTY_TOKEN_URL, reasonOauth2);
+      assertIsSet(getClientId(), HttpConstants.PROPERTY_CLIENT_ID, reasonOauth2);
+      assertIsSet(getClientSecret(), HttpConstants.PROPERTY_CLIENT_SECRET, reasonOauth2);
+      assertIsSet(getRefreshToken(), HttpConstants.PROPERTY_REFRESH_TOKEN, reasonOauth2);
     }
 
-    if (!containsMacro(PROPERTY_VERIFY_HTTPS) && !getVerifyHttps()) {
-      assertIsNotSet(getTrustStoreFile(), PROPERTY_TRUSTSTORE_FILE,
-                     String.format("trustore settings are ignored due to disabled %s", PROPERTY_VERIFY_HTTPS));
+    if (!containsMacro(HttpConstants.PROPERTY_VERIFY_HTTPS) && !getVerifyHttps()) {
+      assertIsNotSet(
+              getTrustStoreFile(),
+              HttpConstants.PROPERTY_TRUSTSTORE_FILE,
+              String.format("trustore settings are ignored due to disabled %s", HttpConstants.PROPERTY_VERIFY_HTTPS)
+      );
     }
   }
 

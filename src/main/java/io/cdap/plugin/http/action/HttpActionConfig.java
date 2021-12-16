@@ -24,15 +24,18 @@ import io.cdap.plugin.http.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.common.RetryPolicy;
 import io.cdap.plugin.http.common.error.ErrorHandling;
 import io.cdap.plugin.http.common.error.HttpErrorHandlerEntity;
+import io.cdap.plugin.http.common.error.RetryableErrorHandling;
 import io.cdap.plugin.http.common.http.HttpConstants;
 import io.cdap.plugin.http.common.http.IHttpConfig;
 import io.cdap.plugin.http.common.http.KeyStoreType;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import javax.annotation.Nullable;
 
@@ -40,10 +43,6 @@ import javax.annotation.Nullable;
  * Http Action plugin Config
  */
 public class HttpActionConfig extends PluginConfig implements IHttpConfig {
-
-  @Name("alwaysHidden")
-  @Description("")
-  protected String alwaysHidden;
 
   @Name(HttpConstants.PROPERTY_URL)
   @Description("Url to fetch to the first page. The url must start with a protocol (e.g. http://).")
@@ -297,7 +296,24 @@ public class HttpActionConfig extends PluginConfig implements IHttpConfig {
 
   @Override
   public List<HttpErrorHandlerEntity> getHttpErrorHandlingEntries() {
-    return Collections.emptyList();
+    Map<String, String> httpErrorsHandlingMap = BaseHttpSourceConfig.getMapFromKeyValueString(httpErrorsHandling);
+    List<HttpErrorHandlerEntity> results = new ArrayList<>(httpErrorsHandlingMap.size());
+
+    for (Map.Entry<String, String> entry : httpErrorsHandlingMap.entrySet()) {
+      String regex = entry.getKey();
+      try {
+        results.add(new HttpErrorHandlerEntity(Pattern.compile(regex),
+                BaseHttpSourceConfig.getEnumValueByString(RetryableErrorHandling.class,
+                        entry.getValue(), HttpConstants.PROPERTY_HTTP_ERROR_HANDLING)));
+      } catch (PatternSyntaxException e) {
+        // We embed causing exception message into this one. Since this message is shown on UI when validation fails.
+        throw new InvalidConfigPropertyException(
+                String.format("Error handling regex '%s' is not valid. %s", regex, e.getMessage()),
+                HttpConstants.PROPERTY_HTTP_ERROR_HANDLING
+        );
+      }
+    }
+    return results;
   }
 
   @Override

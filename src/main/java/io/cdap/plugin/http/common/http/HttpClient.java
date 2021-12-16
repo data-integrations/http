@@ -96,29 +96,31 @@ public class HttpClient implements Closeable {
     httpClientBuilder.setSSLSocketFactory(new SSLConnectionSocketFactoryCreator(config).create());
 
     // set timeouts
-    Long connectTimeoutMillis = TimeUnit.SECONDS.toMillis(config.getConnectTimeout());
-    Long readTimeoutMillis = TimeUnit.SECONDS.toMillis(config.getReadTimeout());
+    int connectTimeoutMillis = (int) TimeUnit.SECONDS.toMillis(config.getConnectTimeout());
+    int readTimeoutMillis = (int) TimeUnit.SECONDS.toMillis(config.getReadTimeout());
     RequestConfig.Builder requestBuilder = RequestConfig.custom();
-    requestBuilder.setSocketTimeout(readTimeoutMillis.intValue());
-    requestBuilder.setConnectTimeout(connectTimeoutMillis.intValue());
-    requestBuilder.setConnectionRequestTimeout(connectTimeoutMillis.intValue());
+    requestBuilder.setSocketTimeout(readTimeoutMillis);
+    requestBuilder.setConnectTimeout(connectTimeoutMillis);
+    requestBuilder.setConnectionRequestTimeout(connectTimeoutMillis);
     httpClientBuilder.setDefaultRequestConfig(requestBuilder.build());
 
     // basic auth
     CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
     if (!Strings.isNullOrEmpty(config.getUsername()) && !Strings.isNullOrEmpty(config.getPassword())) {
-      AuthScope authScope = new AuthScope(HttpHost.create(config.getUrl()));
-      credentialsProvider.setCredentials(authScope,
-                                         new UsernamePasswordCredentials(config.getUsername(), config.getPassword()));
+      credentialsProvider.setCredentials(
+        new AuthScope(HttpHost.create(config.getUrl())),
+        new UsernamePasswordCredentials(config.getUsername(), config.getPassword())
+      );
     }
 
     // proxy and proxy auth
     if (!Strings.isNullOrEmpty(config.getProxyUrl())) {
       HttpHost proxyHost = HttpHost.create(config.getProxyUrl());
       if (!Strings.isNullOrEmpty(config.getProxyUsername()) && !Strings.isNullOrEmpty(config.getProxyPassword())) {
-        credentialsProvider.setCredentials(new AuthScope(proxyHost),
-                                           new UsernamePasswordCredentials(
-                                             config.getProxyUsername(), config.getProxyPassword()));
+        credentialsProvider.setCredentials(
+          new AuthScope(proxyHost),
+          new UsernamePasswordCredentials(config.getProxyUsername(), config.getProxyPassword())
+        );
       }
       httpClientBuilder.setProxy(proxyHost);
     }

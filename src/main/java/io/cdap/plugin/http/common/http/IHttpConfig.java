@@ -23,7 +23,7 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 /**
- * Interface for the HTTP Plugin Config
+ * Interface for the HTTP Plugins Config
  */
 public interface IHttpConfig {
 
