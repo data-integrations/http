@@ -80,7 +80,7 @@ public abstract class BaseHttpBatchSourceETLTest extends HydratorTestBase {
     // this will make our plugins available.
     addPluginArtifact(NamespaceId.DEFAULT.artifact("example-plugins", "1.0.0"),
                       parentArtifact,
-                      HttpBatchSource.class);qqq
+                      HttpBatchSource.class);
   }
 
   public List<StructuredRecord> getPipelineResults(Map<String, String> sourceProperties) throws Exception {
