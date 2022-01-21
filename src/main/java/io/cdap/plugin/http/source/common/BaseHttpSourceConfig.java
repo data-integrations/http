@@ -683,7 +683,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     }
 
     // Validate HTTP Error Handling Map
-    if (!containsMacro(PROPERTY_HTTP_ERROR_HANDLING)) {
+    if (!containsMacro(PROPERTY_HTTP_ERROR_HANDLING) && !containsMacro(PROPERTY_URL)) {
       List<HttpErrorHandlerEntity> httpErrorsHandlingEntries = getHttpErrorHandlingEntries();
       boolean supportsSkippingPages = PaginationIteratorFactory
         .createInstance(this, null).supportsSkippingPages();
@@ -741,7 +741,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
                                         propertiesShouldBeNull.remove(PROPERTY_INDEX_INCREMENT));
           propertiesShouldBeNull.remove(PROPERTY_MAX_INDEX); // can be both null and non null
 
-          if (!url.contains(PAGINATION_INDEX_PLACEHOLDER)) {
+          if (!containsMacro(PROPERTY_URL) && !url.contains(PAGINATION_INDEX_PLACEHOLDER)) {
             throw new InvalidConfigPropertyException(
               String.format("Url '%s' must contain '%s' placeholder when pagination type is '%s'", getUrl(),
                             PAGINATION_INDEX_PLACEHOLDER, getPaginationType()),
