@@ -24,16 +24,16 @@ The url must start with a protocol (e.g. http://).
 
 ### Format
 
-**Format:** Format of the HTTP response. This determines how the response is converted into output records. Possible values are:<br>
+**Format:** Format of the HTTP response. This determines how the response is converted into output records. Possible values are:  
 JSON - retrieves all records from the given json path
-and transforms them into records according to the mapping.<br>
+and transforms them into records according to the mapping.  
 XML - retrieves all records from the given XPath
-and transforms them into records according to the mapping.<br>
+and transforms them into records according to the mapping.  
 TSV - tab separated values. Columns are mapped to record fields in the order they are
-listed in schema.<br>
+listed in schema.  
 CSV - comma separated values. Columns are mapped to record fields in the order they are
-listed in schema.<br>
-Text - transforms a single line of text into a single record with a string field `body` containing the result.<br>
+listed in schema.  
+Text - transforms a single line of text into a single record with a string field `body` containing the result.  
 BLOB - transforms the entire response into a single record with a byte array field `body` containing the result.
 
 **JSON/XML Result Path:** Path to the results. When the format is XML, this is an XPath. When the format is JSON, this is a JSON path.
@@ -199,7 +199,7 @@ The result records are:
 
 Note, that field `key` was mapped without being included into the mapping. Mapping entries like `key: /key`
 can be omitted as long as the field is present in schema.
-<br>
+  
 
 **CSV Skip First Row:** Whether to skip the first row of the HTTP response. This is usually set if the first row is a header row.
 
@@ -238,9 +238,9 @@ Note: pagination types "Link in response header", "Link in response body", "Toke
 "Send to error", "Skip", "Retry and send to error", "Retry and skip" options.
 
 **Non-HTTP Error Handling:** Error handling strategy to use when the HTTP response cannot be transformed to an output record.
-Possible values are:<br>
-Stop on error - Fails pipeline due to erroneous record.<br>
-Send to error - Sends erroneous record's text to error port and continues.<br>
+Possible values are:  
+Stop on error - Fails pipeline due to erroneous record.  
+Send to error - Sends erroneous record's text to error port and continues.  
 Skip on error - Ignores erroneous records.
 
 **Retry Policy:** Policy used to calculate delay between retries.
@@ -257,20 +257,19 @@ Skip on error - Ignores erroneous records.
 
 **Pagination Type:** Strategy used to determine how to get next page.
 
-**Wait Time Between Pages:** Time in milliseconds to wait between HTTP requests for the next page.
-<br><br>
+**Wait Time Between Pages:** Time in milliseconds to wait between HTTP requests for the next page.  
 
 ##### Pagination type: None
 Only single page is loaded.
-<br>
+  
 ##### Pagination type: Link in response header
-In response there is a "Link" header, which contains an url marked as "next". Example:<br>
+In response there is a "Link" header, which contains an url marked as "next". Example:  
 ```
 <http://example.cdap.io/admin/api/pages?page=1&q.language.id=1>; rel="first",
 <http://example.cdap.io/admin/api/pages?page=2&q.language.id=1>; rel="next",
 <http://example.cdap.io/admin/api/pages?page=2&q.language.id=1>; rel="last"`
 ```
-<br>
+  
 
 ##### Pagination type: Link in response body
 Every page contains a next page url. This pagination type is only supported for JSON and XML formats.
@@ -294,7 +293,7 @@ Example page response:
 }
 ```
 Next page field path is `_links/next`.
-<br>
+  
 ##### Pagination type: Token in response body
 Every page contains a token, which is appended as an url parameter to obtain next page.
 This type of pagination is only supported for JSON and XML formats. Pagination happens until no next page
@@ -329,7 +328,7 @@ First page response:
 }
 ```
 Next page fetched by plugin will be url with `&pageToken=CAEQAA` appended.
-<br>
+  
 ##### Pagination type: Increment an index
 Pagination by incrementing a {pagination.index} placeholder value in url. For this pagination type url is required
 to contain above placeholder.
@@ -340,7 +339,7 @@ to contain above placeholder.
 no elements.
 
 **Index Increment:** A value which the {pagination.index} placeholder is incremented by. Increment can be negative.
-<br>
+  
 ##### Pagination type: Custom
 Pagination using user provided code. The code decides how to retrieve a next page url based on previous page contents
 and headers and when to finish pagination.
