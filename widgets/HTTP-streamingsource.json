@@ -427,6 +427,11 @@
         },
         {
           "widget-type": "textbox",
+          "label": "Keystore Cert Alias",
+          "name": "keystoreCertAlias"
+        },
+        {
+          "widget-type": "textbox",
           "label": "TrustStore File",
           "name": "trustStoreFile"
         },

@@ -59,6 +59,7 @@ public class SSLConnectionSocketFactoryCreator {
       SSLContext sslContext = SSLContext.getInstance("TLS"); // "TLS" means rely system properties
       sslContext.init(getKeyManagers(), getTrustManagers(), null);
 
+
       return new SSLConnectionSocketFactory(sslContext, config.getTransportProtocolsList().toArray(new String[0]),
                                             cipherSuites, SSLConnectionSocketFactory.getDefaultHostnameVerifier());
     } catch (KeyManagementException | CertificateException | NoSuchAlgorithmException | KeyStoreException
@@ -70,27 +71,30 @@ public class SSLConnectionSocketFactoryCreator {
   private KeyManager[] getKeyManagers() throws CertificateException, NoSuchAlgorithmException,
     KeyStoreException, IOException, UnrecoverableKeyException {
 
-    KeyStore keystore = loadKeystore(config.getKeystoreFile(), config.getKeystoreType().name(),
-                                     config.getKeystorePassword());
-
     String keyStorePassword = config.getKeystorePassword();
+    KeyStore keystore = loadKeystore(config.getKeystoreFile(), config.getKeystoreType().name(), keyStorePassword);
 
     // we have to manually fall back to default keystore. SSLContext won't provide such a functionality.
     if (keystore == null) {
       String keyStore = System.getProperty("javax.net.ssl.keyStore");
       String keyStoreType = System.getProperty("javax.net.ssl.keyStoreType", KeyStore.getDefaultType());
       keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword", "");
-
       keystore = loadKeystore(keyStore, keyStoreType, keyStorePassword);
     }
 
-    String keystoreAlgorithm =
-      (Strings.isNullOrEmpty(config.getKeystoreKeyAlgorithm())) ? KeyManagerFactory.getDefaultAlgorithm()
+    String keystoreAlgorithm = (Strings.isNullOrEmpty(config.getKeystoreKeyAlgorithm()))
+        ? KeyManagerFactory.getDefaultAlgorithm()
         : config.getKeystoreKeyAlgorithm();
+
     KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(keystoreAlgorithm);
-    char[] passwordArr = (keyStorePassword == null) ? null : keyStorePassword.toCharArray();
-    keyManagerFactory.init(keystore, passwordArr);
-    return keyManagerFactory.getKeyManagers();
+    keyManagerFactory.init(
+      keystore,
+      (keyStorePassword == null) ? null : keyStorePassword.toCharArray()
+    );
+
+    return (Strings.isNullOrEmpty(config.getKeystoreCertAliasName()))
+      ? keyManagerFactory.getKeyManagers()
+      : X509KeyManagerAliasWrapper.getKeyManagers(keyManagerFactory, config.getKeystoreCertAliasName());
   }
 
   private TrustManager[] getTrustManagers()
@@ -100,13 +104,17 @@ public class SSLConnectionSocketFactoryCreator {
       return new TrustManager[] { new TrustAllTrustManager() };
     }
 
-    KeyStore trustStore = loadKeystore(config.getTrustStoreFile(), config.getTrustStoreType().name(),
-                                       config.getTrustStorePassword());
+    KeyStore trustStore = loadKeystore(
+      config.getTrustStoreFile(),
+      config.getTrustStoreType().name(),
+      config.getTrustStorePassword()
+    );
+
     TrustManager[] trustManagers = null;
     if (trustStore != null) {
-      String trustStoreAlgorithm =
-        (Strings.isNullOrEmpty(config.getTrustStoreKeyAlgorithm())) ? TrustManagerFactory.getDefaultAlgorithm()
-          : config.getTrustStoreKeyAlgorithm();
+      String trustStoreAlgorithm = (Strings.isNullOrEmpty(config.getTrustStoreKeyAlgorithm()))
+        ? TrustManagerFactory.getDefaultAlgorithm()
+        : config.getTrustStoreKeyAlgorithm();
       TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(trustStoreAlgorithm);
       trustManagerFactory.init(trustStore);
       trustManagers = trustManagerFactory.getTrustManagers();
@@ -117,13 +125,15 @@ public class SSLConnectionSocketFactoryCreator {
   private static KeyStore loadKeystore(String keystoreFile, String type, String password)
     throws IOException, CertificateException, NoSuchAlgorithmException, KeyStoreException {
 
-    KeyStore keystore = null;
-    if (keystoreFile != null) {
-      keystore = KeyStore.getInstance(type);
-      char[] passwordArr = (password == null) ? null : password.toCharArray();
-      try (InputStream is = Files.newInputStream(Paths.get(keystoreFile))) {
-        keystore.load(is, passwordArr);
-      }
+    if (keystoreFile == null) {
+      return null;
+    }
+
+    KeyStore keystore = KeyStore.getInstance(type);
+    char[] passwordArr = (password == null) ? null : password.toCharArray();
+
+    try (InputStream is = Files.newInputStream(Paths.get(keystoreFile))) {
+      keystore.load(is, passwordArr);
     }
     return keystore;
   }

@@ -100,6 +100,8 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   public static final String PROPERTY_CIPHER_SUITES = "cipherSuites";
   public static final String PROPERTY_SCHEMA = "schema";
 
+  public static final String PROPERTY_KEYSTORE_CERT_ALIAS = "keystoreCertAlias";
+
   public static final String PAGINATION_INDEX_PLACEHOLDER_REGEX = "\\{pagination.index\\}";
   public static final String PAGINATION_INDEX_PLACEHOLDER = "{pagination.index}";
 
@@ -390,6 +392,12 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   @Description("Output schema. Is required to be set.")
   protected String schema;
 
+  @Name(PROPERTY_KEYSTORE_CERT_ALIAS)
+  @Macro
+  @Nullable
+  @Description("Alias of the key in the keystore to be used for communication")
+  protected String keystoreCertAliasName;
+
   protected BaseHttpSourceConfig(String referenceName) {
     super(referenceName);
   }
@@ -625,6 +633,11 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
       throw new InvalidConfigPropertyException("Unable to parse output schema: " +
                                                  schema, e, PROPERTY_SCHEMA);
     }
+  }
+
+  @Nullable
+  public String getKeystoreCertAliasName() {
+    return keystoreCertAliasName;
   }
 
   @Nullable
