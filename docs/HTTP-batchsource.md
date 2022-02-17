@@ -82,7 +82,7 @@ Json path to fetch books is `/response/books`. However if we need to fetch only 
 `/response/books/printInfo` as well.
 
 XPath example:
-```
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <bookstores>
   <bookstore id="1">
@@ -261,10 +261,10 @@ Skip on error - Ignores erroneous records.
 
 ##### Pagination type: None
 Only single page is loaded.
-  
+ 
 ##### Pagination type: Link in response header
-In response there is a "Link" header, which contains an url marked as "next". Example:  
-```
+In response there is a "Link" header, which contains an url marked as "next". Example:
+```xml
 <http://example.cdap.io/admin/api/pages?page=1&q.language.id=1>; rel="first",
 <http://example.cdap.io/admin/api/pages?page=2&q.language.id=1>; rel="next",
 <http://example.cdap.io/admin/api/pages?page=2&q.language.id=1>; rel="last"`
