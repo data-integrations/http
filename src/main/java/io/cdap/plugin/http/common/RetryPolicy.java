@@ -13,15 +13,28 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.cdap.plugin.http.source.batch;
-
-import io.cdap.plugin.http.common.BaseHttpSourceConfig;
+package io.cdap.plugin.http.common;
 
 /**
- * Provides all the configurations required for configuring the {@link HttpBatchSource} plugin.
+ * An enum which represents a retry policy.
  */
-public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
-  protected HttpBatchSourceConfig(String referenceName) {
-    super(referenceName);
+public enum RetryPolicy implements EnumWithValue {
+  LINEAR("linear"),
+  EXPONENTIAL("exponential");
+
+  private final String value;
+
+  RetryPolicy(String value) {
+    this.value = value;
+  }
+
+  @Override
+  public String getValue() {
+    return value;
+  }
+
+  @Override
+  public String toString() {
+    return this.getValue();
   }
 }

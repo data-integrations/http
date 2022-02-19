@@ -30,6 +30,8 @@ import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.batch.BatchSink;
 import io.cdap.cdap.etl.api.batch.BatchSinkContext;
 import io.cdap.cdap.format.StructuredRecordStringConverter;
+import io.cdap.plugin.http.common.http.HttpConstants;
+
 import org.apache.hadoop.mapreduce.lib.output.NullOutputFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +62,7 @@ import javax.net.ssl.X509TrustManager;
  * Sink plugin to send the messages from the pipeline to an external http endpoint.
  */
 @Plugin(type = BatchSink.PLUGIN_TYPE)
-@Name("HTTP")
+@Name(HttpConstants.HTTP_PLUGIN_NAME)
 @Description("Sink plugin to send the messages from the pipeline to an external http endpoint.")
 public class HTTPSink extends BatchSink<StructuredRecord, Void, Void> {
 

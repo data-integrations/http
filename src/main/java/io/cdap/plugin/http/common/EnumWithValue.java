@@ -13,15 +13,11 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.cdap.plugin.http.source.batch;
-
-import io.cdap.plugin.http.common.BaseHttpSourceConfig;
+package io.cdap.plugin.http.common;
 
 /**
- * Provides all the configurations required for configuring the {@link HttpBatchSource} plugin.
+ * Enum which has string values as a part of it.
  */
-public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
-  protected HttpBatchSourceConfig(String referenceName) {
-    super(referenceName);
-  }
+public interface EnumWithValue {
+  String getValue();
 }

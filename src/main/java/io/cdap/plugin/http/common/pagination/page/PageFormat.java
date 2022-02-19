@@ -13,15 +13,35 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.cdap.plugin.http.source.batch;
+package io.cdap.plugin.http.common.pagination.page;
 
-import io.cdap.plugin.http.common.BaseHttpSourceConfig;
+import io.cdap.plugin.http.common.EnumWithValue;
 
 /**
- * Provides all the configurations required for configuring the {@link HttpBatchSource} plugin.
+ * An enum which represent format of the page.
  */
-public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
-  protected HttpBatchSourceConfig(String referenceName) {
-    super(referenceName);
+public enum PageFormat implements EnumWithValue {
+
+  JSON("json"),
+  XML("xml"),
+  TSV("tsv"),
+  CSV("csv"),
+  TEXT("text"),
+  BLOB("blob");
+
+  private final String value;
+
+  PageFormat(String value) {
+    this.value = value;
+  }
+
+  @Override
+  public String getValue() {
+    return value;
+  }
+
+  @Override
+  public String toString() {
+    return this.getValue();
   }
 }

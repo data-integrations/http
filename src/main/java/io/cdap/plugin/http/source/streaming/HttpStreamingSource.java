@@ -26,7 +26,9 @@ import io.cdap.cdap.etl.api.streaming.StreamingContext;
 import io.cdap.cdap.etl.api.streaming.StreamingSource;
 import io.cdap.plugin.common.Constants;
 import io.cdap.plugin.common.IdUtils;
+import io.cdap.plugin.http.common.http.HttpConstants;
 import org.apache.spark.streaming.api.java.JavaDStream;
+
 import scala.reflect.ClassTag;
 import scala.reflect.ClassTag$;
 
@@ -35,10 +37,9 @@ import scala.reflect.ClassTag$;
  * For paginated APIs once the last page is reached it waits for the next pages.
  */
 @Plugin(type = StreamingSource.PLUGIN_TYPE)
-@Name(HttpStreamingSource.NAME)
+@Name(HttpConstants.HTTP_PLUGIN_NAME)
 @Description(HttpStreamingSource.DESCRIPTION)
 public class HttpStreamingSource extends StreamingSource<StructuredRecord> {
-  static final String NAME = "HTTP";
   static final String DESCRIPTION = "Read data from HTTP endpoint periodically waiting for updates";
   private HttpStreamingSourceConfig config;
 

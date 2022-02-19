@@ -19,7 +19,7 @@ package io.cdap.plugin.http.source.streaming;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
-import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
+import io.cdap.plugin.http.common.BaseHttpSourceConfig;
 
 import javax.annotation.Nullable;
 

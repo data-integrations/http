@@ -8,11 +8,6 @@
       "properties": [
         {
           "widget-type": "textbox",
-          "label": "Reference Name",
-          "name": "referenceName"
-        },
-        {
-          "widget-type": "textbox",
           "label": "URL",
           "name": "url"
         },
@@ -45,59 +40,6 @@
           "label": "Request Body",
           "widget-attributes": {
             "rows": "5"
-          }
-        }
-      ]
-    },
-    {
-      "label": "Format",
-      "properties": [
-        {
-          "widget-type": "select",
-          "label": "Format",
-          "name": "format",
-          "widget-attributes": {
-            "values": [
-              "json",
-              "xml",
-              "tsv",
-              "csv",
-              "text",
-              "blob"
-            ],
-            "default": "json"
-          }
-        },
-        {
-          "widget-type": "textbox",
-          "label": "JSON/XML Result Path",
-          "name": "resultPath"
-        },
-        {
-          "widget-type": "keyvalue",
-          "label": "JSON/XML Fields Mapping",
-          "name": "fieldsMapping",
-          "widget-attributes": {
-            "showDelimiter": "false"
-          }
-        },
-        {
-          "widget-type": "radio-group",
-          "label": "CSV Skip First Row",
-          "name": "csvSkipFirstRow",
-          "widget-attributes": {
-            "layout": "inline",
-            "default": "false",
-            "options": [
-              {
-                "id": "true",
-                "label": "true"
-              },
-              {
-                "id": "false",
-                "label": "false"
-              }
-            ]
           }
         }
       ]
@@ -200,12 +142,7 @@
             "showDelimiter": "false",
             "dropdownOptions": [
               "Success",
-              "Fail",
-              "Skip",
-              "Send to error",
-              "Retry and fail",
-              "Retry and skip",
-              "Retry and send to error"
+              "Fail"
             ],
             "key-placeholder": "HTTP Status Code Regex"
           }
@@ -221,53 +158,8 @@
               {
                 "id": "stopOnError",
                 "label": "Stop on error"
-              },
-              {
-                "id": "sendToError",
-                "label": "Send to error"
-              },
-              {
-                "id": "skipOnError",
-                "label": "Skip on error"
               }
             ]
-          }
-        },
-        {
-          "widget-type": "radio-group",
-          "label": "Retry Policy",
-          "name": "retryPolicy",
-          "widget-attributes": {
-            "layout": "inline",
-            "default": "exponential",
-            "options": [
-              {
-                "id": "exponential",
-                "label": "Exponential"
-              },
-              {
-                "id": "linear",
-                "label": "Linear"
-              }
-            ]
-          }
-        },
-        {
-          "widget-type": "number",
-          "label": "Linear Retry Interval",
-          "name": "linearRetryInterval",
-          "widget-attributes": {
-            "min": "0",
-            "default": "30"
-          }
-        },
-        {
-          "widget-type": "number",
-          "label": "Max Retry Duration",
-          "name": "maxRetryDuration",
-          "widget-attributes": {
-            "min": "0",
-            "default": "600"
           }
         },
         {
@@ -286,92 +178,6 @@
           "widget-attributes": {
             "min": "0",
             "default": "120"
-          }
-        }
-      ]
-    },
-    {
-      "label": "Pagination",
-      "properties": [
-        {
-          "widget-type": "select",
-          "label": "Pagination Type",
-          "name": "paginationType",
-          "widget-attributes": {
-            "values": [
-              "None",
-              "Link in response header",
-              "Link in response body",
-              "Token in response body",
-              "Increment an index",
-              "Custom"
-            ],
-            "default": "None"
-          }
-        },
-        {
-          "widget-type": "textbox",
-          "label": "Start Index",
-          "name": "startIndex",
-          "widget-attributes": {
-            "placeholder": "For pagination type \"Increment an index\""
-          }
-        },
-        {
-          "widget-type": "textbox",
-          "label": "Max Index",
-          "name": "maxIndex",
-          "widget-attributes": {
-            "placeholder": "For pagination type \"Increment an index\""
-          }
-        },
-        {
-          "widget-type": "textbox",
-          "label": "Index Increment",
-          "name": "indexIncrement",
-          "widget-attributes": {
-            "placeholder": "For pagination type \"Increment an index\""
-          }
-        },
-        {
-          "widget-type": "textbox",
-          "label": "Next Page JSON/XML Field Path",
-          "name": "nextPageFieldPath",
-          "widget-attributes": {
-            "placeholder": "For pagination type \"Link in response body\""
-          }
-        },
-        {
-          "widget-type": "textbox",
-          "label": "Next Page Token Path",
-          "name": "nextPageTokenPath",
-          "widget-attributes": {
-            "placeholder": "For pagination type \"Token in response body\""
-          }
-        },
-        {
-          "widget-type": "textbox",
-          "label": "Next Page Url Parameter",
-          "name": "nextPageUrlParameter",
-          "widget-attributes": {
-            "placeholder": "For pagination type \"Token in response body\""
-          }
-        },
-        {
-          "widget-type": "python-editor",
-          "label": "Custom Pagination Python Code",
-          "name": "customPaginationCode",
-          "widget-attributes": {
-            "placeholder": "def get_next_page_url(url, page, headers):\n    \"\"\"\n    Based on previous page data generates next page url, when \"Custom pagination\" is enabled.\n    Returns 'None' if no more pages to load \n\n    Args:\n        url (string): previous page url\n        page (string): a body of previous page\n        headers (dict): a dictionary of headers from previous page\n\n    \"\"\"\n    return \"https://next-page-url.com\""
-          }
-        },
-        {
-          "widget-type": "number",
-          "label": "Wait Time Between Pages (milliseconds)",
-          "name": "waitTimeBetweenPages",
-          "widget-attributes": {
-            "min": "0",
-            "default": "0"
           }
         }
       ]
@@ -478,31 +284,6 @@
       ]
     }
   ],
-  "emit-errors": true,
-  "outputs": [
-    {
-      "name": "schema",
-      "label": "schema",
-      "widget-type": "schema",
-      "widget-attributes": {
-        "schema-types": [
-          "boolean",
-          "int",
-          "long",
-          "float",
-          "double",
-          "bytes",
-          "string",
-          "array",
-          "record",
-          "map",
-          "union"
-        ],
-        "schema-default-type": "string",
-        "property-watch": "format"
-      }
-    }
-  ],
   "filters": [
     {
       "name": "Proxy authentication",
@@ -517,88 +298,6 @@
         },
         {
           "name": "proxyPassword",
-          "type": "property"
-        }
-      ]
-    },
-    {
-      "name": "Increment an index",
-      "condition": {
-        "property": "paginationType",
-        "operator": "equal to",
-        "value": "Increment an index"
-      },
-      "show": [
-        {
-          "name": "startIndex",
-          "type": "property"
-        },
-        {
-          "name": "maxIndex",
-          "type": "property"
-        },
-        {
-          "name": "indexIncrement",
-          "type": "property"
-        }
-      ]
-    },
-    {
-      "name": "Token in Response Body",
-      "condition": {
-        "property": "paginationType",
-        "operator": "equal to",
-        "value": "Token in response body"
-      },
-      "show": [
-        {
-          "name": "nextPageTokenPath",
-          "type": "property"
-        },
-        {
-          "name": "nextPageUrlParameter",
-          "type": "property"
-        }
-      ]
-    },
-    {
-      "name": "Link in response body",
-      "condition": {
-        "property": "paginationType",
-        "operator": "equal to",
-        "value": "Link in response body"
-      },
-      "show": [
-        {
-          "name": "nextPageFieldPath",
-          "type": "property"
-        }
-      ]
-    },
-    {
-      "name": "Custom pagination",
-      "condition": {
-        "property": "paginationType",
-        "operator": "equal to",
-        "value": "Custom"
-      },
-      "show": [
-        {
-          "name": "customPaginationCode",
-          "type": "property"
-        }
-      ]
-    },
-    {
-      "name": "Pagination none",
-      "condition": {
-        "property": "paginationType",
-        "operator": "equal to",
-        "value": "None"
-      },
-      "show": [
-        {
-          "name": "waitTimeBetweenPages",
           "type": "property"
         }
       ]
@@ -656,31 +355,27 @@
       ]
     },
     {
-      "name": "JSON/XML Formatting",
+      "name": "SSL HTTPS Verification",
       "condition": {
-        "expression": "format == 'json' || format == 'xml'"
+        "property": "verifyHttps",
+        "operator": "equal to",
+        "value": "true"
       },
       "show": [
         {
-          "name": "resultPath",
+          "name": "trustStoreFile",
           "type": "property"
         },
         {
-          "name": "fieldsMapping",
+          "name": "trustStoreType",
           "type": "property"
-        }
-      ]
-    },
-    {
-      "name": "CSV Formatting",
-      "condition": {
-        "property": "format",
-        "operator": "equal to",
-        "value": "csv"
-      },
-      "show": [
+        },
         {
-          "name": "csvSkipFirstRow",
+          "name": "trustStorePassword",
+          "type": "property"
+        },
+        {
+          "name": "trustStoreKeyAlgorithm",
           "type": "property"
         }
       ]

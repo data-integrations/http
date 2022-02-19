@@ -13,15 +13,13 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.cdap.plugin.http.source.batch;
 
-import io.cdap.plugin.http.common.BaseHttpSourceConfig;
+package io.cdap.plugin.http.common.pagination.state;
+
+import java.io.Serializable;
 
 /**
- * Provides all the configurations required for configuring the {@link HttpBatchSource} plugin.
+ * A marker interface for objects which carry state of PaginationIterator
  */
-public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
-  protected HttpBatchSourceConfig(String referenceName) {
-    super(referenceName);
-  }
+public interface PaginationIteratorState extends Serializable {
 }

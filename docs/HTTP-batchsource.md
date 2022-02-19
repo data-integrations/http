@@ -402,6 +402,20 @@ error. Do not disable this in production environment on a network you do not ent
 
 **Keystore Key Algorithm:** An algorithm used for keystore.
 
+**Keystore Cert Alias**
+
+ Alias of the key in the keystore to be used for communication. This options is supported only by X.509 keys or keystores.
+ 
+Below is an example how the store need to be prepared:
+ ```
+ cat  client.crt client.key > client-bundle.pem
+
+ openssl pkcs12 -export -in client-bundle.pem -out full-chain.keycert.p12 -name ${CERT_ALIAS}
+
+ keytool -importkeystore -srckeystore full-chain.keycert.p12 -srcstoretype pkcs12 -srcalias ${CERT_ALIAS} \
+                         -destkeystore identity.jks -deststoretype jks -destalias ${CERT_ALIAS}
+ ```
+
 **TrustStore File:** A path to a file which contains truststore.
 
 **TrustStore Type:** Format of a truststore.
