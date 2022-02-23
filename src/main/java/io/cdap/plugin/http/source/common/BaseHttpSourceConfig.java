@@ -870,6 +870,9 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     String[] mappings = keyValueString.split(",");
     for (String map : mappings) {
       String[] columns = map.split(":");
+      if (columns.length < 2) { //For scenario where either of key or value not provided
+        throw new IllegalArgumentException(String.format("Missing value for key %s", columns[0]));
+      }
       result.put(columns[0], columns[1]);
     }
     return result;
