@@ -333,6 +333,7 @@ public class PaginationIteratorTest {
       this.url = "";
       this.httpMethod = "GET";
       this.oauth2Enabled = "false";
+      this.serviceAccountEnabled = "false";
       this.httpErrorsHandling = "2..:Success,.*:Fail";
       this.retryPolicy = "linear";
       this.maxRetryDuration = 10L;

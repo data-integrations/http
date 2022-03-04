@@ -87,6 +87,9 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   public static final String PROPERTY_CLIENT_SECRET = "clientSecret";
   public static final String PROPERTY_SCOPES = "scopes";
   public static final String PROPERTY_REFRESH_TOKEN = "refreshToken";
+  public static final String PROPERTY_SERVICE_ACCOUNT_ENABLED = "serviceAccountEnabled";
+  public static final String PROPERTY_SERVICE_ACCOUNT_JSON = "serviceAccountJson";
+  public static final String PROPERTY_SERVICE_ACCOUNT_SCOPE = "serviceAccountScope";
   public static final String PROPERTY_VERIFY_HTTPS = "verifyHttps";
   public static final String PROPERTY_KEYSTORE_FILE = "keystoreFile";
   public static final String PROPERTY_KEYSTORE_TYPE = "keystoreType";
@@ -316,6 +319,23 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   @Macro
   protected String refreshToken;
 
+  @Name(PROPERTY_SERVICE_ACCOUNT_ENABLED)
+  @Description("If true, plugin will use service account key to perform oauth2 authentication.")
+  protected String serviceAccountEnabled;
+
+  @Nullable
+  @Name(PROPERTY_SERVICE_ACCOUNT_JSON)
+  @Description("Json key file content for OAuth2 with service account.")
+  @Macro
+  protected String serviceAccountJson;
+
+  @Nullable
+  @Name(PROPERTY_SERVICE_ACCOUNT_SCOPE)
+  @Description("Scope used when using a service account json key file. " +
+               "Defaults to https://www.googleapis.com/auth/cloud-platform")
+  @Macro
+  protected String serviceAccountScope;
+
   @Name(PROPERTY_VERIFY_HTTPS)
   @Description("If false, untrusted trust certificates (e.g. self signed), will not lead to an" +
     "error. Do not disable this in production environment on a network you do not entirely trust. " +
@@ -533,6 +553,10 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     return Boolean.parseBoolean(oauth2Enabled);
   }
 
+  public Boolean getServiceAccountEnabled() {
+    return Boolean.parseBoolean(serviceAccountEnabled);
+  }
+
   @Nullable
   public String getAuthUrl() {
     return authUrl;
@@ -561,6 +585,16 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   @Nullable
   public String getRefreshToken() {
     return refreshToken;
+  }
+
+  @Nullable
+  public String getServiceAccountJson() {
+    return serviceAccountJson;
+  }
+
+  @Nullable
+  public String getServiceAccountScope() {
+    return serviceAccountScope;
   }
 
   public Boolean getVerifyHttps() {
@@ -792,6 +826,11 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
       assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
       assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
       assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
+    }
+
+    if (!containsMacro(PROPERTY_SERVICE_ACCOUNT_ENABLED) && this.getServiceAccountEnabled()) {
+      String reasonOauth2 = "Service Account is enabled";
+      assertIsSet(getServiceAccountJson(), PROPERTY_SERVICE_ACCOUNT_JSON, reasonOauth2);
     }
 
     if (!containsMacro(PROPERTY_VERIFY_HTTPS) && !getVerifyHttps()) {
