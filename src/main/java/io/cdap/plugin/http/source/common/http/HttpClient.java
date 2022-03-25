@@ -126,14 +126,15 @@ public class HttpClient implements Closeable {
 
     ArrayList<Header> clientHeaders = new ArrayList<>();
 
-    // oAuth2
-    if (config.getOauth2Enabled()) {
-      String accessToken = OAuthUtil.getAccessTokenByRefreshToken(HttpClients.createDefault(), config.getTokenUrl(),
-                                                                  config.getClientId(), config.getClientSecret(),
-                                                                  config.getRefreshToken());
-      clientHeaders.add(new BasicHeader("Authorization", "Bearer " + accessToken));
-    }
+    AuthType authType = config.getAuthType();
 
+    switch (authType) {
+      case OAUTH2:
+        String accessToken = OAuthUtil.getAccessTokenByRefreshToken(HttpClients.createDefault(), config.getTokenUrl(),
+                                                                    config.getClientId(), config.getClientSecret(),
+                                                                    config.getRefreshToken());
+        clientHeaders.add(new BasicHeader("Authorization", "Bearer " + accessToken));
+    }
 
     // set default headers
     if (headers != null) {

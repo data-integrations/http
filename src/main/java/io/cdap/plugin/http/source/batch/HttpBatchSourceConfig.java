@@ -31,7 +31,6 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
     this.httpMethod = builder.httpMethod;
     this.headers = builder.headers;
     this.format = builder.format;
-    this.oauth2Enabled = builder.oauth2Enabled;
     this.errorHandling = builder.errorHandling;
     this.retryPolicy = builder.retryPolicy;
     this.maxRetryDuration = builder.maxRetryDuration;
@@ -39,7 +38,7 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
     this.readTimeout = builder.readTimeout;
     this.paginationType = builder.paginationType;
     this.verifyHttps = builder.verifyHttps;
-    this.serviceAccountEnabled = builder.serviceAccountEnabled;
+    this.authType = builder.authType;
   }
 
   public static HttpBatchSourceConfigBuilder builder() {
@@ -56,7 +55,6 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
     private String httpMethod;
     private String headers;
     private String format;
-    private String oauth2Enabled;
     private String errorHandling;
     private String retryPolicy;
     private Long maxRetryDuration;
@@ -64,7 +62,7 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
     private Integer readTimeout;
     private String paginationType;
     private String verifyHttps;
-    private String serviceAccountEnabled;
+    private String authType;
 
     public HttpBatchSourceConfigBuilder setReferenceName (String referenceName) {
       this.referenceName = referenceName;
@@ -88,16 +86,6 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
 
     public HttpBatchSourceConfigBuilder setFormat(String format) {
       this.format = format;
-      return this;
-    }
-
-    public HttpBatchSourceConfigBuilder setOauth2Enabled(String oauth2Enabled) {
-      this.oauth2Enabled = oauth2Enabled;
-      return this;
-    }
-
-    public HttpBatchSourceConfigBuilder setServiceAccountEnabled(String serviceAccountEnabled) {
-      this.serviceAccountEnabled = serviceAccountEnabled;
       return this;
     }
 
@@ -133,6 +121,11 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
 
     public HttpBatchSourceConfigBuilder setVerifyHttps(String verifyHttps) {
       this.verifyHttps = verifyHttps;
+      return this;
+    }
+
+    public HttpBatchSourceConfigBuilder setAuthType(String authType) {
+      this.authType = authType;
       return this;
     }
 

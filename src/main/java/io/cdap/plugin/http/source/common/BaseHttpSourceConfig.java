@@ -83,13 +83,11 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   public static final String PROPERTY_WAIT_TIME_BETWEEN_PAGES = "waitTimeBetweenPages";
   public static final String PROPERTY_AUTH_TYPE = "authType";
   public static final String PROPERTY_AUTH_TYPE_LABEL = "Auth type";
-  public static final String PROPERTY_SERVICE_ACCOUNT_ENABLED = "serviceAccountEnabled";
   public static final String PROPERTY_NAME_SERVICE_ACCOUNT_TYPE = "serviceAccountType";
   public static final String PROPERTY_NAME_SERVICE_ACCOUNT_FILE_PATH = "serviceAccountFilePath";
   public static final String PROPERTY_NAME_SERVICE_ACCOUNT_JSON = "serviceAccountJSON";
   public static final String PROPERTY_SERVICE_ACCOUNT_FILE_PATH = "filePath";
   public static final String PROPERTY_SERVICE_ACCOUNT_JSON = "JSON";
-  public static final String PROPERTY_OAUTH2_ENABLED = "oauth2Enabled";
   public static final String PROPERTY_AUTH_URL = "authUrl";
   public static final String PROPERTY_TOKEN_URL = "tokenUrl";
   public static final String PROPERTY_CLIENT_ID = "clientId";
@@ -288,17 +286,12 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   @Name(PROPERTY_AUTH_TYPE)
   @Description("Type of authentication used to submit request. \n" +
     "OAuth2, Service account, Basic Authentication types are available.")
-  private String authType;
-
-  @Name(PROPERTY_SERVICE_ACCOUNT_ENABLED)
-  @Description("If true, plugin will perform Service Account authentication.")
-  protected String serviceAccountEnabled;
+  protected String authType;
 
   @Name(PROPERTY_NAME_SERVICE_ACCOUNT_TYPE)
   @Description("Service account type, file path where the service account is located or the JSON content of the " +
     "service account.")
   @Nullable
-  @Macro
   protected String serviceAccountType;
 
   @Nullable
@@ -316,10 +309,6 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   @Nullable
   @Macro
   protected String serviceAccountJson;
-
-  @Name(PROPERTY_OAUTH2_ENABLED)
-  @Description("If true, plugin will perform OAuth2 authentication.")
-  protected String oauth2Enabled;
 
   @Nullable
   @Name(PROPERTY_AUTH_URL)
@@ -578,10 +567,6 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     return waitTimeBetweenPages;
   }
 
-  public Boolean getOauth2Enabled() {
-    return Boolean.parseBoolean(oauth2Enabled);
-  }
-
   @Nullable
   public String getAuthUrl() {
     return authUrl;
@@ -626,20 +611,32 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     return getEnumValueByString(KeyStoreType.class, keystoreType, PROPERTY_KEYSTORE_TYPE);
   }
 
-  public Boolean getServiceAccountEnabled() {
-    return Boolean.parseBoolean(serviceAccountEnabled);
-  }
 
   public void setServiceAccountType(String serviceAccountType) {
     this.serviceAccountType = serviceAccountType;
+  }
+
+  @Nullable
+  public String getServiceAccountType() {
+    return serviceAccountType;
   }
 
   public void setServiceAccountJson(String serviceAccountJson) {
     this.serviceAccountJson = serviceAccountJson;
   }
 
+  @Nullable
+  public String getServiceAccountJson() {
+    return serviceAccountJson;
+  }
+
   public void setServiceAccountFilePath(String serviceAccountFilePath) {
     this.serviceAccountFilePath = serviceAccountFilePath;
+  }
+
+  @Nullable
+  public String getServiceAccountFilePath() {
+    return serviceAccountFilePath;
   }
 
   @Nullable
@@ -849,14 +846,30 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
       }
     }
 
-    // Validate OAuth2 properties
-    if (!containsMacro(PROPERTY_OAUTH2_ENABLED) && this.getOauth2Enabled()) {
-      String reasonOauth2 = "OAuth2 is enabled";
-      assertIsSet(getAuthUrl(), PROPERTY_AUTH_URL, reasonOauth2);
-      assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
-      assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
-      assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
-      assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
+    // Validate Authentication properties
+    switch (this.authType) {
+      case "oAuth2":
+        String reasonOauth2 = "OAuth2 is enabled";
+        assertIsSet(getAuthUrl(), PROPERTY_AUTH_URL, reasonOauth2);
+        assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
+        assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
+        assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
+        assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
+        break;
+      case "serviceAccount":
+        String reasonSA = "Service Account is enabled";
+        assertIsSet(getServiceAccountType(), PROPERTY_NAME_SERVICE_ACCOUNT_TYPE, reasonSA);
+        if (getServiceAccountType().equals("filePath")) {
+          assertIsSet(getServiceAccountFilePath(), PROPERTY_NAME_SERVICE_ACCOUNT_FILE_PATH, reasonSA);
+        } else if (getServiceAccountType().equals("JSON")) {
+          assertIsSet(getServiceAccountJson(), PROPERTY_NAME_SERVICE_ACCOUNT_JSON, reasonSA);
+        }
+        break;
+      case "basicAuth":
+        String reasonBasicAuth = "Basic Authentication is enabled";
+        assertIsSet(getUsername(), PROPERTY_USERNAME, reasonBasicAuth);
+        assertIsSet(getPassword(), PROPERTY_PASSWORD, reasonBasicAuth);
+        break;
     }
 
     if (!containsMacro(PROPERTY_VERIFY_HTTPS) && !getVerifyHttps()) {

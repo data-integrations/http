@@ -29,7 +29,7 @@ public class HttpBatchSourceConfigTest {
     public void testMissingKeyValue() {
         HttpBatchSourceConfig config = HttpBatchSourceConfig.builder()
                 .setReferenceName("test").setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:")
-                .setFormat("JSON").setOauth2Enabled("false").setErrorHandling(StringUtils.EMPTY)
+                .setFormat("JSON").setAuthType("none").setErrorHandling(StringUtils.EMPTY)
                 .setRetryPolicy(StringUtils.EMPTY).setMaxRetryDuration(600L).setConnectTimeout(120)
                 .setReadTimeout(120).setPaginationType("NONE").setVerifyHttps("true").build();
         config.validate();
