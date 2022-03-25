@@ -39,6 +39,7 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
     this.readTimeout = builder.readTimeout;
     this.paginationType = builder.paginationType;
     this.verifyHttps = builder.verifyHttps;
+    this.serviceAccountEnabled = builder.serviceAccountEnabled;
   }
 
   public static HttpBatchSourceConfigBuilder builder() {
@@ -63,6 +64,7 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
     private Integer readTimeout;
     private String paginationType;
     private String verifyHttps;
+    private String serviceAccountEnabled;
 
     public HttpBatchSourceConfigBuilder setReferenceName (String referenceName) {
       this.referenceName = referenceName;
@@ -91,6 +93,11 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
 
     public HttpBatchSourceConfigBuilder setOauth2Enabled(String oauth2Enabled) {
       this.oauth2Enabled = oauth2Enabled;
+      return this;
+    }
+
+    public HttpBatchSourceConfigBuilder setServiceAccountEnabled(String serviceAccountEnabled) {
+      this.serviceAccountEnabled = serviceAccountEnabled;
       return this;
     }
 

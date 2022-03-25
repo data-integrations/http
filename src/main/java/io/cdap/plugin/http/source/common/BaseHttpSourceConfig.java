@@ -26,6 +26,7 @@ import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.http.source.common.error.ErrorHandling;
 import io.cdap.plugin.http.source.common.error.HttpErrorHandlerEntity;
 import io.cdap.plugin.http.source.common.error.RetryableErrorHandling;
+import io.cdap.plugin.http.source.common.http.AuthType;
 import io.cdap.plugin.http.source.common.http.KeyStoreType;
 import io.cdap.plugin.http.source.common.pagination.PaginationIteratorFactory;
 import io.cdap.plugin.http.source.common.pagination.PaginationType;
@@ -80,6 +81,14 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   public static final String PROPERTY_NEXT_PAGE_URL_PARAMETER = "nextPageUrlParameter";
   public static final String PROPERTY_CUSTOM_PAGINATION_CODE = "customPaginationCode";
   public static final String PROPERTY_WAIT_TIME_BETWEEN_PAGES = "waitTimeBetweenPages";
+  public static final String PROPERTY_AUTH_TYPE = "authType";
+  public static final String PROPERTY_AUTH_TYPE_LABEL = "Auth type";
+  public static final String PROPERTY_SERVICE_ACCOUNT_ENABLED = "serviceAccountEnabled";
+  public static final String PROPERTY_NAME_SERVICE_ACCOUNT_TYPE = "serviceAccountType";
+  public static final String PROPERTY_NAME_SERVICE_ACCOUNT_FILE_PATH = "serviceAccountFilePath";
+  public static final String PROPERTY_NAME_SERVICE_ACCOUNT_JSON = "serviceAccountJSON";
+  public static final String PROPERTY_SERVICE_ACCOUNT_FILE_PATH = "filePath";
+  public static final String PROPERTY_SERVICE_ACCOUNT_JSON = "JSON";
   public static final String PROPERTY_OAUTH2_ENABLED = "oauth2Enabled";
   public static final String PROPERTY_AUTH_URL = "authUrl";
   public static final String PROPERTY_TOKEN_URL = "tokenUrl";
@@ -276,6 +285,38 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   @Macro
   protected Long waitTimeBetweenPages;
 
+  @Name(PROPERTY_AUTH_TYPE)
+  @Description("Type of authentication used to submit request. \n" +
+    "OAuth2, Service account, Basic Authentication types are available.")
+  private String authType;
+
+  @Name(PROPERTY_SERVICE_ACCOUNT_ENABLED)
+  @Description("If true, plugin will perform Service Account authentication.")
+  protected String serviceAccountEnabled;
+
+  @Name(PROPERTY_NAME_SERVICE_ACCOUNT_TYPE)
+  @Description("Service account type, file path where the service account is located or the JSON content of the " +
+    "service account.")
+  @Nullable
+  @Macro
+  protected String serviceAccountType;
+
+  @Nullable
+  @Macro
+  @Name(PROPERTY_NAME_SERVICE_ACCOUNT_FILE_PATH)
+  @Description("Path on the local file system of the service account key used for authorization. " +
+    "Can be set to 'auto-detect' for getting service account from system variable. " +
+    "The file/system variable must be present on every node in the cluster. " +
+    "Service account json can be generated on Google Cloud " +
+    "Service Account page (https://console.cloud.google.com/iam-admin/serviceaccounts).")
+  protected String serviceAccountFilePath;
+
+  @Name(PROPERTY_NAME_SERVICE_ACCOUNT_JSON)
+  @Description("Content of the service account file.")
+  @Nullable
+  @Macro
+  protected String serviceAccountJson;
+
   @Name(PROPERTY_OAUTH2_ENABLED)
   @Description("If true, plugin will perform OAuth2 authentication.")
   protected String oauth2Enabled;
@@ -430,6 +471,14 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     return Boolean.parseBoolean(csvSkipFirstRow);
   }
 
+  public AuthType getAuthType() {
+    return AuthType.fromValue(authType);
+  }
+
+  public void setAuthType(String authType) {
+    this.authType = authType;
+  }
+
   @Nullable
   public String getUsername() {
     return username;
@@ -575,6 +624,22 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   @Nullable
   public KeyStoreType getKeystoreType() {
     return getEnumValueByString(KeyStoreType.class, keystoreType, PROPERTY_KEYSTORE_TYPE);
+  }
+
+  public Boolean getServiceAccountEnabled() {
+    return Boolean.parseBoolean(serviceAccountEnabled);
+  }
+
+  public void setServiceAccountType(String serviceAccountType) {
+    this.serviceAccountType = serviceAccountType;
+  }
+
+  public void setServiceAccountJson(String serviceAccountJson) {
+    this.serviceAccountJson = serviceAccountJson;
+  }
+
+  public void setServiceAccountFilePath(String serviceAccountFilePath) {
+    this.serviceAccountFilePath = serviceAccountFilePath;
   }
 
   @Nullable
