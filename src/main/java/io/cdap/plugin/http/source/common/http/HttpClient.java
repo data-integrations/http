@@ -134,6 +134,7 @@ public class HttpClient implements Closeable {
                                                                     config.getClientId(), config.getClientSecret(),
                                                                     config.getRefreshToken());
         clientHeaders.add(new BasicHeader("Authorization", "Bearer " + accessToken));
+        break;
     }
 
     // set default headers

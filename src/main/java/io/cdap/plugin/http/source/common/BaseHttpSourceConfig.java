@@ -81,6 +81,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   public static final String PROPERTY_NEXT_PAGE_URL_PARAMETER = "nextPageUrlParameter";
   public static final String PROPERTY_CUSTOM_PAGINATION_CODE = "customPaginationCode";
   public static final String PROPERTY_WAIT_TIME_BETWEEN_PAGES = "waitTimeBetweenPages";
+  public static final String PROPERTY_OAUTH2_ENABLED = "oauth2Enabled";
   public static final String PROPERTY_AUTH_TYPE = "authType";
   public static final String PROPERTY_AUTH_TYPE_LABEL = "Auth type";
   public static final String PROPERTY_NAME_SERVICE_ACCOUNT_TYPE = "serviceAccountType";
@@ -282,6 +283,11 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   @Description("Time in milliseconds to wait between HTTP requests for the next page.")
   @Macro
   protected Long waitTimeBetweenPages;
+
+  @Name(PROPERTY_OAUTH2_ENABLED)
+  @Description("If true, plugin will perform OAuth2 authentication.")
+  @Nullable
+  protected String oauth2Enabled;
 
   @Name(PROPERTY_AUTH_TYPE)
   @Description("Type of authentication used to submit request. \n" +
@@ -565,6 +571,10 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   @Nullable
   public Long getWaitTimeBetweenPages() {
     return waitTimeBetweenPages;
+  }
+
+  public Boolean getOauth2Enabled() {
+    return Boolean.parseBoolean(oauth2Enabled);
   }
 
   @Nullable

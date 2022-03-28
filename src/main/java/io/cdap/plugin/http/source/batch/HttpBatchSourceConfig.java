@@ -31,6 +31,7 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
     this.httpMethod = builder.httpMethod;
     this.headers = builder.headers;
     this.format = builder.format;
+    this.oauth2Enabled = builder.oauth2Enabled;
     this.errorHandling = builder.errorHandling;
     this.retryPolicy = builder.retryPolicy;
     this.maxRetryDuration = builder.maxRetryDuration;
@@ -55,6 +56,7 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
     private String httpMethod;
     private String headers;
     private String format;
+    private String oauth2Enabled;
     private String errorHandling;
     private String retryPolicy;
     private Long maxRetryDuration;
@@ -66,6 +68,11 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
 
     public HttpBatchSourceConfigBuilder setReferenceName (String referenceName) {
       this.referenceName = referenceName;
+      return this;
+    }
+
+    public HttpBatchSourceConfigBuilder setOauth2Enabled(String oauth2Enabled) {
+      this.oauth2Enabled = oauth2Enabled;
       return this;
     }
 
