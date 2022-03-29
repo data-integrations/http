@@ -71,11 +71,6 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
       return this;
     }
 
-    public HttpBatchSourceConfigBuilder setOauth2Enabled(String oauth2Enabled) {
-      this.oauth2Enabled = oauth2Enabled;
-      return this;
-    }
-
     public HttpBatchSourceConfigBuilder setUrl(String url) {
       this.url = url;
       return this;
@@ -96,6 +91,11 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
       return this;
     }
 
+    public HttpBatchSourceConfigBuilder setOauth2Enabled(String oauth2Enabled) {
+      this.oauth2Enabled = oauth2Enabled;
+      return this;
+    }
+    
     public HttpBatchSourceConfigBuilder setErrorHandling(String errorHandling) {
       this.errorHandling = errorHandling;
       return this;

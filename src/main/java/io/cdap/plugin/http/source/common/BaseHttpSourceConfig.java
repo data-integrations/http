@@ -856,9 +856,19 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
       }
     }
 
+    // Validate OAuth2 properties
+    if (!containsMacro(PROPERTY_OAUTH2_ENABLED) && this.getOauth2Enabled()) {
+      String reasonOauth2 = "OAuth2 is enabled";
+      assertIsSet(getAuthUrl(), PROPERTY_AUTH_URL, reasonOauth2);
+      assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
+      assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
+      assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
+      assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
+    }
     // Validate Authentication properties
-    switch (this.authType) {
-      case "oAuth2":
+    AuthType authType = getAuthType();
+    switch (authType) {
+      case OAUTH2:
         String reasonOauth2 = "OAuth2 is enabled";
         assertIsSet(getAuthUrl(), PROPERTY_AUTH_URL, reasonOauth2);
         assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
@@ -866,7 +876,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
         assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
         assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
         break;
-      case "serviceAccount":
+      case SERVICE_ACCOUNT:
         String reasonSA = "Service Account is enabled";
         assertIsSet(getServiceAccountType(), PROPERTY_NAME_SERVICE_ACCOUNT_TYPE, reasonSA);
         if (getServiceAccountType().equals("filePath")) {
@@ -875,7 +885,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
           assertIsSet(getServiceAccountJson(), PROPERTY_NAME_SERVICE_ACCOUNT_JSON, reasonSA);
         }
         break;
-      case "basicAuth":
+      case BASIC_AUTH:
         String reasonBasicAuth = "Basic Authentication is enabled";
         assertIsSet(getUsername(), PROPERTY_USERNAME, reasonBasicAuth);
         assertIsSet(getPassword(), PROPERTY_PASSWORD, reasonBasicAuth);
