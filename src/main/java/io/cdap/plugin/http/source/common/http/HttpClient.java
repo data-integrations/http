@@ -143,6 +143,8 @@ public class HttpClient implements Closeable {
         break;
       case SERVICE_ACCOUNT:
         // TODO
+        accessToken = OAuthUtil.getAccessTokenByServiceAccount(config);
+        clientHeaders.add(new BasicHeader("Authorization", "Bearer " + accessToken));
         break;
     }
 

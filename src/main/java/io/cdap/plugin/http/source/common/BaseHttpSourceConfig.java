@@ -20,6 +20,7 @@ import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.cdap.etl.api.validation.InvalidStageException;
 import io.cdap.plugin.common.ReferencePluginConfig;
@@ -32,6 +33,7 @@ import io.cdap.plugin.http.source.common.pagination.PaginationIteratorFactory;
 import io.cdap.plugin.http.source.common.pagination.PaginationType;
 import io.cdap.plugin.http.source.common.pagination.page.PageFormat;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -42,6 +44,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Stream;
@@ -89,6 +92,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   public static final String PROPERTY_NAME_SERVICE_ACCOUNT_JSON = "serviceAccountJSON";
   public static final String PROPERTY_SERVICE_ACCOUNT_FILE_PATH = "filePath";
   public static final String PROPERTY_SERVICE_ACCOUNT_JSON = "JSON";
+  public static final String PROPERTY_AUTO_DETECT_VALUE = "auto-detect";
   public static final String PROPERTY_AUTH_URL = "authUrl";
   public static final String PROPERTY_TOKEN_URL = "tokenUrl";
   public static final String PROPERTY_CLIENT_ID = "clientId";
@@ -742,7 +746,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     return getListFromString(transportProtocols);
   }
 
-  public void validate() {
+  public void validate(FailureCollector failureCollector) {
     // Validate URL
     if (!containsMacro(PROPERTY_URL)) {
       try {
@@ -879,10 +883,9 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
       case SERVICE_ACCOUNT:
         String reasonSA = "Service Account is enabled";
         assertIsSet(getServiceAccountType(), PROPERTY_NAME_SERVICE_ACCOUNT_TYPE, reasonSA);
-        if (getServiceAccountType().equals("filePath")) {
-          assertIsSet(getServiceAccountFilePath(), PROPERTY_NAME_SERVICE_ACCOUNT_FILE_PATH, reasonSA);
-        } else if (getServiceAccountType().equals("JSON")) {
-          assertIsSet(getServiceAccountJson(), PROPERTY_NAME_SERVICE_ACCOUNT_JSON, reasonSA);
+        boolean propertiesAreValid = validateServiceAccount(failureCollector);
+        if (propertiesAreValid) {
+
         }
         break;
       case BASIC_AUTH:
@@ -896,6 +899,49 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
       assertIsNotSet(getTrustStoreFile(), PROPERTY_TRUSTSTORE_FILE,
                      String.format("trustore settings are ignored due to disabled %s", PROPERTY_VERIFY_HTTPS));
     }
+  }
+
+  private boolean validateServiceAccount(FailureCollector collector) {
+    if (containsMacro(PROPERTY_NAME_SERVICE_ACCOUNT_FILE_PATH) || containsMacro(PROPERTY_NAME_SERVICE_ACCOUNT_JSON)) {
+      return false;
+    }
+    final Boolean bServiceAccountFilePath = isServiceAccountFilePath();
+    final Boolean bServiceAccountJson = isServiceAccountJson();
+
+    // we don't want the validation to fail because the VM used during the validation
+    // may be different from the VM used during runtime and may not have the Google Drive Api scope.
+    if (bServiceAccountFilePath && PROPERTY_AUTO_DETECT_VALUE.equalsIgnoreCase(serviceAccountFilePath)) {
+      return false;
+    }
+
+    if (bServiceAccountFilePath != null && bServiceAccountFilePath) {
+      if (!PROPERTY_AUTO_DETECT_VALUE.equals(serviceAccountFilePath) && !new File(serviceAccountFilePath).exists()) {
+        collector.addFailure("Service Account File Path is not available.",
+                             "Please provide path to existing Service Account file.")
+          .withConfigProperty(PROPERTY_NAME_SERVICE_ACCOUNT_FILE_PATH);
+      }
+    }
+    if (bServiceAccountJson != null && bServiceAccountJson) {
+      if (!Optional.ofNullable(getServiceAccountJson()).isPresent()) {
+        collector.addFailure("Service Account JSON can not be empty.",
+                             "Please provide Service Account JSON.")
+          .withConfigProperty(PROPERTY_NAME_SERVICE_ACCOUNT_JSON);
+      }
+    }
+    return collector.getValidationFailures().size() == 0;
+  }
+
+  @Nullable
+  public Boolean isServiceAccountJson() {
+    String serviceAccountType = getServiceAccountType();
+    return Strings.isNullOrEmpty(serviceAccountType) ? null : serviceAccountType.equals(PROPERTY_SERVICE_ACCOUNT_JSON);
+  }
+
+  @Nullable
+  public Boolean isServiceAccountFilePath() {
+    String serviceAccountType = getServiceAccountType();
+    return Strings.isNullOrEmpty(serviceAccountType) ? null :
+      serviceAccountType.equals(PROPERTY_SERVICE_ACCOUNT_FILE_PATH);
   }
 
   public void validateSchema() {

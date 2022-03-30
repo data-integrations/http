@@ -16,6 +16,8 @@
 
 package io.cdap.plugin.http.source.common;
 
+import io.cdap.cdap.etl.api.FailureCollector;
+import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
 import io.cdap.plugin.http.source.batch.HttpBatchSourceConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
@@ -27,11 +29,12 @@ public class HttpBatchSourceConfigTest {
 
     @Test (expected = IllegalArgumentException.class)
     public void testMissingKeyValue() {
+        FailureCollector collector = new MockFailureCollector();
         HttpBatchSourceConfig config = HttpBatchSourceConfig.builder()
                 .setReferenceName("test").setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:")
                 .setFormat("JSON").setAuthType("none").setErrorHandling(StringUtils.EMPTY)
                 .setRetryPolicy(StringUtils.EMPTY).setMaxRetryDuration(600L).setConnectTimeout(120)
                 .setReadTimeout(120).setPaginationType("NONE").setVerifyHttps("true").build();
-        config.validate();
+        config.validate(collector);
     }
 }

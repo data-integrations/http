@@ -15,7 +15,10 @@
  */
 package io.cdap.plugin.http.source.common.http;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.common.base.Strings;
 import com.google.gson.JsonElement;
+import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.source.common.pagination.page.JSONUtil;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -23,7 +26,10 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -53,6 +59,20 @@ public class OAuthUtil {
 
     JsonElement jsonElement = JSONUtil.toJsonObject(responseString).get("access_token");
     return jsonElement.getAsString();
+  }
+
+  public static String getAccessTokenByServiceAccount(BaseHttpSourceConfig config) throws IOException {
+    GoogleCredential credential;
+    String accessToken = "";
+    if (config.isServiceAccountJson()) {
+      InputStream jsonInputStream = new ByteArrayInputStream(config.getServiceAccountJson().getBytes());
+      credential = GoogleCredential.fromStream(jsonInputStream);
+      accessToken = credential.getAccessToken();
+    } else if (config.isServiceAccountFilePath() && !Strings.isNullOrEmpty(config.getServiceAccountFilePath())) {
+      credential = GoogleCredential.fromStream(new FileInputStream(config.getServiceAccountFilePath()));
+      accessToken = credential.getAccessToken();
+    }
+    return accessToken;
   }
 }
 
