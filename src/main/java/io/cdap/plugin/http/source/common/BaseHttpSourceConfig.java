@@ -28,7 +28,9 @@ import io.cdap.plugin.http.source.common.error.ErrorHandling;
 import io.cdap.plugin.http.source.common.error.HttpErrorHandlerEntity;
 import io.cdap.plugin.http.source.common.error.RetryableErrorHandling;
 import io.cdap.plugin.http.source.common.http.AuthType;
+import io.cdap.plugin.http.source.common.http.HttpClient;
 import io.cdap.plugin.http.source.common.http.KeyStoreType;
+import io.cdap.plugin.http.source.common.http.OAuthUtil;
 import io.cdap.plugin.http.source.common.pagination.PaginationIteratorFactory;
 import io.cdap.plugin.http.source.common.pagination.PaginationType;
 import io.cdap.plugin.http.source.common.pagination.page.PageFormat;
@@ -885,7 +887,13 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
         assertIsSet(getServiceAccountType(), PROPERTY_NAME_SERVICE_ACCOUNT_TYPE, reasonSA);
         boolean propertiesAreValid = validateServiceAccount(failureCollector);
         if (propertiesAreValid) {
-
+          try {
+            String jwtToken = OAuthUtil.getAccessTokenByServiceAccount(this);
+          } catch (Exception e) {
+            failureCollector.addFailure("Unable to authenticate given service account info",
+                                        "Please make sure all infomation entered correctly")
+              .withStacktrace(e.getStackTrace());
+          }
         }
         break;
       case BASIC_AUTH:
