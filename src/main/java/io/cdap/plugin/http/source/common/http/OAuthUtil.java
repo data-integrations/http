@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
@@ -73,7 +74,8 @@ public class OAuthUtil {
     Integer expiryLength = (config.getJwtTokenExpiryLength() != null) ? config.getJwtTokenExpiryLength() : 3600;
     String jwtToken = "";
     if (config.isServiceAccountJson()) {
-      InputStream jsonInputStream = new ByteArrayInputStream(config.getServiceAccountJson().getBytes());
+      InputStream jsonInputStream = new ByteArrayInputStream(config.getServiceAccountJson()
+                                                               .getBytes(StandardCharsets.UTF_8));
       credential = GoogleCredentials.fromStream(jsonInputStream);
       jwtToken = generateJwt(expiryLength, credential);
     } else if (config.isServiceAccountFilePath() && !Strings.isNullOrEmpty(config.getServiceAccountFilePath())) {
