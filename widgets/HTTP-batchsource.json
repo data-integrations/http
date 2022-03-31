@@ -195,6 +195,14 @@
           "name": "serviceAccountJSON"
         },
         {
+          "widget-type": "number",
+          "label": "JWT Token Expiry Length (in seconds)",
+          "name": "jwtTokenExpiryLength",
+          "widget-attributes": {
+            "default": 3600
+          }
+        },
+        {
           "widget-type": "textbox",
           "label": "Username",
           "name": "username"
@@ -714,6 +722,10 @@
       "show": [
         {
           "name": "serviceAccountType",
+          "type": "property"
+        },
+        {
+          "name": "jwtTokenExpiryLength",
           "type": "property"
         }
       ]

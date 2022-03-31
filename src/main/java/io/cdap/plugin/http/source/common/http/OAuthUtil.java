@@ -70,14 +70,15 @@ public class OAuthUtil {
 
   public static String getAccessTokenByServiceAccount(BaseHttpSourceConfig config) throws IOException {
     GoogleCredentials credential;
+    Integer expiryLength = (config.getJwtTokenExpiryLength() != null) ? config.getJwtTokenExpiryLength() : 3600;
     String jwtToken = "";
     if (config.isServiceAccountJson()) {
       InputStream jsonInputStream = new ByteArrayInputStream(config.getServiceAccountJson().getBytes());
       credential = GoogleCredentials.fromStream(jsonInputStream);
-      jwtToken = generateJwt(5000, credential);
+      jwtToken = generateJwt(expiryLength, credential);
     } else if (config.isServiceAccountFilePath() && !Strings.isNullOrEmpty(config.getServiceAccountFilePath())) {
       credential = GoogleCredentials.fromStream(new FileInputStream(config.getServiceAccountFilePath()));
-      jwtToken = generateJwt(5000, credential);
+      jwtToken = generateJwt(expiryLength, credential);
     }
     return jwtToken;
   }

@@ -95,6 +95,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   public static final String PROPERTY_SERVICE_ACCOUNT_FILE_PATH = "filePath";
   public static final String PROPERTY_SERVICE_ACCOUNT_JSON = "JSON";
   public static final String PROPERTY_AUTO_DETECT_VALUE = "auto-detect";
+  public static final String PROPERTY_JWT_TOKEN_EXPIRY_LENGTH = "jwtTokenExpiryLength";
   public static final String PROPERTY_AUTH_URL = "authUrl";
   public static final String PROPERTY_TOKEN_URL = "tokenUrl";
   public static final String PROPERTY_CLIENT_ID = "clientId";
@@ -327,6 +328,12 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   @Description("Endpoint for the authorization server used to retrieve the authorization code.")
   @Macro
   protected String authUrl;
+
+  @Nullable
+  @Name(PROPERTY_JWT_TOKEN_EXPIRY_LENGTH)
+  @Description("The expiration time for generated JWT Token from service account, default 3600 seconds")
+  @Macro
+  protected Integer jwtTokenExpiryLength;
 
   @Nullable
   @Name(PROPERTY_TOKEN_URL)
@@ -653,6 +660,15 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   @Nullable
   public String getServiceAccountFilePath() {
     return serviceAccountFilePath;
+  }
+
+  public void setJwtTokenExpiryLength(Integer jwtTokenExpiryLength) {
+    this.jwtTokenExpiryLength = jwtTokenExpiryLength;
+  }
+
+  @Nullable
+  public Integer getJwtTokenExpiryLength() {
+    return jwtTokenExpiryLength;
   }
 
   @Nullable

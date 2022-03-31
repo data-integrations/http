@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Enum for data range presenting.
+ * Enum for different authentication methods.
  */
 public enum AuthType {
   NONE("none"),
