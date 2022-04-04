@@ -21,6 +21,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonElement;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.source.common.pagination.page.JSONUtil;
@@ -72,17 +73,22 @@ public class OAuthUtil {
   public static String getAccessTokenByServiceAccount(BaseHttpSourceConfig config) throws IOException {
     GoogleCredentials credential;
     Integer expiryLength = (config.getJwtTokenExpiryLength() != null) ? config.getJwtTokenExpiryLength() : 3600;
-    String jwtToken = "";
+    //String jwtToken = "";
+    String accessToken = "";
     if (config.isServiceAccountJson()) {
       InputStream jsonInputStream = new ByteArrayInputStream(config.getServiceAccountJson()
                                                                .getBytes(StandardCharsets.UTF_8));
-      credential = GoogleCredentials.fromStream(jsonInputStream);
-      jwtToken = generateJwt(expiryLength, credential);
+      credential = GoogleCredentials.fromStream(jsonInputStream)
+        .createScoped(ImmutableSet.of("https://www.googleapis.com/auth/cloud-platform"));
+      accessToken = credential.refreshAccessToken().getTokenValue();
+      //jwtToken = generateJwt(expiryLength, credential);
     } else if (config.isServiceAccountFilePath() && !Strings.isNullOrEmpty(config.getServiceAccountFilePath())) {
-      credential = GoogleCredentials.fromStream(new FileInputStream(config.getServiceAccountFilePath()));
-      jwtToken = generateJwt(expiryLength, credential);
+      credential = GoogleCredentials.fromStream(new FileInputStream(config.getServiceAccountFilePath()))
+        .createScoped(ImmutableSet.of("https://www.googleapis.com/auth/cloud-platform"));
+      accessToken = credential.refreshAccessToken().getTokenValue();
+      //jwtToken = generateJwt(expiryLength, credential);
     }
-    return jwtToken;
+    return accessToken;
   }
 
   /**
