@@ -72,21 +72,25 @@ public class OAuthUtil {
 
   public static String getAccessTokenByServiceAccount(BaseHttpSourceConfig config) throws IOException {
     GoogleCredentials credential;
-    Integer expiryLength = (config.getJwtTokenExpiryLength() != null) ? config.getJwtTokenExpiryLength() : 3600;
-    //String jwtToken = "";
     String accessToken = "";
-    if (config.isServiceAccountJson()) {
-      InputStream jsonInputStream = new ByteArrayInputStream(config.getServiceAccountJson()
-                                                               .getBytes(StandardCharsets.UTF_8));
-      credential = GoogleCredentials.fromStream(jsonInputStream)
-        .createScoped(ImmutableSet.of("https://www.googleapis.com/auth/cloud-platform"));
-      accessToken = credential.refreshAccessToken().getTokenValue();
-      //jwtToken = generateJwt(expiryLength, credential);
-    } else if (config.isServiceAccountFilePath() && !Strings.isNullOrEmpty(config.getServiceAccountFilePath())) {
-      credential = GoogleCredentials.fromStream(new FileInputStream(config.getServiceAccountFilePath()))
-        .createScoped(ImmutableSet.of("https://www.googleapis.com/auth/cloud-platform"));
-      accessToken = credential.refreshAccessToken().getTokenValue();
-      //jwtToken = generateJwt(expiryLength, credential);
+    try {
+      if (config.isServiceAccountJson()) {
+        InputStream jsonInputStream = new ByteArrayInputStream(config.getServiceAccountJson()
+                                                                 .getBytes(StandardCharsets.UTF_8));
+        credential = GoogleCredentials.fromStream(jsonInputStream)
+          .createScoped(ImmutableSet.of("https://www.googleapis.com/auth/cloud-platform"));
+        accessToken = credential.refreshAccessToken().getTokenValue();
+      } else if (config.isServiceAccountFilePath() && !Strings.isNullOrEmpty(config.getServiceAccountFilePath())) {
+        credential = GoogleCredentials.fromStream(new FileInputStream(config.getServiceAccountFilePath()))
+          .createScoped(ImmutableSet.of("https://www.googleapis.com/auth/cloud-platform"));
+        accessToken = credential.refreshAccessToken().getTokenValue();
+      } else {
+        credential = GoogleCredentials.getApplicationDefault()
+          .createScoped(ImmutableSet.of("https://www.googleapis.com/auth/cloud-platform"));
+        accessToken = credential.refreshAccessToken().getTokenValue();
+      }
+    } catch (IOException e) {
+      throw new IllegalArgumentException("Failed to generate Access Token with given Service Account information", e);
     }
     return accessToken;
   }
