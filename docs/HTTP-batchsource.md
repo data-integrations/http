@@ -203,11 +203,30 @@ can be omitted as long as the field is present in schema.
 
 **CSV Skip First Row:** Whether to skip the first row of the HTTP response. This is usually set if the first row is a header row.
 
-### Basic Authentication
-
-**Username:** Username for basic authentication.
-
-**Password:** Password for basic authentication.
+### Authentication
+* **OAuth2**
+    * **Auth URL:** Endpoint for the authorization server used to retrieve the authorization code.
+    * **Token URL:** Endpoint for the resource server, which exchanges the authorization code for an access token.
+    * **Client ID:** Client identifier obtained during the Application registration process.
+    * **Client Secret:** Client secret obtained during the Application registration process.
+    * **Scopes:** Scope of the access request, which might have multiple space-separated values.
+    * **Refresh Token:** Token used to receive accessToken, which is end product of OAuth2.
+* **Service Account** - service account key used for authorization
+    * **File Path**: Path on the local file system of the service account key used for
+      authorization. Can be set to 'auto-detect' when running on a Dataproc cluster.
+      When running on other clusters, the file must be present on every node in the cluster.
+    * **JSON**: Contents of the service account JSON file.
+    * **Scope**: The additional Google credential scopes required to access entered url, cloud-platform is included by 
+      default, visit https://developers.google.com/identity/protocols/oauth2/scopes for more information.
+      * Scope example:
+      
+```
+https://www.googleapis.com/auth/bigquery
+https://www.googleapis.com/auth/cloud-platform
+```
+* **Basic Authentication**
+  * **Username:** Username for basic authentication.
+  * **Password:** Password for basic authentication.
 
 ### HTTP Proxy
 
@@ -372,22 +391,6 @@ def get_next_page_url(url, page, headers):
 ```
 The above code iterates over first five pages of searchcode.com results. When 'None' is returned the iteration
 is stopped.
-
-### OAuth2
-
-**OAuth2 Enabled:** If true, plugin will perform OAuth2 authentication.
-
-**Auth URL:** Endpoint for the authorization server used to retrieve the authorization code.
-
-**Token URL:** Endpoint for the resource server, which exchanges the authorization code for an access token.
-
-**Client ID:** Client identifier obtained during the Application registration process.
-
-**Client Secret:** Client secret obtained during the Application registration process.
-
-**Scopes:** Scope of the access request, which might have multiple space-separated values.
-
-**Refresh Token:** Token used to receive accessToken, which is end product of OAuth2.
 
 ### SSL/TLS
 

@@ -95,7 +95,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   public static final String PROPERTY_SERVICE_ACCOUNT_FILE_PATH = "filePath";
   public static final String PROPERTY_SERVICE_ACCOUNT_JSON = "JSON";
   public static final String PROPERTY_AUTO_DETECT_VALUE = "auto-detect";
-  public static final String PROPERTY_JWT_TOKEN_EXPIRY_LENGTH = "jwtTokenExpiryLength";
+  public static final String PROPERTY_SERVICE_ACCOUNT_SCOPE = "serviceAccountScope";
   public static final String PROPERTY_AUTH_URL = "authUrl";
   public static final String PROPERTY_TOKEN_URL = "tokenUrl";
   public static final String PROPERTY_CLIENT_ID = "clientId";
@@ -330,10 +330,12 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   protected String authUrl;
 
   @Nullable
-  @Name(PROPERTY_JWT_TOKEN_EXPIRY_LENGTH)
-  @Description("The expiration time for generated JWT Token from service account, default 3600 seconds")
+  @Name(PROPERTY_SERVICE_ACCOUNT_SCOPE)
+  @Description("The additional Google credential scopes required to access entered url, " +
+    "cloud-platform is included by default, visit https://developers.google.com/identity/protocols/oauth2/scopes " +
+    "for more information.")
   @Macro
-  protected Integer jwtTokenExpiryLength;
+  protected String serviceAccountScope;
 
   @Nullable
   @Name(PROPERTY_TOKEN_URL)
@@ -662,13 +664,9 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     return serviceAccountFilePath;
   }
 
-  public void setJwtTokenExpiryLength(Integer jwtTokenExpiryLength) {
-    this.jwtTokenExpiryLength = jwtTokenExpiryLength;
-  }
-
   @Nullable
-  public Integer getJwtTokenExpiryLength() {
-    return jwtTokenExpiryLength;
+  public String getServiceAccountScope() {
+    return serviceAccountScope;
   }
 
   @Nullable
@@ -904,9 +902,9 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
         boolean propertiesAreValid = validateServiceAccount(failureCollector);
         if (propertiesAreValid) {
           try {
-            String jwtToken = OAuthUtil.getAccessTokenByServiceAccount(this);
+            String accessToken = OAuthUtil.getAccessTokenByServiceAccount(this);
           } catch (Exception e) {
-            failureCollector.addFailure("Unable to authenticate given service account info",
+            failureCollector.addFailure("Unable to authenticate given service account info. ",
                                         "Please make sure all infomation entered correctly")
               .withStacktrace(e.getStackTrace());
           }

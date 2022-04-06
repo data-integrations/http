@@ -15,11 +15,7 @@
  */
 package io.cdap.plugin.http.source.common.http;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTCreator;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.google.auth.oauth2.GoogleCredentials;
-import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonElement;
@@ -38,9 +34,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.security.interfaces.RSAPrivateKey;
-import java.util.Date;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A class which contains utilities to make OAuth2 specific calls.
@@ -74,58 +67,30 @@ public class OAuthUtil {
     GoogleCredentials credential;
     String accessToken = "";
     try {
+      ImmutableSet scopeSet = ImmutableSet.of("https://www.googleapis.com/auth/cloud-platform");
+      if (config.getServiceAccountScope() != null) {
+        String[] scopes = config.getServiceAccountScope().split("\n");
+        for (String scope: scopes) {
+          scopeSet = ImmutableSet.builder().addAll(scopeSet).add(scope).build();
+        }
+      }
       if (config.isServiceAccountJson()) {
         InputStream jsonInputStream = new ByteArrayInputStream(config.getServiceAccountJson()
                                                                  .getBytes(StandardCharsets.UTF_8));
         credential = GoogleCredentials.fromStream(jsonInputStream)
-          .createScoped(ImmutableSet.of("https://www.googleapis.com/auth/cloud-platform"));
-        accessToken = credential.refreshAccessToken().getTokenValue();
+          .createScoped(scopeSet);
       } else if (config.isServiceAccountFilePath() && !Strings.isNullOrEmpty(config.getServiceAccountFilePath())) {
         credential = GoogleCredentials.fromStream(new FileInputStream(config.getServiceAccountFilePath()))
-          .createScoped(ImmutableSet.of("https://www.googleapis.com/auth/cloud-platform"));
-        accessToken = credential.refreshAccessToken().getTokenValue();
+          .createScoped(scopeSet);
       } else {
         credential = GoogleCredentials.getApplicationDefault()
-          .createScoped(ImmutableSet.of("https://www.googleapis.com/auth/cloud-platform"));
-        accessToken = credential.refreshAccessToken().getTokenValue();
+          .createScoped(scopeSet);
       }
-    } catch (IOException e) {
+      accessToken = credential.refreshAccessToken().getTokenValue();
+    } catch (Exception e) {
       throw new IllegalArgumentException("Failed to generate Access Token with given Service Account information", e);
     }
     return accessToken;
-  }
-
-  /**
-   * Generates a signed JSON Web Token using a Google API Service Account
-   * utilizes com.auth0.jwt.
-   * https://cloud.google.com/endpoints/docs/openapi/service-account-authentication
-   */
-  public static String generateJwt(final int expiryLength, GoogleCredentials cred)
-    throws IOException {
-
-    Date now = new Date();
-    Date expTime = new Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(expiryLength));
-    String saEmail = ((ServiceAccountCredentials) cred).getClientEmail();
-
-    // Build the JWT payload
-    JWTCreator.Builder token = JWT.create()
-      .withIssuedAt(now)
-      // Expires after 'expiryLength' seconds
-      .withExpiresAt(expTime)
-      // Must match 'issuer' in the security configuration in your
-      // swagger spec (e.g. service account email)
-      .withIssuer(saEmail)
-      // Must be either your Endpoints service name, or match the value
-      // specified as the 'x-google-audience' in the OpenAPI document
-      // .withAudience(audience)
-      // Subject and email should match the service account's email
-      .withSubject(saEmail)
-      .withClaim("email", saEmail);
-
-    // Sign the JWT with a service account
-    RSAPrivateKey key = (RSAPrivateKey) ((ServiceAccountCredentials) cred).getPrivateKey();
-    Algorithm algorithm = Algorithm.RSA256(null, key);
-    return token.sign(algorithm);
   }
 }
 
