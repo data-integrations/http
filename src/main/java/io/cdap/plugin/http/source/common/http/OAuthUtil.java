@@ -15,7 +15,11 @@
  */
 package io.cdap.plugin.http.source.common.http;
 
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonElement;
+import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.source.common.pagination.page.JSONUtil;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -23,9 +27,13 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * A class which contains utilities to make OAuth2 specific calls.
@@ -53,6 +61,36 @@ public class OAuthUtil {
 
     JsonElement jsonElement = JSONUtil.toJsonObject(responseString).get("access_token");
     return jsonElement.getAsString();
+  }
+
+  public static String getAccessTokenByServiceAccount(BaseHttpSourceConfig config) throws IOException {
+    GoogleCredentials credential;
+    String accessToken = "";
+    try {
+      ImmutableSet scopeSet = ImmutableSet.of("https://www.googleapis.com/auth/cloud-platform");
+      if (config.getServiceAccountScope() != null) {
+        String[] scopes = config.getServiceAccountScope().split("\n");
+        for (String scope: scopes) {
+          scopeSet = ImmutableSet.builder().addAll(scopeSet).add(scope).build();
+        }
+      }
+      if (config.isServiceAccountJson()) {
+        InputStream jsonInputStream = new ByteArrayInputStream(config.getServiceAccountJson()
+                                                                 .getBytes(StandardCharsets.UTF_8));
+        credential = GoogleCredentials.fromStream(jsonInputStream)
+          .createScoped(scopeSet);
+      } else if (config.isServiceAccountFilePath() && !Strings.isNullOrEmpty(config.getServiceAccountFilePath())) {
+        credential = GoogleCredentials.fromStream(new FileInputStream(config.getServiceAccountFilePath()))
+          .createScoped(scopeSet);
+      } else {
+        credential = GoogleCredentials.getApplicationDefault()
+          .createScoped(scopeSet);
+      }
+      accessToken = credential.refreshAccessToken().getTokenValue();
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Failed to generate Access Token with given Service Account information", e);
+    }
+    return accessToken;
   }
 }
 

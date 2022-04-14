@@ -332,7 +332,7 @@ public class PaginationIteratorTest {
         "[{\"name\":\"body\",\"type\":\"string\"}]}";
       this.url = "";
       this.httpMethod = "GET";
-      this.oauth2Enabled = "false";
+      this.authType = "none";
       this.httpErrorsHandling = "2..:Success,.*:Fail";
       this.retryPolicy = "linear";
       this.maxRetryDuration = 10L;
