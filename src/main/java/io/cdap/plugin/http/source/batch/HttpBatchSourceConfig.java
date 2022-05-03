@@ -15,6 +15,7 @@
  */
 package io.cdap.plugin.http.source.batch;
 
+import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 
 /**
@@ -23,6 +24,11 @@ import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
   protected HttpBatchSourceConfig(String referenceName) {
     super(referenceName);
+  }
+
+  @Override
+  public void validate(FailureCollector failureCollector) {
+    super.validate(failureCollector);
   }
 
   private HttpBatchSourceConfig(HttpBatchSourceConfigBuilder builder) {

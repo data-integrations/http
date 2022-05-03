@@ -768,31 +768,31 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
       try {
         // replace with placeholder with anything just during pagination
         new URI(getUrl().replaceAll(PAGINATION_INDEX_PLACEHOLDER_REGEX, "0"));
+
+        // Validate HTTP Error Handling Map
+        if (!containsMacro(PROPERTY_HTTP_ERROR_HANDLING)) {
+          List<HttpErrorHandlerEntity> httpErrorsHandlingEntries = getHttpErrorHandlingEntries();
+          boolean supportsSkippingPages = PaginationIteratorFactory
+            .createInstance(this, null).supportsSkippingPages();
+
+          if (!supportsSkippingPages) {
+            for (HttpErrorHandlerEntity httpErrorsHandlingEntry : httpErrorsHandlingEntries) {
+              ErrorHandling postRetryStrategy = httpErrorsHandlingEntry.getStrategy().getAfterRetryStrategy();
+              if (postRetryStrategy.equals(ErrorHandling.SEND) ||
+                postRetryStrategy.equals(ErrorHandling.SKIP)) {
+                throw new InvalidConfigPropertyException(
+                  String.format("Error handling strategy '%s' is not support in combination with pagination type",
+                                httpErrorsHandlingEntry.getStrategy(), getPaginationType()),
+                  PROPERTY_HTTP_ERROR_HANDLING);
+              }
+            }
+          }
+        }
       } catch (URISyntaxException e) {
         throw new InvalidConfigPropertyException(
           String.format("URL value is not valid: '%s'", getUrl()), e, PROPERTY_URL);
       }
     }
-
-    // Validate HTTP Error Handling Map
-    if (!containsMacro(PROPERTY_HTTP_ERROR_HANDLING)) {
-      List<HttpErrorHandlerEntity> httpErrorsHandlingEntries = getHttpErrorHandlingEntries();
-      boolean supportsSkippingPages = PaginationIteratorFactory
-        .createInstance(this, null).supportsSkippingPages();
-
-      if (!supportsSkippingPages) {
-        for (HttpErrorHandlerEntity httpErrorsHandlingEntry : httpErrorsHandlingEntries) {
-          ErrorHandling postRetryStrategy = httpErrorsHandlingEntry.getStrategy().getAfterRetryStrategy();
-          if (postRetryStrategy.equals(ErrorHandling.SEND) ||
-            postRetryStrategy.equals(ErrorHandling.SKIP)) {
-            throw new InvalidConfigPropertyException(
-              String.format("Error handling strategy '%s' is not support in combination with pagination type",
-                            httpErrorsHandlingEntry.getStrategy(), getPaginationType()), PROPERTY_HTTP_ERROR_HANDLING);
-          }
-        }
-      }
-    }
-
 
     // Validate Linear Retry Interval
     if (!containsMacro(PROPERTY_RETRY_POLICY) && getRetryPolicy() == RetryPolicy.LINEAR) {
@@ -833,7 +833,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
                                         propertiesShouldBeNull.remove(PROPERTY_INDEX_INCREMENT));
           propertiesShouldBeNull.remove(PROPERTY_MAX_INDEX); // can be both null and non null
 
-          if (!url.contains(PAGINATION_INDEX_PLACEHOLDER)) {
+          if (!containsMacro(PROPERTY_URL) && !url.contains(PAGINATION_INDEX_PLACEHOLDER)) {
             throw new InvalidConfigPropertyException(
               String.format("Url '%s' must contain '%s' placeholder when pagination type is '%s'", getUrl(),
                             PAGINATION_INDEX_PLACEHOLDER, getPaginationType()),
@@ -859,7 +859,6 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
         assertIsSet(propertyValue, propertyName, reasonPagination);
       }
     }
-
 
     // Validate format properties
     if (!containsMacro(PROPERTY_FORMAT)) {
