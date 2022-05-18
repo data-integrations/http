@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
  * to contain above placeholder.
  */
 public class IncrementAnIndexPaginationIterator extends BaseHttpPaginationIterator {
-  private static final Logger LOG = LoggerFactory.getLogger(IncrementAnIndexPaginationIterator.class);
   public static final String PAGINATION_INDEX_PLACEHOLDER_REGEX = "\\{pagination.index\\}";
 
   private final Long indexIncrement;
@@ -46,22 +45,30 @@ public class IncrementAnIndexPaginationIterator extends BaseHttpPaginationIterat
       this.index = config.getStartIndex() - this.indexIncrement;
     }
 
-    this.nextPageUrl = getNextPageUrl();
+    this.nextPageUrl = getNextPageUrl(null);
   }
 
-  private String getNextPageUrl() {
+  private String getNextPageUrl(BasePage page) {
     index += indexIncrement;
 
-    if (maxIndex != null && index > maxIndex) {
-      return null;
+    if (maxIndex != null) {
+      // If the index is greater than max index, we stop the pagination
+      if (index > maxIndex) {
+        return null;
+      }
     } else {
-      return config.getUrl().replaceAll(PAGINATION_INDEX_PLACEHOLDER_REGEX, index.toString());
+      // If the page received is empty, we stop the pagination
+      if (page != null && page.next().getRecord() == null) {
+        return null;
+      }
     }
+
+    return config.getUrl().replaceAll(PAGINATION_INDEX_PLACEHOLDER_REGEX, index.toString());
   }
 
   @Override
   protected String getNextPageUrl(HttpResponse response, BasePage page) {
-    return getNextPageUrl();
+    return getNextPageUrl(page);
   }
 
   @Override
