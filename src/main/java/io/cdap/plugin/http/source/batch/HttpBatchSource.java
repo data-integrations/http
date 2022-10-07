@@ -31,6 +31,7 @@ import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSource;
 import io.cdap.cdap.etl.api.batch.BatchSourceContext;
+import io.cdap.plugin.common.Asset;
 import io.cdap.plugin.common.LineageRecorder;
 import io.cdap.plugin.http.source.common.pagination.page.BasePage;
 import io.cdap.plugin.http.source.common.pagination.page.PageEntry;
@@ -75,14 +76,16 @@ public class HttpBatchSource extends BatchSource<NullWritable, BasePage, Structu
 
     schema = config.getSchema();
 
-    LineageRecorder lineageRecorder = new LineageRecorder(context, config.referenceName);
+    Asset asset = Asset.builder(config.getReferenceNameOrNormalizedFQN())
+      .setFqn(config.getUrl()).build();
+    LineageRecorder lineageRecorder = new LineageRecorder(context, asset);
     lineageRecorder.createExternalDataset(schema);
     lineageRecorder.recordRead("Read", String.format("Read from HTTP '%s'", config.getUrl()),
       Preconditions.checkNotNull(schema.getFields()).stream()
         .map(Schema.Field::getName)
         .collect(Collectors.toList()));
 
-    context.setInput(Input.of(config.referenceName, new HttpInputFormatProvider(config)));
+    context.setInput(Input.of(config.getReferenceNameOrNormalizedFQN(), new HttpInputFormatProvider(config)));
   }
 
   @Override

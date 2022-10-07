@@ -16,6 +16,7 @@
 
 package io.cdap.plugin.http.sink.batch;
 
+import com.google.common.base.Preconditions;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.annotation.Plugin;
@@ -27,9 +28,12 @@ import io.cdap.cdap.api.dataset.lib.KeyValue;
 import io.cdap.cdap.etl.api.Emitter;
 import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.PipelineConfigurer;
+import io.cdap.cdap.etl.api.StageConfigurer;
 import io.cdap.cdap.etl.api.batch.BatchSink;
 import io.cdap.cdap.etl.api.batch.BatchSinkContext;
 import io.cdap.cdap.format.StructuredRecordStringConverter;
+import io.cdap.plugin.common.Asset;
+import io.cdap.plugin.common.LineageRecorder;
 import org.apache.hadoop.mapreduce.lib.output.NullOutputFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +53,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -78,8 +83,10 @@ public class HTTPSink extends BatchSink<StructuredRecord, Void, Void> {
   @Override
   public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
     super.configurePipeline(pipelineConfigurer);
-    FailureCollector collector = pipelineConfigurer.getStageConfigurer().getFailureCollector();
+    StageConfigurer stageConfigurer = pipelineConfigurer.getStageConfigurer();
+    FailureCollector collector = stageConfigurer.getFailureCollector();
     config.validate(collector);
+    config.validateSchema(stageConfigurer.getInputSchema(), collector);
     collector.getOrThrowException();
   }
 
@@ -87,9 +94,20 @@ public class HTTPSink extends BatchSink<StructuredRecord, Void, Void> {
   public void prepareRun(BatchSinkContext context) {
     FailureCollector collector = context.getFailureCollector();
     config.validate(collector);
+    config.validateSchema(context.getInputSchema(), collector);
     collector.getOrThrowException();
 
-    context.addOutput(Output.of(config.referenceName, new HTTPSink.HTTPOutputFormatProvider()));
+    Schema inputSchema = context.getInputSchema();
+    Asset asset = Asset.builder(config.getReferenceNameOrNormalizedFQN())
+      .setFqn(config.getUrl()).build();
+    LineageRecorder lineageRecorder = new LineageRecorder(context, asset);
+    lineageRecorder.createExternalDataset(context.getInputSchema());
+    lineageRecorder.recordWrite("Write", String.format("Wrote to HTTP '%s'", config.getUrl()),
+                                Preconditions.checkNotNull(inputSchema.getFields()).stream()
+                                  .map(Schema.Field::getName)
+                                  .collect(Collectors.toList()));
+
+    context.addOutput(Output.of(config.getReferenceNameOrNormalizedFQN(), new HTTPSink.HTTPOutputFormatProvider()));
   }
 
   @Override

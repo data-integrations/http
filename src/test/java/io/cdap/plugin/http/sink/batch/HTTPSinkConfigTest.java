@@ -16,6 +16,7 @@
 
 package io.cdap.plugin.http.sink.batch;
 
+import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.validation.CauseAttributes;
 import io.cdap.cdap.etl.api.validation.ValidationException;
 import io.cdap.cdap.etl.api.validation.ValidationFailure;
@@ -143,6 +144,26 @@ public class HTTPSinkConfigTest {
 
     MockFailureCollector collector = new MockFailureCollector("httpsinkwithemptyurl");
     config.validate(collector);
+    collector.getOrThrowException();
+  }
+
+  @Test()
+  public void testValidInputSchema() {
+    Schema schema = Schema.recordOf("record",
+                                    Schema.Field.of("id", Schema.of(Schema.Type.LONG)),
+                                    Schema.Field.of("name", Schema.of(Schema.Type.STRING)));
+    HTTPSinkConfig config = HTTPSinkConfig.newBuilder(VALID_CONFIG).build();
+    MockFailureCollector collector = new MockFailureCollector("httpsinkwithvalidinputschema");
+    config.validateSchema(schema, collector);
+    Assert.assertTrue(collector.getValidationFailures().isEmpty());
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void testInvalidInputSchema() {
+    Schema schema = null;
+    HTTPSinkConfig config = HTTPSinkConfig.newBuilder(VALID_CONFIG).build();
+    MockFailureCollector collector = new MockFailureCollector("httpsinkwithinvalidinputschema");
+    config.validateSchema(schema, collector);
     collector.getOrThrowException();
   }
 

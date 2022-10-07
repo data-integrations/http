@@ -23,6 +23,7 @@ import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.cdap.etl.api.validation.InvalidStageException;
+import io.cdap.plugin.common.ReferenceNames;
 import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.http.source.common.error.ErrorHandling;
 import io.cdap.plugin.http.source.common.error.HttpErrorHandlerEntity;
@@ -760,6 +761,10 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
 
   public List<String> getTransportProtocolsList() {
     return getListFromString(transportProtocols);
+  }
+
+  public String getReferenceNameOrNormalizedFQN() {
+    return Strings.isNullOrEmpty(referenceName) ? ReferenceNames.normalizeFqn(url) : referenceName;
   }
 
   public void validate(FailureCollector failureCollector) {

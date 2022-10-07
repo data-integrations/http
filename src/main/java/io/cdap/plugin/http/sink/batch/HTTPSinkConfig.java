@@ -22,12 +22,15 @@ import com.google.common.collect.ImmutableSet;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
+import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
+import io.cdap.plugin.common.ReferenceNames;
 import io.cdap.plugin.common.ReferencePluginConfig;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -271,6 +274,10 @@ public class HTTPSinkConfig extends ReferencePluginConfig {
     return convertHeadersToMap(requestHeaders);
   }
 
+  public String getReferenceNameOrNormalizedFQN() {
+    return Strings.isNullOrEmpty(referenceName) ? ReferenceNames.normalizeFqn(url) : referenceName;
+  }
+
   public void validate(FailureCollector collector) {
     if (!containsMacro(URL)) {
       try {
@@ -313,6 +320,14 @@ public class HTTPSinkConfig extends ReferencePluginConfig {
       && body == null) {
       collector.addFailure("For Custom message format, message cannot be null.", null)
         .withConfigProperty(MESSAGE_FORMAT);
+    }
+  }
+
+  public void validateSchema(Schema schema, FailureCollector collector) {
+    List<Schema.Field> fields = schema.getFields();
+    if (fields == null || fields.isEmpty()) {
+      collector.addFailure("Schema must contain at least one field", null);
+      throw collector.getOrThrowException();
     }
   }
 
