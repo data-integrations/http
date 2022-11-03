@@ -166,6 +166,10 @@ class JsonPage extends BasePage {
         return new PageEntry(error, config.getErrorHandling());
       }
       return new PageEntry(record);
+    } catch (IllegalStateException e) {
+      return new PageEntry(InvalidEntryCreator.buildStringError(
+        jsonString, "Check if the field should be set to Nullable in the output schema.", e),
+                           config.getErrorHandling());
     } catch (Throwable e) {
       return new PageEntry(InvalidEntryCreator.buildStringError(jsonString, e), config.getErrorHandling());
     }

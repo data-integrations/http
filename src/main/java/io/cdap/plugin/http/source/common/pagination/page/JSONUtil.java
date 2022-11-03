@@ -70,12 +70,21 @@ public class JSONUtil {
         jsonObject = currentElement.getAsJsonObject();
       }
 
-      if (!currentElement.isJsonObject() || jsonObject.get(pathPart) == null) {
+      if (!currentElement.isJsonObject()) {
         return new JsonQueryResponse(
           Arrays.copyOfRange(pathParts, 0, i),
           Arrays.copyOfRange(pathParts, i, pathParts.length),
           optionalFields,
           currentElement
+        );
+      }
+
+      if (jsonObject.get(pathPart) == null) {
+        return new JsonQueryResponse(
+          Arrays.copyOfRange(pathParts, 0, i),
+          Arrays.copyOfRange(pathParts, i, pathParts.length),
+          optionalFields,
+          null
         );
       }
 
