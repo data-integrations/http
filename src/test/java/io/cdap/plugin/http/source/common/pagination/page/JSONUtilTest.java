@@ -80,6 +80,16 @@ public class JSONUtilTest {
   }
 
   @Test
+  public void testRetrieveMissing() {
+    JsonObject jsonObject = JSONUtil.toJsonObject(JSON);
+    JSONUtil.JsonQueryResponse response = JSONUtil.getJsonElementByPath(jsonObject, "/missingField",
+                                                                        new ArrayList<>());
+    Assert.assertEquals("/", response.getRetrievedPath());
+    Assert.assertEquals("/missingField", response.getUnretrievedPath());
+    Assert.assertEquals(null, response.get());
+  }
+
+  @Test
   public void testRetrievePrimitive() {
     JsonObject jsonObject = JSONUtil.toJsonObject(JSON);
     JSONUtil.JsonQueryResponse response = JSONUtil.getJsonElementByPath(jsonObject, "/pageInfo/totalResults",
