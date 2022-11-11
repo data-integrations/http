@@ -41,8 +41,12 @@ public class InvalidEntryCreator {
   }
 
   public static InvalidEntry<StructuredRecord> buildStringError(String recordBody, Throwable e) {
-    String errorText = String.format("Cannot convert line '%s' to a record. Reason: '%s: %s'",
-                                     recordBody, e.getClass().getName(), e.getMessage());
+    return buildStringError(recordBody, "", e);
+  }
+
+  public static InvalidEntry<StructuredRecord> buildStringError(String recordBody, String actionText, Throwable e) {
+    String errorText = String.format("Cannot convert line '%s' to a record. Reason: '%s: %s'. %s",
+                                     recordBody, e.getClass().getName(), e.getMessage(), actionText);
 
     return buildStringError(0, recordBody, errorText);
   }
