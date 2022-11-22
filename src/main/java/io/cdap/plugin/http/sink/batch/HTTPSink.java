@@ -70,7 +70,7 @@ import javax.net.ssl.X509TrustManager;
 public class HTTPSink extends BatchSink<StructuredRecord, Void, Void> {
 
   private static final Logger LOG = LoggerFactory.getLogger(HTTPSink.class);
-  private static final String REGEX_HASHED_VAR = "#s*(\\w+)";
+  private static final String REGEX_HASHED_VAR = "#(\\w+)";
 
   private static StringBuilder messages = new StringBuilder();
   private String contentType;
