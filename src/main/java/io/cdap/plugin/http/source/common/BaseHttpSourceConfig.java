@@ -894,11 +894,21 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     switch (authType) {
       case OAUTH2:
         String reasonOauth2 = "OAuth2 is enabled";
-        assertIsSet(getAuthUrl(), PROPERTY_AUTH_URL, reasonOauth2);
-        assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
-        assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
-        assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
-        assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
+        if (!containsMacro(PROPERTY_AUTH_URL)) {
+          assertIsSet(getAuthUrl(), PROPERTY_AUTH_URL, reasonOauth2);
+        }
+        if (!containsMacro(PROPERTY_TOKEN_URL)) {
+          assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
+        }
+        if (!containsMacro(PROPERTY_CLIENT_ID)) {
+          assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
+        }
+        if (!containsMacro((PROPERTY_CLIENT_SECRET))) {
+          assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
+        }
+        if (!containsMacro(PROPERTY_REFRESH_TOKEN)) {
+          assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
+        }
         break;
       case SERVICE_ACCOUNT:
         String reasonSA = "Service Account is enabled";
@@ -916,8 +926,12 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
         break;
       case BASIC_AUTH:
         String reasonBasicAuth = "Basic Authentication is enabled";
-        assertIsSet(getUsername(), PROPERTY_USERNAME, reasonBasicAuth);
-        assertIsSet(getPassword(), PROPERTY_PASSWORD, reasonBasicAuth);
+        if (!containsMacro(PROPERTY_USERNAME)) {
+          assertIsSet(getUsername(), PROPERTY_USERNAME, reasonBasicAuth);
+        }
+        if (!containsMacro(PROPERTY_PASSWORD)) {
+          assertIsSet(getPassword(), PROPERTY_PASSWORD, reasonBasicAuth);
+        }
         break;
     }
 
