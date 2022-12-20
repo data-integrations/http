@@ -787,11 +787,21 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     // Validate OAuth2 properties
     if (!containsMacro(PROPERTY_OAUTH2_ENABLED) && this.getOauth2Enabled()) {
       String reasonOauth2 = "OAuth2 is enabled";
-      assertIsSet(getAuthUrl(), PROPERTY_AUTH_URL, reasonOauth2);
-      assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
-      assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
-      assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
-      assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
+      if (!containsMacro(PROPERTY_AUTH_URL)) {
+        assertIsSet(getAuthUrl(), PROPERTY_AUTH_URL, reasonOauth2);
+      }
+      if (!containsMacro(PROPERTY_TOKEN_URL)) {
+        assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
+      }
+      if (!containsMacro(PROPERTY_CLIENT_ID)) {
+        assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
+      }
+      if (!containsMacro((PROPERTY_CLIENT_SECRET))) {
+        assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
+      }
+      if (!containsMacro(PROPERTY_REFRESH_TOKEN)) {
+        assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
+      }
     }
 
     if (!containsMacro(PROPERTY_VERIFY_HTTPS) && !getVerifyHttps()) {
