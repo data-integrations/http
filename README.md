@@ -1,9 +1,7 @@
 # HTTP
 
-[![cm-available](https://cdap-users.herokuapp.com/assets/cm-available.svg)](https://docs.cask.co/cdap/current/en/integrations/cask-market.html)
-![cdap-batch-sink](https://cdap-users.herokuapp.com/assets/cdap-batch-sink.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Join CDAP community](https://cdap-users.herokuapp.com/badge.svg?t=wrangler)](https://cdap-users.herokuapp.com?t=1)
+[![Join CDAP community](https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Libera_Chat_Logo.svg/64px-Libera_Chat_Logo.svg.png)](https://web.libera.chat/#cdap-users)
 
 Introduction
 ============
@@ -21,8 +19,8 @@ Building Plugins
 You get started with http plugins by building directly from the latest source code::
 
 ```
-   git clone https://github.com/data-integrations/http.git
-   cd http
+   git clone https://github.com/data-integrations/http.git cdap-http
+   cd cdap-http
    mvn clean package
 ```
 
@@ -57,13 +55,14 @@ to the users.
 
 IRC Channel
 -----------
-CDAP IRC Channel: #cdap on irc.freenode.net
-
+CDAP Users on IRC: [#cdap-users channel](https://web.libera.chat/#cdap-users)
 
 License and Trademarks
 ======================
 
 Copyright © 2017 Cask Data, Inc.
+
+Copyright © 2023 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 in compliance with the License. You may obtain a copy of the License at
