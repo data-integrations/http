@@ -436,9 +436,9 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   @Macro
   protected String cipherSuites;
 
+  @Nullable
   @Name(PROPERTY_SCHEMA)
   @Macro
-  @Nullable
   @Description("Output schema. Is required to be set.")
   protected String schema;
 
@@ -985,6 +985,11 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   }
 
   public void validateSchema() {
+    Schema schema = getSchema();
+    if (schema == null) {
+      throw new InvalidConfigPropertyException(
+              String.format("Output schema cannot be empty"), PROPERTY_SCHEMA);
+    }
     if (!containsMacro(PROPERTY_FORMAT)) {
       PageFormat format = getFormat();
 
