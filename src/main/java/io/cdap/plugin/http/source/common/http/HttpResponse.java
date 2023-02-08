@@ -81,7 +81,8 @@ public class HttpResponse implements Closeable {
     if (bytes == null) {
       HttpEntity responseEntity = response.getEntity();
       if(responseEntity == null) {
-        return bytes;
+        byte[] emptyResponse = {};
+        return emptyResponse;
       }
       try {
         bytes = EntityUtils.toByteArray(responseEntity);
