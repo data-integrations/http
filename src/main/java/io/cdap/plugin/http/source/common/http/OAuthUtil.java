@@ -62,7 +62,7 @@ public class OAuthUtil {
 
     JsonElement jsonElement = JSONUtil.toJsonObject(responseString).get("access_token");
     if (jsonElement == null) {
-         throw new IOException("Access token not found");
+         throw new IllegalArgumentException("Access token not found");
     }
     return jsonElement.getAsString();
   }
