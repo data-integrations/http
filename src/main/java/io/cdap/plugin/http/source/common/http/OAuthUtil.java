@@ -21,7 +21,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonElement;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.source.common.pagination.page.JSONUtil;
-import org.apache.commons.httpclient.auth.InvalidCredentialsException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
