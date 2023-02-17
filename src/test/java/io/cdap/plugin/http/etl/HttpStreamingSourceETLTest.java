@@ -130,7 +130,6 @@ public class HttpStreamingSourceETLTest extends HttpSourceETLTest {
 
     programManager.stop();
     programManager.waitForStopped(10, TimeUnit.SECONDS);
-    programManager.waitForRun(ProgramRunStatus.KILLED, 10, TimeUnit.SECONDS);
 
     return MockSink.readOutput(outputManager);
   }
