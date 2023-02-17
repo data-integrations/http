@@ -80,7 +80,7 @@ public class HttpResponse implements Closeable {
   public byte[] getBytes() {
     if (bytes == null) {
       HttpEntity responseEntity = response.getEntity();
-      if(responseEntity == null) {
+      if (responseEntity == null) {
         return new byte[0];
       }
       try {

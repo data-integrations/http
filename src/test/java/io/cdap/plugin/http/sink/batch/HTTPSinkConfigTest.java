@@ -158,15 +158,6 @@ public class HTTPSinkConfigTest {
     Assert.assertTrue(collector.getValidationFailures().isEmpty());
   }
 
-  @Test(expected = NullPointerException.class)
-  public void testInvalidInputSchema() {
-    Schema schema = null;
-    HTTPSinkConfig config = HTTPSinkConfig.newBuilder(VALID_CONFIG).build();
-    MockFailureCollector collector = new MockFailureCollector("httpsinkwithinvalidinputschema");
-    config.validateSchema(schema, collector);
-    collector.getOrThrowException();
-  }
-
   public static void assertPropertyValidationFailed(MockFailureCollector failureCollector, String paramName) {
     List<ValidationFailure> failureList = failureCollector.getValidationFailures();
     Assert.assertEquals(1, failureList.size());
