@@ -26,6 +26,7 @@ import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -155,6 +156,9 @@ public class HttpClient implements Closeable {
       }
     }
     httpClientBuilder.setDefaultHeaders(clientHeaders);
+    if (!config.getVerifyHttps()) {
+      httpClientBuilder.setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE);
+    }
 
     return httpClientBuilder.build();
   }
