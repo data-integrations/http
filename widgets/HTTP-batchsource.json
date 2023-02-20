@@ -647,7 +647,7 @@
       "name": "Pagination none",
       "condition": {
         "property": "paginationType",
-        "operator": "equal to",
+        "operator": "not equal to",
         "value": "None"
       },
       "show": [
