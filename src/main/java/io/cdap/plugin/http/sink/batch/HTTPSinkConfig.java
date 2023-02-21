@@ -24,6 +24,7 @@ import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
+import io.cdap.cdap.format.StructuredRecordStringConverter;
 import io.cdap.plugin.common.ReferenceNames;
 import io.cdap.plugin.common.ReferencePluginConfig;
 
@@ -323,7 +324,10 @@ public class HTTPSinkConfig extends ReferencePluginConfig {
     }
   }
 
-  public void validateSchema(Schema schema, FailureCollector collector) {
+  public void validateSchema(@Nullable Schema schema, FailureCollector collector) {
+    if (schema == null) {
+      return;
+    }
     List<Schema.Field> fields = schema.getFields();
     if (fields == null || fields.isEmpty()) {
       collector.addFailure("Schema must contain at least one field", null);

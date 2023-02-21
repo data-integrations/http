@@ -26,6 +26,7 @@ import io.cdap.cdap.api.dataset.table.Table;
 import io.cdap.cdap.common.utils.Tasks;
 import io.cdap.cdap.datapipeline.DataPipelineApp;
 import io.cdap.cdap.datapipeline.SmartWorkflow;
+import io.cdap.cdap.etl.api.Engine;
 import io.cdap.cdap.etl.api.batch.BatchSink;
 import io.cdap.cdap.etl.mock.batch.MockSource;
 import io.cdap.cdap.etl.mock.test.HydratorTestBase;
@@ -132,10 +133,11 @@ public class HTTPSinkTest extends HydratorTestBase {
       .build();
 
     ETLStage sink = new ETLStage("HTTP", new ETLPlugin("HTTP", BatchSink.PLUGIN_TYPE, properties, null));
-    ETLBatchConfig etlConfig = ETLBatchConfig.builder("* * * * *")
+    ETLBatchConfig etlConfig = ETLBatchConfig.builder()
       .addStage(source)
       .addStage(sink)
       .addConnection(source.getName(), sink.getName())
+      .setEngine(Engine.SPARK)
       .build();
 
     AppRequest<ETLBatchConfig> appRequest = new AppRequest<>(BATCH_ARTIFACT, etlConfig);
@@ -203,10 +205,11 @@ public class HTTPSinkTest extends HydratorTestBase {
       ImmutableMap.of("url", baseURL + "/feeds/users");
 
     ETLStage sink = new ETLStage("HTTP", new ETLPlugin("HTTP", BatchSink.PLUGIN_TYPE, properties, null));
-    ETLBatchConfig etlConfig = ETLBatchConfig.builder("* * * * *")
+    ETLBatchConfig etlConfig = ETLBatchConfig.builder()
       .addStage(source)
       .addStage(sink)
       .addConnection(source.getName(), sink.getName())
+      .setEngine(Engine.SPARK)
       .build();
 
     ApplicationManager appManager = deployETL(etlConfig, inputDatasetName);
