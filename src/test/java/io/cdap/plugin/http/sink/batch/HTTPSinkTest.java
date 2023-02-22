@@ -132,7 +132,7 @@ public class HTTPSinkTest extends HydratorTestBase {
       .build();
 
     ETLStage sink = new ETLStage("HTTP", new ETLPlugin("HTTP", BatchSink.PLUGIN_TYPE, properties, null));
-    ETLBatchConfig etlConfig = ETLBatchConfig.builder("* * * * *")
+    ETLBatchConfig etlConfig = ETLBatchConfig.builder()
       .addStage(source)
       .addStage(sink)
       .addConnection(source.getName(), sink.getName())
@@ -203,7 +203,7 @@ public class HTTPSinkTest extends HydratorTestBase {
       ImmutableMap.of("url", baseURL + "/feeds/users");
 
     ETLStage sink = new ETLStage("HTTP", new ETLPlugin("HTTP", BatchSink.PLUGIN_TYPE, properties, null));
-    ETLBatchConfig etlConfig = ETLBatchConfig.builder("* * * * *")
+    ETLBatchConfig etlConfig = ETLBatchConfig.builder()
       .addStage(source)
       .addStage(sink)
       .addConnection(source.getName(), sink.getName())
