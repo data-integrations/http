@@ -107,7 +107,8 @@ public class HttpClient implements Closeable {
     // basic auth
     CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
     if (!Strings.isNullOrEmpty(config.getUsername()) && !Strings.isNullOrEmpty(config.getPassword())) {
-      AuthScope authScope = new AuthScope(HttpHost.create(config.getUrl()));
+      URI uri = URI.create(config.getUrl());
+      AuthScope authScope = new AuthScope(new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme()));
       credentialsProvider.setCredentials(authScope,
                                          new UsernamePasswordCredentials(config.getUsername(), config.getPassword()));
     }
