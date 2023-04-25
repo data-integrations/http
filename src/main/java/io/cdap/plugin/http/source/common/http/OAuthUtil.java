@@ -23,6 +23,7 @@ import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.source.common.pagination.page.JSONUtil;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
@@ -82,7 +83,8 @@ public class OAuthUtil {
                                                                  .getBytes(StandardCharsets.UTF_8));
         credential = GoogleCredentials.fromStream(jsonInputStream)
           .createScoped(scopeSet);
-      } else if (config.isServiceAccountFilePath() && !Strings.isNullOrEmpty(config.getServiceAccountFilePath())) {
+      } else if (config.isServiceAccountFilePath() && !Strings.isNullOrEmpty(config.getServiceAccountFilePath())
+        && !BaseHttpSourceConfig.PROPERTY_AUTO_DETECT_VALUE.equals(config.getServiceAccountFilePath())) {
         credential = GoogleCredentials.fromStream(new FileInputStream(config.getServiceAccountFilePath()))
           .createScoped(scopeSet);
       } else {
