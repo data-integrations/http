@@ -48,7 +48,9 @@ public class HTTPSinkConfigTest {
     1,
     1,
     1,
-    true
+    true,
+          "true",
+          "basicAuth"
   );
 
   @Test

@@ -19,8 +19,14 @@ package io.cdap.plugin.http.sink.batch;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.format.StructuredRecordStringConverter;
+import io.cdap.plugin.http.source.common.http.AuthType;
+import io.cdap.plugin.http.source.common.http.OAuthUtil;
+
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.http.Header;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +41,7 @@ import java.net.URLEncoder;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -103,7 +110,27 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
     IOException exception = null;
     do {
       HttpURLConnection conn = null;
-      Map<String, String> headers = config.getRequestHeadersMap();
+
+      Map<String, String> headers = null;
+
+      // auth check
+      AuthType authType = config.getAuthType();
+        ArrayList<Header> clientHeaders = new ArrayList<>();
+        switch (authType) {
+          case OAUTH2:
+            String accessToken = OAuthUtil.getAccessTokenByRefreshToken(HttpClients.createDefault(),
+                    config.getTokenUrl(), config.getClientId(), config.getClientSecret(),
+                    config.getRefreshToken());
+            clientHeaders.add(new BasicHeader("Authorization", "Bearer " + accessToken));
+            headers = config.getHeadersMap(String.valueOf(clientHeaders));
+            break;
+          case SERVICE_ACCOUNT:
+            // get accessToken from service account
+            accessToken = OAuthUtil.getAccessTokenByServiceAccount(config);
+            clientHeaders.add(new BasicHeader("Authorization", "Bearer " + accessToken));
+            headers = config.getHeadersMap(String.valueOf(clientHeaders));
+            break;
+        }
       try {
         URL url = new URL(config.getUrl());
         conn = (HttpURLConnection) url.openConnection();
