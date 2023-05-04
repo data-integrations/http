@@ -29,7 +29,6 @@ import io.cdap.cdap.format.StructuredRecordStringConverter;
 import io.cdap.plugin.common.ReferenceNames;
 import io.cdap.plugin.common.ReferencePluginConfig;
 
-import io.cdap.plugin.http.source.batch.HttpBatchSourceConfig;
 import io.cdap.plugin.http.source.common.http.AuthType;
 import io.cdap.plugin.http.source.common.http.OAuthUtil;
 import java.io.File;

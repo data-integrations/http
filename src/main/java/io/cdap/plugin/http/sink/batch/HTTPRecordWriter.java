@@ -115,8 +115,8 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
 
       // auth check
       AuthType authType = config.getAuthType();
-        ArrayList<Header> clientHeaders = new ArrayList<>();
-        switch (authType) {
+      ArrayList<Header> clientHeaders = new ArrayList<>();
+      switch (authType) {
           case OAUTH2:
             String accessToken = OAuthUtil.getAccessTokenByRefreshToken(HttpClients.createDefault(),
                     config.getTokenUrl(), config.getClientId(), config.getClientSecret(),
@@ -131,6 +131,9 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
             headers = config.getHeadersMap(String.valueOf(clientHeaders));
             break;
         }
+      if (headers.equals(null))  {
+        headers = config.getRequestHeadersMap();
+      }
       try {
         URL url = new URL(config.getUrl());
         conn = (HttpURLConnection) url.openConnection();
