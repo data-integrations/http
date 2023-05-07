@@ -25,12 +25,11 @@ import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
-import io.cdap.cdap.format.StructuredRecordStringConverter;
 import io.cdap.plugin.common.ReferenceNames;
-import io.cdap.plugin.common.ReferencePluginConfig;
 
-import io.cdap.plugin.http.source.common.http.AuthType;
-import io.cdap.plugin.http.source.common.http.OAuthUtil;
+import io.cdap.plugin.http.common.BaseHttpConfig;
+import io.cdap.plugin.http.common.http.AuthType;
+import io.cdap.plugin.http.common.http.OAuthUtil;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -46,7 +45,7 @@ import javax.ws.rs.HttpMethod;
 /**
  * Config class for {@link HTTPSink}.
  */
-public class HTTPSinkConfig extends ReferencePluginConfig {
+public class HTTPSinkConfig extends BaseHttpConfig {
   public static final String URL = "url";
   public static final String METHOD = "method";
   public static final String BATCH_SIZE = "batchSize";
@@ -61,36 +60,6 @@ public class HTTPSinkConfig extends ReferencePluginConfig {
   public static final String CONNECTION_TIMEOUT = "connectTimeout";
   public static final String READ_TIMEOUT = "readTimeout";
   public static final String FAIL_ON_NON_200_RESPONSE = "failOnNon200Response";
-  public static final String PROPERTY_OAUTH2_ENABLED = "oauth2Enabled";
-  public static final String PROPERTY_AUTH_URL = "authUrl";
-  public static final String PROPERTY_TOKEN_URL = "tokenUrl";
-  public static final String PROPERTY_CLIENT_ID = "clientId";
-  public static final String PROPERTY_CLIENT_SECRET = "clientSecret";
-  public static final String PROPERTY_SCOPES = "scopes";
-  public static final String PROPERTY_REFRESH_TOKEN = "refreshToken";
-
-  public static final String PROPERTY_AUTH_TYPE = "authType";
-
-  public static final String PROPERTY_AUTH_TYPE_LABEL = "Auth type";
-
-  public static final String PROPERTY_USERNAME = "username";
-
-  public static final String PROPERTY_PASSWORD = "password";
-
-  public static final String PROPERTY_NAME_SERVICE_ACCOUNT_TYPE = "serviceAccountType";
-
-  public static final String PROPERTY_NAME_SERVICE_ACCOUNT_FILE_PATH = "serviceAccountFilePath";
-
-  public static final String PROPERTY_NAME_SERVICE_ACCOUNT_JSON = "serviceAccountJSON";
-
-  public static final String PROPERTY_SERVICE_ACCOUNT_FILE_PATH = "filePath";
-
-  public static final String PROPERTY_SERVICE_ACCOUNT_JSON = "JSON";
-
-  public static final String PROPERTY_AUTO_DETECT_VALUE = "auto-detect";
-
-  public static final String PROPERTY_SERVICE_ACCOUNT_SCOPE = "serviceAccountScope";
-
   private static final String KV_DELIMITER = ":";
   private static final String DELIMITER = "\n";
   private static final Set<String> METHODS = ImmutableSet.of(HttpMethod.GET, HttpMethod.POST,
@@ -180,102 +149,13 @@ public class HTTPSinkConfig extends ReferencePluginConfig {
   @Macro
   private final Boolean failOnNon200Response;
 
-  @Name(PROPERTY_OAUTH2_ENABLED)
-  @Description("If true, plugin will perform OAuth2 authentication.")
-  @Nullable
-  protected String oauth2Enabled;
-
-  @Nullable
-  @Name(PROPERTY_AUTH_URL)
-  @Description("Endpoint for the authorization server used to retrieve the authorization code.")
-  @Macro
-  protected String authUrl;
-
-  @Nullable
-  @Name(PROPERTY_TOKEN_URL)
-  @Description("Endpoint for the resource server, which exchanges the authorization code for an access token.")
-  @Macro
-  protected String tokenUrl;
-
-  @Nullable
-  @Name(PROPERTY_CLIENT_ID)
-  @Description("Client identifier obtained during the Application registration process.")
-  @Macro
-  protected String clientId;
-
-  @Nullable
-  @Name(PROPERTY_CLIENT_SECRET)
-  @Description("Client secret obtained during the Application registration process.")
-  @Macro
-  protected String clientSecret;
-
-  @Nullable
-  @Name(PROPERTY_SCOPES)
-  @Description("Scope of the access request, which might have multiple space-separated values.")
-  @Macro
-  protected String scopes;
-
-  @Nullable
-  @Name(PROPERTY_REFRESH_TOKEN)
-  @Description("Token used to receive accessToken, which is end product of OAuth2.")
-  @Macro
-  protected String refreshToken;
-
-  @Nullable
-  @Name(PROPERTY_USERNAME)
-  @Description("Username for basic authentication.")
-  @Macro
-  protected String username;
-
-  @Nullable
-  @Name(PROPERTY_PASSWORD)
-  @Description("Password for basic authentication.")
-  @Macro
-  protected String password;
-
-  @Name(PROPERTY_AUTH_TYPE)
-  @Description("Type of authentication used to submit request. \n" +
-          "OAuth2, Service account, Basic Authentication types are available.")
-  protected String authType;
-
-  @Name(PROPERTY_NAME_SERVICE_ACCOUNT_TYPE)
-  @Description("Service account type, file path where the service account is located or the JSON content of the " +
-          "service account.")
-  @Nullable
-  protected String serviceAccountType;
-
-  @Nullable
-  @Macro
-  @Name(PROPERTY_NAME_SERVICE_ACCOUNT_FILE_PATH)
-  @Description("Path on the local file system of the service account key used for authorization. " +
-          "Can be set to 'auto-detect' for getting service account from system variable. " +
-          "The file/system variable must be present on every node in the cluster. " +
-          "Service account json can be generated on Google Cloud " +
-          "Service Account page (https://console.cloud.google.com/iam-admin/serviceaccounts).")
-  protected String serviceAccountFilePath;
-
-  @Name(PROPERTY_NAME_SERVICE_ACCOUNT_JSON)
-  @Description("Content of the service account file.")
-  @Nullable
-  @Macro
-  protected String serviceAccountJson;
-
-  @Nullable
-  @Name(PROPERTY_SERVICE_ACCOUNT_SCOPE)
-  @Description("The additional Google credential scopes required to access entered url, " +
-          "cloud-platform is included by default, " +
-          "visit https://developers.google.com/identity/protocols/oauth2/scopes " +
-          "for more information.")
-  @Macro
-  protected String serviceAccountScope;
-
   public HTTPSinkConfig(String referenceName, String url, String method, Integer batchSize,
                         @Nullable String delimiterForMessages, String messageFormat, @Nullable String body,
                         @Nullable String requestHeaders, String charset,
                         boolean followRedirects, boolean disableSSLValidation, @Nullable int numRetries,
                         @Nullable int readTimeout, @Nullable int connectTimeout, boolean failOnNon200Response,
                         String oauth2Enabled, String authType) {
-    super(referenceName);
+    super(referenceName, authType, oauth2Enabled);
     this.url = url;
     this.method = method;
     this.batchSize = batchSize;
@@ -290,12 +170,10 @@ public class HTTPSinkConfig extends ReferencePluginConfig {
     this.readTimeout = readTimeout;
     this.connectTimeout = connectTimeout;
     this.failOnNon200Response = failOnNon200Response;
-    this.oauth2Enabled = oauth2Enabled;
-    this.authType = authType;
   }
 
   private HTTPSinkConfig(Builder builder) {
-    super(builder.referenceName);
+    super(builder.referenceName, builder.authType, builder.oauth2Enabled);
     url = builder.url;
     method = builder.method;
     batchSize = builder.batchSize;
@@ -310,8 +188,6 @@ public class HTTPSinkConfig extends ReferencePluginConfig {
     connectTimeout = builder.connectTimeout;
     readTimeout = builder.readTimeout;
     failOnNon200Response = builder.failOnNon200Response;
-    oauth2Enabled = builder.oauth2Enabled;
-    authType = builder.authType;
   }
 
   public static Builder newBuilder() {
@@ -401,98 +277,6 @@ public class HTTPSinkConfig extends ReferencePluginConfig {
     return failOnNon200Response;
   }
 
-  public Boolean getOauth2Enabled() {
-    return Boolean.parseBoolean(oauth2Enabled);
-  }
-
-  public String getOAuth2Enabled() {
-    return oauth2Enabled;
-  }
-
-  @Nullable
-  public String getAuthUrl() {
-    return authUrl;
-  }
-
-  @Nullable
-  public String getTokenUrl() {
-    return tokenUrl;
-  }
-
-  @Nullable
-  public String getClientId() {
-    return clientId;
-  }
-
-  @Nullable
-  public String getClientSecret() {
-    return clientSecret;
-  }
-
-  @Nullable
-  public String getScopes() {
-    return scopes;
-  }
-
-  @Nullable
-  public String getRefreshToken() {
-    return refreshToken;
-  }
-
-  public AuthType getAuthType() {
-    return AuthType.fromValue(authType);
-  }
-
-  public String getAuthTypeString() {
-    return authType;
-  }
-
-  public void setAuthType(String authType) {
-    this.authType = authType;
-  }
-
-  @Nullable
-  public String getUsername() {
-    return username;
-  }
-
-  @Nullable
-  public String getPassword() {
-    return password;
-  }
-
-  public void setServiceAccountType(String serviceAccountType) {
-    this.serviceAccountType = serviceAccountType;
-  }
-
-  @Nullable
-  public String getServiceAccountType() {
-    return serviceAccountType;
-  }
-
-  public void setServiceAccountJson(String serviceAccountJson) {
-    this.serviceAccountJson = serviceAccountJson;
-  }
-
-  @Nullable
-  public String getServiceAccountJson() {
-    return serviceAccountJson;
-  }
-
-  public void setServiceAccountFilePath(String serviceAccountFilePath) {
-    this.serviceAccountFilePath = serviceAccountFilePath;
-  }
-
-  @Nullable
-  public String getServiceAccountFilePath() {
-    return serviceAccountFilePath;
-  }
-
-  @Nullable
-  public String getServiceAccountScope() {
-    return serviceAccountScope;
-  }
-
   public Map<String, String> getRequestHeadersMap() {
     return convertHeadersToMap(requestHeaders);
   }
@@ -520,61 +304,7 @@ public class HTTPSinkConfig extends ReferencePluginConfig {
         .withConfigProperty(CONNECTION_TIMEOUT);
     }
 
-    // Validate OAuth2 properties
-    if (!containsMacro(PROPERTY_OAUTH2_ENABLED) && this.getOauth2Enabled()) {
-      String reasonOauth2 = "OAuth2 is enabled";
-      assertIsSet(getAuthUrl(), PROPERTY_AUTH_URL, reasonOauth2);
-      assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
-      assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
-      assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
-      assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
-    }
-
-    // Validate Authentication properties
-    AuthType authType = getAuthType();
-    switch (authType) {
-      case OAUTH2:
-        String reasonOauth2 = "OAuth2 is enabled";
-        if (!containsMacro(PROPERTY_AUTH_URL)) {
-          assertIsSet(getAuthUrl(), PROPERTY_AUTH_URL, reasonOauth2);
-        }
-        if (!containsMacro(PROPERTY_TOKEN_URL)) {
-          assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
-        }
-        if (!containsMacro(PROPERTY_CLIENT_ID)) {
-          assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
-        }
-        if (!containsMacro((PROPERTY_CLIENT_SECRET))) {
-          assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
-        }
-        if (!containsMacro(PROPERTY_REFRESH_TOKEN)) {
-          assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
-        }
-        break;
-      case SERVICE_ACCOUNT:
-        String reasonSA = "Service Account is enabled";
-        assertIsSet(getServiceAccountType(), PROPERTY_NAME_SERVICE_ACCOUNT_TYPE, reasonSA);
-        boolean propertiesAreValid = validateServiceAccount(collector);
-        if (propertiesAreValid) {
-          try {
-            String accessToken = OAuthUtil.getAccessTokenByServiceAccount(this);
-          } catch (Exception e) {
-            collector.addFailure("Unable to authenticate given service account info. ",
-                            "Please make sure all infomation entered correctly")
-                    .withStacktrace(e.getStackTrace());
-          }
-        }
-        break;
-      case BASIC_AUTH:
-        String reasonBasicAuth = "Basic Authentication is enabled";
-        if (!containsMacro(PROPERTY_USERNAME)) {
-          assertIsSet(getUsername(), PROPERTY_USERNAME, reasonBasicAuth);
-        }
-        if (!containsMacro(PROPERTY_PASSWORD)) {
-          assertIsSet(getPassword(), PROPERTY_PASSWORD, reasonBasicAuth);
-        }
-        break;
-    }
+    validateOAuth(collector);
 
     try {
       convertHeadersToMap(requestHeaders);
@@ -606,49 +336,6 @@ public class HTTPSinkConfig extends ReferencePluginConfig {
     }
   }
 
-  private boolean validateServiceAccount(FailureCollector collector) {
-    if (containsMacro(PROPERTY_NAME_SERVICE_ACCOUNT_FILE_PATH) || containsMacro(PROPERTY_NAME_SERVICE_ACCOUNT_JSON)) {
-      return false;
-    }
-    final Boolean bServiceAccountFilePath = isServiceAccountFilePath();
-    final Boolean bServiceAccountJson = isServiceAccountJson();
-
-    // we don't want the validation to fail because the VM used during the validation
-    // may be different from the VM used during runtime and may not have the Google Drive Api scope.
-    if (bServiceAccountFilePath && PROPERTY_AUTO_DETECT_VALUE.equalsIgnoreCase(serviceAccountFilePath)) {
-      return false;
-    }
-
-    if (bServiceAccountFilePath != null && bServiceAccountFilePath) {
-      if (!PROPERTY_AUTO_DETECT_VALUE.equals(serviceAccountFilePath) && !new File(serviceAccountFilePath).exists()) {
-        collector.addFailure("Service Account File Path is not available.",
-                        "Please provide path to existing Service Account file.")
-                .withConfigProperty(PROPERTY_NAME_SERVICE_ACCOUNT_FILE_PATH);
-      }
-    }
-    if (bServiceAccountJson != null && bServiceAccountJson) {
-      if (!Optional.ofNullable(getServiceAccountJson()).isPresent()) {
-        collector.addFailure("Service Account JSON can not be empty.",
-                        "Please provide Service Account JSON.")
-                .withConfigProperty(PROPERTY_NAME_SERVICE_ACCOUNT_JSON);
-      }
-    }
-    return collector.getValidationFailures().size() == 0;
-  }
-
-  @Nullable
-  public Boolean isServiceAccountJson() {
-    String serviceAccountType = getServiceAccountType();
-    return Strings.isNullOrEmpty(serviceAccountType) ? null : serviceAccountType.equals(PROPERTY_SERVICE_ACCOUNT_JSON);
-  }
-
-  @Nullable
-  public Boolean isServiceAccountFilePath() {
-    String serviceAccountType = getServiceAccountType();
-    return Strings.isNullOrEmpty(serviceAccountType) ? null :
-            serviceAccountType.equals(PROPERTY_SERVICE_ACCOUNT_FILE_PATH);
-  }
-
   public void validateSchema(@Nullable Schema schema, FailureCollector collector) {
     if (schema == null) {
       return;
@@ -657,13 +344,6 @@ public class HTTPSinkConfig extends ReferencePluginConfig {
     if (fields == null || fields.isEmpty()) {
       collector.addFailure("Schema must contain at least one field", null);
       throw collector.getOrThrowException();
-    }
-  }
-
-  public static void assertIsSet(Object propertyValue, String propertyName, String reason) {
-    if (propertyValue == null) {
-      throw new InvalidConfigPropertyException(
-              String.format("Property '%s' must be set, since %s", propertyName, reason), propertyName);
     }
   }
 

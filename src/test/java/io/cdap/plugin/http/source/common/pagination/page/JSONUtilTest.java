@@ -16,6 +16,7 @@
 package io.cdap.plugin.http.source.common.pagination.page;
 
 import com.google.gson.JsonObject;
+import io.cdap.plugin.http.common.pagination.page.JSONUtil;
 import org.junit.Assert;
 import org.junit.Test;
 

@@ -19,8 +19,8 @@ package io.cdap.plugin.http.sink.batch;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.format.StructuredRecordStringConverter;
-import io.cdap.plugin.http.source.common.http.AuthType;
-import io.cdap.plugin.http.source.common.http.OAuthUtil;
+import io.cdap.plugin.http.common.http.AuthType;
+import io.cdap.plugin.http.common.http.OAuthUtil;
 
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -118,15 +118,17 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
       ArrayList<Header> clientHeaders = new ArrayList<>();
       switch (authType) {
           case OAUTH2:
-            String accessToken = OAuthUtil.getAccessTokenByRefreshToken(HttpClients.createDefault(),
-                    config.getTokenUrl(), config.getClientId(), config.getClientSecret(),
-                    config.getRefreshToken());
+            String accessToken = OAuthUtil.getAccessTokenByRefreshToken(HttpClients.createDefault(), config.getTokenUrl(),
+                                                                        config.getClientId(), config.getClientSecret(),
+                                                                        config.getRefreshToken());
             clientHeaders.add(new BasicHeader("Authorization", "Bearer " + accessToken));
             headers = config.getHeadersMap(String.valueOf(clientHeaders));
             break;
           case SERVICE_ACCOUNT:
             // get accessToken from service account
-            accessToken = OAuthUtil.getAccessTokenByServiceAccount(config);
+            accessToken = OAuthUtil.getAccessToken(config.getServiceAccountScope(), config.isServiceAccountJson(),
+                                                   config.getServiceAccountJson(), config.isServiceAccountFilePath(),
+                                                   config.getServiceAccountFilePath());
             clientHeaders.add(new BasicHeader("Authorization", "Bearer " + accessToken));
             headers = config.getHeadersMap(String.valueOf(clientHeaders));
             break;
