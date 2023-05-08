@@ -19,8 +19,8 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonElement;
+import io.cdap.plugin.http.common.BaseHttpConfig;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
-import io.cdap.plugin.http.sink.batch.HTTPSinkConfig;
 import io.cdap.plugin.http.common.pagination.page.JSONUtil;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -67,27 +67,28 @@ public class OAuthUtil {
     return jsonElement.getAsString();
   }
 
-  public static String getAccessToken(String serviceAccountScope, Boolean isServiceAccountJson,
-                                      String serviceAccountJson, Boolean isServiceAccountFilePath,
-                                      String serviceAccountFilePath) throws IOException {
+  public static String getAccessTokenByServiceAccount(BaseHttpConfig config) throws IOException {
+    return getAccessToken(config);
+  }
+  public static String getAccessToken(BaseHttpConfig config) throws IOException {
     GoogleCredentials credential;
     String accessToken = "";
     try {
       ImmutableSet scopeSet = ImmutableSet.of("https://www.googleapis.com/auth/cloud-platform");
-      if (serviceAccountScope != null) {
-        String[] scopes = serviceAccountScope.split("\n");
+      if (config.getServiceAccountScope() != null) {
+        String[] scopes = config.getServiceAccountScope().split("\n");
         for (String scope: scopes) {
           scopeSet = ImmutableSet.builder().addAll(scopeSet).add(scope).build();
         }
       }
-      if (isServiceAccountJson) {
-        InputStream jsonInputStream = new ByteArrayInputStream(serviceAccountJson
+      if (config.isServiceAccountJson()) {
+        InputStream jsonInputStream = new ByteArrayInputStream(config.getServiceAccountJson()
                 .getBytes(StandardCharsets.UTF_8));
         credential = GoogleCredentials.fromStream(jsonInputStream)
                 .createScoped(scopeSet);
-      } else if (isServiceAccountFilePath && !Strings.isNullOrEmpty(serviceAccountFilePath)
-              && !BaseHttpSourceConfig.PROPERTY_AUTO_DETECT_VALUE.equals(serviceAccountFilePath)) {
-        credential = GoogleCredentials.fromStream(new FileInputStream(serviceAccountFilePath))
+      } else if (config.isServiceAccountFilePath() && !Strings.isNullOrEmpty(config.getServiceAccountFilePath())
+              && !BaseHttpSourceConfig.PROPERTY_AUTO_DETECT_VALUE.equals(config.getServiceAccountFilePath())) {
+        credential = GoogleCredentials.fromStream(new FileInputStream(config.getServiceAccountFilePath()))
                 .createScoped(scopeSet);
       } else {
         credential = GoogleCredentials.getApplicationDefault()

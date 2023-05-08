@@ -49,7 +49,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Stream;
@@ -379,10 +378,6 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
     return Boolean.parseBoolean(csvSkipFirstRow);
   }
 
-  public void setAuthType(String authType) {
-    this.authType = authType;
-  }
-
   @Nullable
   public String getProxyUrl() {
     return proxyUrl;
@@ -597,6 +592,8 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
   }
 
   public void validate(FailureCollector failureCollector) {
+    super.validate(failureCollector);
+
     // Validate URL
     if (!containsMacro(PROPERTY_URL)) {
       try {
@@ -708,8 +705,6 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
         assertIsNotSet(getFieldsMapping(), PROPERTY_FIELDS_MAPPING, reasonFormat);
       }
     }
-
-    validateOAuth(failureCollector);
 
     if (!containsMacro(PROPERTY_VERIFY_HTTPS) && !getVerifyHttps()) {
       assertIsNotSet(getTrustStoreFile(), PROPERTY_TRUSTSTORE_FILE,

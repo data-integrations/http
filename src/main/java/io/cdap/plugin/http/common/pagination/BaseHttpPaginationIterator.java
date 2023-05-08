@@ -169,7 +169,7 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
   }
 
   // for testing purposes
-  HttpClient getHttpClient() {
+  public HttpClient getHttpClient() {
     return httpClient;
   }
 

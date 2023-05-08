@@ -49,14 +49,14 @@ public class PaginationIteratorTest {
   @Test
   public void testNonePagination() throws IOException {
     class TestConfig extends BaseTestConfig {
-      TestConfig(String referenceName) {
-        super(referenceName);
+      TestConfig(String referenceName, String authType, String oauth2Enabled) {
+        super(referenceName, authType, oauth2Enabled);
         this.paginationType = "None";
       }
     }
 
     String[] responses = {"testResponse1"};
-    BaseHttpSourceConfig config = new TestConfig("testNonePagination");
+    BaseHttpSourceConfig config = new TestConfig("testNonePagination", "basic", "true");
     List<StructuredRecord> results =
       getResultsFromIterator(getPaginationIterator(config, responses));
     assertResults(results, responses, config);
@@ -65,8 +65,8 @@ public class PaginationIteratorTest {
   @Test
   public void testIncrementAnIndex() throws IOException {
     class TestConfig extends BaseTestConfig {
-      TestConfig(String referenceName) {
-        super(referenceName);
+      TestConfig(String referenceName, String authType, String oauth2Enabled) {
+        super(referenceName, authType, oauth2Enabled);
         this.paginationType = "Increment an index";
         this.startIndex = 0L;
         this.indexIncrement = 10L;
@@ -75,7 +75,7 @@ public class PaginationIteratorTest {
     }
     String[] responses = {"testResponse1", "testResponse2", "testResponse3", "testResponse4", "testResponse5"};
 
-    BaseHttpSourceConfig config = new TestConfig("testIncrementAnIndex");
+    BaseHttpSourceConfig config = new TestConfig("testIncrementAnIndex", "basic", "true");
     List<StructuredRecord> results = getResultsFromIterator(getPaginationIterator(config, responses));
     assertResults(results, responses, config);
   }
@@ -83,8 +83,8 @@ public class PaginationIteratorTest {
   @Test
   public void testLinkInResponseBody() throws IOException {
     class TestConfig extends BaseTestConfig {
-      TestConfig(String referenceName) {
-        super(referenceName);
+      TestConfig(String referenceName, String authType, String oauth2Enabled) {
+        super(referenceName, authType, oauth2Enabled);
         this.format = "json";
         this.paginationType = "Link in response body";
         this.resultPath = "/";
@@ -95,7 +95,7 @@ public class PaginationIteratorTest {
       "{\"body\": \"testResponse2\", \"next\":\"p3\"}",
       "{\"body\": \"testResponse3\"}"};
 
-    BaseHttpSourceConfig config = new TestConfig("testLinkInResponseBody");
+    BaseHttpSourceConfig config = new TestConfig("testLinkInResponseBody", "basic", "true");
     List<StructuredRecord> results = getResultsFromIterator(getPaginationIterator(config, responses));
     assertResults(results, responses, config);
   }
@@ -103,15 +103,15 @@ public class PaginationIteratorTest {
   @Test
   public void testLinkInResponseHeader() throws IOException {
     class TestConfig extends BaseTestConfig {
-      TestConfig(String referenceName) {
-        super(referenceName);
+      TestConfig(String referenceName, String authType, String oauth2Enabled) {
+        super(referenceName, authType, oauth2Enabled);
         this.resultPath = "/items";
         this.paginationType = "Link in response header";
       }
     }
     String[] responses = {"testResponse1", "testResponse2", "testResponse3"};
 
-    BaseHttpSourceConfig config = new TestConfig("testLinkInResponseHeader");
+    BaseHttpSourceConfig config = new TestConfig("testLinkInResponseHeader", "basic", "true");
     BaseHttpPaginationIterator paginationIterator = getPaginationIterator(config, responses);
 
     String value1 = "<https://api.github.com/search/code?q=Salesforce%2Buser%3Adata-integrations&page=2>; " +
@@ -136,8 +136,8 @@ public class PaginationIteratorTest {
   @Test
   public void testTokenPagination() throws IOException {
     class TestConfig extends BaseTestConfig {
-      TestConfig(String referenceName) {
-        super(referenceName);
+      TestConfig(String referenceName, String authType, String oauth2Enabled) {
+        super(referenceName, authType, oauth2Enabled);
         this.format = "json";
         this.resultPath = "/";
         this.paginationType = "Token in response body";
@@ -150,7 +150,7 @@ public class PaginationIteratorTest {
       "{\"body\": \"testResponse2\", \"nextPageToken\":\"p3\"}",
       "{\"body\": \"testResponse3\"}"};
 
-    BaseHttpSourceConfig config = new TestConfig("testTokenPagination");
+    BaseHttpSourceConfig config = new TestConfig("testTokenPagination", "basic", "true");
     List<StructuredRecord> results = getResultsFromIterator(getPaginationIterator(config, responses));
     assertResults(results, responses, config);
   }
@@ -158,8 +158,8 @@ public class PaginationIteratorTest {
   @Test
   public void testPaginationCustom() throws IOException {
     class TestConfig extends BaseTestConfig {
-      TestConfig(String referenceName) {
-        super(referenceName);
+      TestConfig(String referenceName, String authType, String oauth2Enabled) {
+        super(referenceName, authType, oauth2Enabled);
         this.paginationType = "Custom";
         this.format = "json";
         this.resultPath = "/";
@@ -190,7 +190,7 @@ public class PaginationIteratorTest {
       "{\"body\": \"testResponse2\", \"nextpage\": 2}",
       "{\"body\": \"testResponse3\", \"nextpage\": 3}"};
 
-    BaseHttpSourceConfig config = new TestConfig("testTokenPagination");
+    BaseHttpSourceConfig config = new TestConfig("testTokenPagination", "basic", "true");
     BaseHttpPaginationIterator paginationIterator = getPaginationIterator(config, responses);
 
     Mockito.when(responseMock.getAllHeaders()).thenReturn(new Header[0]);
@@ -201,14 +201,14 @@ public class PaginationIteratorTest {
   @Test(expected = IllegalStateException.class)
   public void testErrorHttpStatus() throws IOException {
     class TestConfig extends BaseTestConfig {
-      TestConfig(String referenceName) {
-        super(referenceName);
+      TestConfig(String referenceName, String authType, String oauth2Enabled) {
+        super(referenceName, authType, oauth2Enabled);
         this.paginationType = "None";
       }
     }
 
     String[] responses = {"testResponse1"};
-    BaseHttpSourceConfig config = new TestConfig("testTokenPagination");
+    BaseHttpSourceConfig config = new TestConfig("testTokenPagination", "basic", "true");
     getResultsFromIterator(getPaginationIterator(config, responses, 400));
   }
 
@@ -327,8 +327,8 @@ public class PaginationIteratorTest {
   }
 
   static class BaseTestConfig extends HttpBatchSourceConfig {
-    BaseTestConfig(String referenceName) {
-      super(referenceName);
+    BaseTestConfig(String referenceName, String authType, String oauth2Enabled) {
+      super(referenceName, authType, oauth2Enabled);
 
       this.schema = "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":" +
         "[{\"name\":\"body\",\"type\":\"string\"}]}";

@@ -24,13 +24,9 @@ import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
-import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.plugin.common.ReferenceNames;
 
 import io.cdap.plugin.http.common.BaseHttpConfig;
-import io.cdap.plugin.http.common.http.AuthType;
-import io.cdap.plugin.http.common.http.OAuthUtil;
-import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
@@ -290,6 +286,8 @@ public class HTTPSinkConfig extends BaseHttpConfig {
   }
 
   public void validate(FailureCollector collector) {
+    super.validate(collector);
+
     if (!containsMacro(URL)) {
       try {
         new URL(url);
@@ -303,8 +301,6 @@ public class HTTPSinkConfig extends BaseHttpConfig {
       collector.addFailure("Connection Timeout cannot be a negative number.", null)
         .withConfigProperty(CONNECTION_TIMEOUT);
     }
-
-    validateOAuth(collector);
 
     try {
       convertHeadersToMap(requestHeaders);
@@ -459,16 +455,6 @@ public class HTTPSinkConfig extends BaseHttpConfig {
 
     public Builder setFailOnNon200Response(Boolean failOnNon200Response) {
       this.failOnNon200Response = failOnNon200Response;
-      return this;
-    }
-
-    public Builder setOauth2Enabled(String oauth2Enabled) {
-      this.oauth2Enabled = oauth2Enabled;
-      return this;
-    }
-
-    public Builder setAuthType(String authType) {
-      this.authType = authType;
       return this;
     }
 

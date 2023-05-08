@@ -4,22 +4,19 @@ import com.google.common.base.Strings;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
-import io.cdap.cdap.api.plugin.PluginConfig;
 import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
+import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.http.common.http.AuthType;
 import io.cdap.plugin.http.common.http.OAuthUtil;
-import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.apache.http.Header;
 
 /**
- *
+ *  Base configuration for HTTP Source and HTTP Sink
  */
-public class BaseHttpConfig extends PluginConfig {
+public abstract class BaseHttpConfig extends ReferencePluginConfig {
 
     public static final String PROPERTY_AUTH_TYPE = "authType";
     public static final String PROPERTY_OAUTH2_ENABLED = "oauth2Enabled";
@@ -144,6 +141,7 @@ public class BaseHttpConfig extends PluginConfig {
     protected String serviceAccountScope;
 
     public BaseHttpConfig(String referenceName, String authType, String oauth2Enabled) {
+        super(referenceName);
         this.referenceName = referenceName;
         this.authType = authType;
         this.oauth2Enabled = oauth2Enabled;
@@ -218,6 +216,10 @@ public class BaseHttpConfig extends PluginConfig {
         this.serviceAccountJson = serviceAccountJson;
     }
 
+    public void setAuthType(String authType) {
+        this.authType = authType;
+    }
+
     @Nullable
     public String getServiceAccountJson() {
         return serviceAccountJson;
@@ -280,65 +282,63 @@ public class BaseHttpConfig extends PluginConfig {
         return collector.getValidationFailures().size() == 0;
     }
 
-     public void validateOAuth(FailureCollector collector) {
-         // Validate OAuth2 properties
-         if (!containsMacro(PROPERTY_OAUTH2_ENABLED) && this.getOauth2Enabled()) {
-             String reasonOauth2 = "OAuth2 is enabled";
-             assertIsSet(getAuthUrl(), PROPERTY_AUTH_URL, reasonOauth2);
-             assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
-             assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
-             assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
-             assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
-         }
+    public void validate(FailureCollector failureCollector) {
+        // Validate OAuth2 properties
+        if (!containsMacro(PROPERTY_OAUTH2_ENABLED) && this.getOauth2Enabled()) {
+            String reasonOauth2 = "OAuth2 is enabled";
+            assertIsSet(getAuthUrl(), PROPERTY_AUTH_URL, reasonOauth2);
+            assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
+            assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
+            assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
+            assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
+        }
 
-         // Validate Authentication properties
-         AuthType authType = getAuthType();
-         switch (authType) {
-             case OAUTH2:
-                 String reasonOauth2 = "OAuth2 is enabled";
-                 if (!containsMacro(PROPERTY_AUTH_URL)) {
-                     assertIsSet(getAuthUrl(), PROPERTY_AUTH_URL, reasonOauth2);
-                 }
-                 if (!containsMacro(PROPERTY_TOKEN_URL)) {
-                     assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
-                 }
-                 if (!containsMacro(PROPERTY_CLIENT_ID)) {
-                     assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
-                 }
-                 if (!containsMacro((PROPERTY_CLIENT_SECRET))) {
-                     assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
-                 }
-                 if (!containsMacro(PROPERTY_REFRESH_TOKEN)) {
-                     assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
-                 }
-                 break;
-             case SERVICE_ACCOUNT:
-                 String reasonSA = "Service Account is enabled";
-                 assertIsSet(getServiceAccountType(), PROPERTY_NAME_SERVICE_ACCOUNT_TYPE, reasonSA);
-                 boolean propertiesAreValid = validateServiceAccount(collector);
-                 if (propertiesAreValid) {
-                     try {
-                         String  accessToken = OAuthUtil.getAccessToken(this.getServiceAccountScope(), this.isServiceAccountJson(),
-                                                                        this.getServiceAccountJson(), this.isServiceAccountFilePath(),
-                                                                        this.getServiceAccountFilePath());
-                     } catch (Exception e) {
-                         collector.addFailure("Unable to authenticate given service account info. ",
-                                         "Please make sure all infomation entered correctly")
-                                 .withStacktrace(e.getStackTrace());
-                     }
-                 }
-                 break;
-             case BASIC_AUTH:
-                 String reasonBasicAuth = "Basic Authentication is enabled";
-                 if (!containsMacro(PROPERTY_USERNAME)) {
-                     assertIsSet(getUsername(), PROPERTY_USERNAME, reasonBasicAuth);
-                 }
-                 if (!containsMacro(PROPERTY_PASSWORD)) {
-                     assertIsSet(getPassword(), PROPERTY_PASSWORD, reasonBasicAuth);
-                 }
-                 break;
-         }
-     }
+        // Validate Authentication properties
+        AuthType authType = getAuthType();
+        switch (authType) {
+            case OAUTH2:
+                String reasonOauth2 = "OAuth2 is enabled";
+                if (!containsMacro(PROPERTY_AUTH_URL)) {
+                    assertIsSet(getAuthUrl(), PROPERTY_AUTH_URL, reasonOauth2);
+                }
+                if (!containsMacro(PROPERTY_TOKEN_URL)) {
+                    assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
+                }
+                if (!containsMacro(PROPERTY_CLIENT_ID)) {
+                    assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
+                }
+                if (!containsMacro((PROPERTY_CLIENT_SECRET))) {
+                    assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
+                }
+                if (!containsMacro(PROPERTY_REFRESH_TOKEN)) {
+                    assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
+                }
+                break;
+            case SERVICE_ACCOUNT:
+                String reasonSA = "Service Account is enabled";
+                assertIsSet(getServiceAccountType(), PROPERTY_NAME_SERVICE_ACCOUNT_TYPE, reasonSA);
+                boolean propertiesAreValid = validateServiceAccount(failureCollector);
+                if (propertiesAreValid) {
+                    try {
+                        String  accessToken = OAuthUtil.getAccessTokenByServiceAccount(this);
+                    } catch (Exception e) {
+                        failureCollector.addFailure("Unable to authenticate given service account info. ",
+                                        "Please make sure all infomation entered correctly")
+                                .withStacktrace(e.getStackTrace());
+                    }
+                }
+                break;
+            case BASIC_AUTH:
+                String reasonBasicAuth = "Basic Authentication is enabled";
+                if (!containsMacro(PROPERTY_USERNAME)) {
+                    assertIsSet(getUsername(), PROPERTY_USERNAME, reasonBasicAuth);
+                }
+                if (!containsMacro(PROPERTY_PASSWORD)) {
+                    assertIsSet(getPassword(), PROPERTY_PASSWORD, reasonBasicAuth);
+                }
+                break;
+        }
+    }
 
     public static void assertIsSet(Object propertyValue, String propertyName, String reason) {
         if (propertyValue == null) {

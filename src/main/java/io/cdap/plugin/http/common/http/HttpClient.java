@@ -17,6 +17,7 @@ package io.cdap.plugin.http.common.http;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
+import io.cdap.plugin.http.common.BaseHttpConfig;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
@@ -125,6 +126,20 @@ public class HttpClient implements Closeable {
     }
     httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
 
+    ArrayList<Header> clientHeaders = getClientHeaders(config);
+
+    // set default headers
+    if (headers != null) {
+      for (Map.Entry<String, String> headerEntry : this.headers.entrySet())  {
+        clientHeaders.add(new BasicHeader(headerEntry.getKey(), headerEntry.getValue()));
+      }
+    }
+    httpClientBuilder.setDefaultHeaders(clientHeaders);
+
+    return httpClientBuilder.build();
+  }
+
+  public static ArrayList<Header> getClientHeaders(BaseHttpConfig config) throws IOException {
     ArrayList<Header> clientHeaders = new ArrayList<>();
 
     // auth check
@@ -138,28 +153,17 @@ public class HttpClient implements Closeable {
     switch (authType) {
       case OAUTH2:
         String accessToken = OAuthUtil.getAccessTokenByRefreshToken(HttpClients.createDefault(), config.getTokenUrl(),
-                                                                    config.getClientId(), config.getClientSecret(),
-                                                                    config.getRefreshToken());
+                config.getClientId(), config.getClientSecret(),
+                config.getRefreshToken());
         clientHeaders.add(new BasicHeader("Authorization", "Bearer " + accessToken));
         break;
       case SERVICE_ACCOUNT:
         // get accessToken from service account
-        accessToken = OAuthUtil.getAccessToken(config.getServiceAccountScope(), config.isServiceAccountJson(),
-                                               config.getServiceAccountJson(), config.isServiceAccountFilePath(),
-                                               config.getServiceAccountFilePath());
+        accessToken = OAuthUtil.getAccessTokenByServiceAccount(config);
         clientHeaders.add(new BasicHeader("Authorization", "Bearer " + accessToken));
         break;
     }
-
-    // set default headers
-    if (headers != null) {
-      for (Map.Entry<String, String> headerEntry : this.headers.entrySet())  {
-        clientHeaders.add(new BasicHeader(headerEntry.getKey(), headerEntry.getValue()));
-      }
-    }
-    httpClientBuilder.setDefaultHeaders(clientHeaders);
-
-    return httpClientBuilder.build();
+    return clientHeaders;
   }
 
   /**
