@@ -36,8 +36,8 @@ public class HttpStreamingSourceConfig extends BaseHttpSourceConfig {
   @Macro
   protected Long maxPagesPerFetch;
 
-  protected HttpStreamingSourceConfig(String referenceName, String authType, String oauth2Enabled) {
-    super(referenceName, authType, oauth2Enabled);
+  protected HttpStreamingSourceConfig(String referenceName) {
+    super(referenceName);
   }
 
   public Long getMaxPagesPerFetch() {

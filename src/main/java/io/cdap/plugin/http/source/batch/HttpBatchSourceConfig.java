@@ -22,8 +22,8 @@ import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
  * Provides all the configurations required for configuring the {@link HttpBatchSource} plugin.
  */
 public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
-  protected HttpBatchSourceConfig(String referenceName, String authType, String oauth2Enabled) {
-    super(referenceName, authType, oauth2Enabled);
+  protected HttpBatchSourceConfig(String referenceName) {
+    super(referenceName);
   }
 
   @Override
@@ -32,7 +32,7 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
   }
 
   private HttpBatchSourceConfig(HttpBatchSourceConfigBuilder builder) {
-    super(builder.referenceName, builder.authType, builder.oauth2Enabled);
+    super(builder.referenceName);
     this.url = builder.url;
     this.httpMethod = builder.httpMethod;
     this.headers = builder.headers;

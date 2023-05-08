@@ -338,8 +338,8 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
   @Description("Output schema. Is required to be set.")
   protected String schema;
 
-  protected BaseHttpSourceConfig(String referenceName, String authType, String oauth2Enabled) {
-    super(referenceName, authType, oauth2Enabled);
+  protected BaseHttpSourceConfig(String referenceName) {
+    super(referenceName);
   }
 
   public String getUrl() {

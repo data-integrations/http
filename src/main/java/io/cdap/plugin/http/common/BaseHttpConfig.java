@@ -140,11 +140,8 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
     @Macro
     protected String serviceAccountScope;
 
-    public BaseHttpConfig(String referenceName, String authType, String oauth2Enabled) {
+    public BaseHttpConfig(String referenceName) {
         super(referenceName);
-        this.referenceName = referenceName;
-        this.authType = authType;
-        this.oauth2Enabled = oauth2Enabled;
     }
 
     public AuthType getAuthType() {

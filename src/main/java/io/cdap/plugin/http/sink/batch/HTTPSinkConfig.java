@@ -151,7 +151,7 @@ public class HTTPSinkConfig extends BaseHttpConfig {
                         boolean followRedirects, boolean disableSSLValidation, @Nullable int numRetries,
                         @Nullable int readTimeout, @Nullable int connectTimeout, boolean failOnNon200Response,
                         String oauth2Enabled, String authType) {
-    super(referenceName, authType, oauth2Enabled);
+    super(referenceName);
     this.url = url;
     this.method = method;
     this.batchSize = batchSize;
@@ -166,10 +166,12 @@ public class HTTPSinkConfig extends BaseHttpConfig {
     this.readTimeout = readTimeout;
     this.connectTimeout = connectTimeout;
     this.failOnNon200Response = failOnNon200Response;
+    this.oauth2Enabled = oauth2Enabled;
+    this.authType = authType;
   }
 
   private HTTPSinkConfig(Builder builder) {
-    super(builder.referenceName, builder.authType, builder.oauth2Enabled);
+    super(builder.referenceName);
     url = builder.url;
     method = builder.method;
     batchSize = builder.batchSize;
@@ -184,6 +186,8 @@ public class HTTPSinkConfig extends BaseHttpConfig {
     connectTimeout = builder.connectTimeout;
     readTimeout = builder.readTimeout;
     failOnNon200Response = builder.failOnNon200Response;
+    oauth2Enabled = builder.oauth2Enabled;
+    authType = builder.authType;
   }
 
   public static Builder newBuilder() {
