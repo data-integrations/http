@@ -126,7 +126,13 @@ public class HttpClient implements Closeable {
     }
     httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
 
-    ArrayList<Header> clientHeaders = BaseHttpConfig.getAuthorizationHeaders(config);
+    ArrayList<Header> clientHeaders = new ArrayList<>();
+
+    Header authorizationHeader = config.getAuthorizationHeaders();
+
+    if (authorizationHeader != null) {
+         clientHeaders.add(authorizationHeader);
+    }
 
     // set default headers
     if (headers != null) {

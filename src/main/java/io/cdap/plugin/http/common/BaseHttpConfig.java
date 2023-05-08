@@ -358,31 +358,28 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
         }
     }
 
-    public static ArrayList<Header> getAuthorizationHeaders(BaseHttpConfig config) throws IOException {
-        ArrayList<Header> clientHeaders = new ArrayList<>();
+    public Header getAuthorizationHeaders() throws IOException {
 
         // auth check
-        AuthType authType = config.getAuthType();
+        AuthType authType = getAuthType();
 
         // backward compatibility
-        if (config.getOauth2Enabled()) {
+        if (getOauth2Enabled()) {
             authType = AuthType.OAUTH2;
         }
 
         switch (authType) {
             case OAUTH2:
-                String accessToken = OAuthUtil.getAccessTokenByRefreshToken(HttpClients.createDefault(), config.getTokenUrl(),
-                        config.getClientId(), config.getClientSecret(),
-                        config.getRefreshToken());
-                clientHeaders.add(new BasicHeader("Authorization", "Bearer " + accessToken));
-                break;
+                String accessToken = OAuthUtil.getAccessTokenByRefreshToken(HttpClients.createDefault(), getTokenUrl(),
+                        getClientId(), getClientSecret(),
+                        getRefreshToken());
+                return new BasicHeader("Authorization", "Bearer " + accessToken);
             case SERVICE_ACCOUNT:
                 // get accessToken from service account
-                accessToken = OAuthUtil.getAccessTokenByServiceAccount(config);
-                clientHeaders.add(new BasicHeader("Authorization", "Bearer " + accessToken));
-                break;
+                accessToken = OAuthUtil.getAccessTokenByServiceAccount(this);
+                return new BasicHeader("Authorization", "Bearer " + accessToken);
         }
-        return clientHeaders;
+        return null;
     }
 
     public static void assertIsSet(Object propertyValue, String propertyName, String reason) {
