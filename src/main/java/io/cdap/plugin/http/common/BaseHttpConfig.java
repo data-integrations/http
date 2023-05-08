@@ -1,3 +1,19 @@
+/*
+ * Copyright © 2023 Cask Data, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
 package io.cdap.plugin.http.common;
 
 import com.google.common.base.Strings;
@@ -10,8 +26,13 @@ import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.http.common.http.AuthType;
 import io.cdap.plugin.http.common.http.OAuthUtil;
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Optional;
 import javax.annotation.Nullable;
+import org.apache.http.Header;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicHeader;
 
 /**
  *  Base configuration for HTTP Source and HTTP Sink
@@ -335,6 +356,33 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
                 }
                 break;
         }
+    }
+
+    public static ArrayList<Header> getAuthorizationHeaders(BaseHttpConfig config) throws IOException {
+        ArrayList<Header> clientHeaders = new ArrayList<>();
+
+        // auth check
+        AuthType authType = config.getAuthType();
+
+        // backward compatibility
+        if (config.getOauth2Enabled()) {
+            authType = AuthType.OAUTH2;
+        }
+
+        switch (authType) {
+            case OAUTH2:
+                String accessToken = OAuthUtil.getAccessTokenByRefreshToken(HttpClients.createDefault(), config.getTokenUrl(),
+                        config.getClientId(), config.getClientSecret(),
+                        config.getRefreshToken());
+                clientHeaders.add(new BasicHeader("Authorization", "Bearer " + accessToken));
+                break;
+            case SERVICE_ACCOUNT:
+                // get accessToken from service account
+                accessToken = OAuthUtil.getAccessTokenByServiceAccount(config);
+                clientHeaders.add(new BasicHeader("Authorization", "Bearer " + accessToken));
+                break;
+        }
+        return clientHeaders;
     }
 
     public static void assertIsSet(Object propertyValue, String propertyName, String reason) {

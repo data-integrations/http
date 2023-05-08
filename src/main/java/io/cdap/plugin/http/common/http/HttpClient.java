@@ -126,7 +126,7 @@ public class HttpClient implements Closeable {
     }
     httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
 
-    ArrayList<Header> clientHeaders = getClientHeaders(config);
+    ArrayList<Header> clientHeaders = BaseHttpConfig.getAuthorizationHeaders(config);
 
     // set default headers
     if (headers != null) {
@@ -137,33 +137,6 @@ public class HttpClient implements Closeable {
     httpClientBuilder.setDefaultHeaders(clientHeaders);
 
     return httpClientBuilder.build();
-  }
-
-  public static ArrayList<Header> getClientHeaders(BaseHttpConfig config) throws IOException {
-    ArrayList<Header> clientHeaders = new ArrayList<>();
-
-    // auth check
-    AuthType authType = config.getAuthType();
-
-    // backward compatibility
-    if (config.getOauth2Enabled()) {
-      authType = AuthType.OAUTH2;
-    }
-
-    switch (authType) {
-      case OAUTH2:
-        String accessToken = OAuthUtil.getAccessTokenByRefreshToken(HttpClients.createDefault(), config.getTokenUrl(),
-                config.getClientId(), config.getClientSecret(),
-                config.getRefreshToken());
-        clientHeaders.add(new BasicHeader("Authorization", "Bearer " + accessToken));
-        break;
-      case SERVICE_ACCOUNT:
-        // get accessToken from service account
-        accessToken = OAuthUtil.getAccessTokenByServiceAccount(config);
-        clientHeaders.add(new BasicHeader("Authorization", "Bearer " + accessToken));
-        break;
-    }
-    return clientHeaders;
   }
 
   /**

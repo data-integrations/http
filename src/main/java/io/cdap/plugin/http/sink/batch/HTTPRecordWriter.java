@@ -19,6 +19,7 @@ package io.cdap.plugin.http.sink.batch;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.format.StructuredRecordStringConverter;
+import io.cdap.plugin.http.common.BaseHttpConfig;
 import io.cdap.plugin.http.common.http.HttpClient;
 
 import org.apache.hadoop.mapreduce.RecordWriter;
@@ -110,7 +111,7 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
 
       Map<String, String> headers = null;
 
-      ArrayList<Header> clientHeaders = HttpClient.getClientHeaders(config);
+      ArrayList<Header> clientHeaders = BaseHttpConfig.getAuthorizationHeaders(config);
       headers = config.getHeadersMap(String.valueOf(clientHeaders));
       if (headers.equals(null))  {
         headers = config.getRequestHeadersMap();

@@ -66,11 +66,8 @@ public class OAuthUtil {
     }
     return jsonElement.getAsString();
   }
-
+  
   public static String getAccessTokenByServiceAccount(BaseHttpConfig config) throws IOException {
-    return getAccessToken(config);
-  }
-  public static String getAccessToken(BaseHttpConfig config) throws IOException {
     GoogleCredentials credential;
     String accessToken = "";
     try {
