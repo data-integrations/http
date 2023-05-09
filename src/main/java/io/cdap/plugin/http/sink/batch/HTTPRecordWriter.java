@@ -110,8 +110,10 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
 
       Map<String, String> headers = config.getRequestHeadersMap();
 
-      Header authorizationHeaders = config.getAuthorizationHeaders();
-      headers.putAll(config.getHeadersMap(String.valueOf(authorizationHeaders)));
+      Header authorizationHeader = config.getAuthorizationHeader();
+      if (authorizationHeader != null) {
+        headers.putAll(config.getHeadersMap(String.valueOf(authorizationHeader)));
+      }
 
       try {
         URL url = new URL(config.getUrl());

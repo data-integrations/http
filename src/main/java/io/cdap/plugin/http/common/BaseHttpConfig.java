@@ -358,7 +358,7 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
         }
     }
 
-    public Header getAuthorizationHeaders() throws IOException {
+    public Header getAuthorizationHeader() throws IOException {
 
         // auth check
         AuthType authType = getAuthType();

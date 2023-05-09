@@ -128,10 +128,10 @@ public class HttpClient implements Closeable {
 
     ArrayList<Header> clientHeaders = new ArrayList<>();
 
-    Header authorizationHeader = config.getAuthorizationHeaders();
+    Header authorizationHeader = config.getAuthorizationHeader();
 
     if (authorizationHeader != null) {
-         clientHeaders.add(authorizationHeader);
+      clientHeaders.add(authorizationHeader);
     }
 
     // set default headers
