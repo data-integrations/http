@@ -18,11 +18,11 @@ package io.cdap.plugin.http.source.common.pagination;
 
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.api.data.schema.Schema.Field;
+import io.cdap.plugin.http.common.http.HttpResponse;
+import io.cdap.plugin.http.common.pagination.page.BasePage;
+import io.cdap.plugin.http.common.pagination.page.PageFactory;
+import io.cdap.plugin.http.common.pagination.page.PageFormat;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
-import io.cdap.plugin.http.source.common.http.HttpResponse;
-import io.cdap.plugin.http.source.common.pagination.page.BasePage;
-import io.cdap.plugin.http.source.common.pagination.page.PageFactory;
-import io.cdap.plugin.http.source.common.pagination.page.PageFormat;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
