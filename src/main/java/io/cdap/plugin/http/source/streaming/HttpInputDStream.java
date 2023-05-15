@@ -18,10 +18,10 @@ package io.cdap.plugin.http.source.streaming;
 
 import com.google.common.base.Throwables;
 import io.cdap.cdap.api.data.format.StructuredRecord;
-import io.cdap.plugin.http.common.pagination.BaseHttpPaginationIterator;
-import io.cdap.plugin.http.common.pagination.PaginationIteratorFactory;
-import io.cdap.plugin.http.common.pagination.page.BasePage;
-import io.cdap.plugin.http.common.pagination.state.PaginationIteratorState;
+import io.cdap.plugin.http.source.common.pagination.BaseHttpPaginationIterator;
+import io.cdap.plugin.http.source.common.pagination.PaginationIteratorFactory;
+import io.cdap.plugin.http.source.common.pagination.page.BasePage;
+import io.cdap.plugin.http.source.common.pagination.state.PaginationIteratorState;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.streaming.StreamingContext;

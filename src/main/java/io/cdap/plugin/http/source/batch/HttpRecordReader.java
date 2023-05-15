@@ -17,9 +17,9 @@ package io.cdap.plugin.http.source.batch;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.cdap.plugin.http.common.pagination.BaseHttpPaginationIterator;
-import io.cdap.plugin.http.common.pagination.PaginationIteratorFactory;
-import io.cdap.plugin.http.common.pagination.page.BasePage;
+import io.cdap.plugin.http.source.common.pagination.BaseHttpPaginationIterator;
+import io.cdap.plugin.http.source.common.pagination.PaginationIteratorFactory;
+import io.cdap.plugin.http.source.common.pagination.page.BasePage;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputSplit;

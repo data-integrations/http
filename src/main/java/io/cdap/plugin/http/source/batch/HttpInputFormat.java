@@ -15,7 +15,7 @@
  */
 package io.cdap.plugin.http.source.batch;
 
-import io.cdap.plugin.http.common.pagination.page.BasePage;
+import io.cdap.plugin.http.source.common.pagination.page.BasePage;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;

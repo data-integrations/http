@@ -24,16 +24,16 @@ import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
+import io.cdap.cdap.format.StructuredRecordStringConverter;
 import io.cdap.plugin.common.ReferenceNames;
+import io.cdap.plugin.common.ReferencePluginConfig;
 
-import io.cdap.plugin.http.common.BaseHttpConfig;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.ws.rs.HttpMethod;
@@ -41,7 +41,7 @@ import javax.ws.rs.HttpMethod;
 /**
  * Config class for {@link HTTPSink}.
  */
-public class HTTPSinkConfig extends BaseHttpConfig {
+public class HTTPSinkConfig extends ReferencePluginConfig {
   public static final String URL = "url";
   public static final String METHOD = "method";
   public static final String BATCH_SIZE = "batchSize";
@@ -56,6 +56,7 @@ public class HTTPSinkConfig extends BaseHttpConfig {
   public static final String CONNECTION_TIMEOUT = "connectTimeout";
   public static final String READ_TIMEOUT = "readTimeout";
   public static final String FAIL_ON_NON_200_RESPONSE = "failOnNon200Response";
+
   private static final String KV_DELIMITER = ":";
   private static final String DELIMITER = "\n";
   private static final Set<String> METHODS = ImmutableSet.of(HttpMethod.GET, HttpMethod.POST,
@@ -149,8 +150,7 @@ public class HTTPSinkConfig extends BaseHttpConfig {
                         @Nullable String delimiterForMessages, String messageFormat, @Nullable String body,
                         @Nullable String requestHeaders, String charset,
                         boolean followRedirects, boolean disableSSLValidation, @Nullable int numRetries,
-                        @Nullable int readTimeout, @Nullable int connectTimeout, boolean failOnNon200Response,
-                        String oauth2Enabled, String authType) {
+                        @Nullable int readTimeout, @Nullable int connectTimeout, boolean failOnNon200Response) {
     super(referenceName);
     this.url = url;
     this.method = method;
@@ -166,8 +166,6 @@ public class HTTPSinkConfig extends BaseHttpConfig {
     this.readTimeout = readTimeout;
     this.connectTimeout = connectTimeout;
     this.failOnNon200Response = failOnNon200Response;
-    this.oauth2Enabled = oauth2Enabled;
-    this.authType = authType;
   }
 
   private HTTPSinkConfig(Builder builder) {
@@ -186,8 +184,6 @@ public class HTTPSinkConfig extends BaseHttpConfig {
     connectTimeout = builder.connectTimeout;
     readTimeout = builder.readTimeout;
     failOnNon200Response = builder.failOnNon200Response;
-    oauth2Enabled = builder.oauth2Enabled;
-    authType = builder.authType;
   }
 
   public static Builder newBuilder() {
@@ -211,8 +207,6 @@ public class HTTPSinkConfig extends BaseHttpConfig {
     builder.connectTimeout = copy.getConnectTimeout();
     builder.readTimeout = copy.getReadTimeout();
     builder.failOnNon200Response = copy.getFailOnNon200Response();
-    builder.oauth2Enabled = copy.getOAuth2Enabled();
-    builder.authType = copy.getAuthTypeString();
     return builder;
   }
 
@@ -281,17 +275,11 @@ public class HTTPSinkConfig extends BaseHttpConfig {
     return convertHeadersToMap(requestHeaders);
   }
 
-  public Map<String, String> getHeadersMap(String header) {
-    return convertHeadersToMap(header);
-  }
-
   public String getReferenceNameOrNormalizedFQN() {
     return Strings.isNullOrEmpty(referenceName) ? ReferenceNames.normalizeFqn(url) : referenceName;
   }
 
   public void validate(FailureCollector collector) {
-    super.validate(collector);
-
     if (!containsMacro(URL)) {
       try {
         new URL(url);
@@ -381,8 +369,6 @@ public class HTTPSinkConfig extends BaseHttpConfig {
     private Integer connectTimeout;
     private Integer readTimeout;
     private Boolean failOnNon200Response;
-    private String oauth2Enabled;
-    private String authType;
 
     private Builder() {
     }
