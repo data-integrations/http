@@ -19,8 +19,11 @@ package io.cdap.plugin.http.sink.batch;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.format.StructuredRecordStringConverter;
+import io.cdap.plugin.http.common.http.HttpClient;
+
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.http.Header;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +38,7 @@ import java.net.URLEncoder;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -103,7 +107,14 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
     IOException exception = null;
     do {
       HttpURLConnection conn = null;
+
       Map<String, String> headers = config.getRequestHeadersMap();
+
+      Header authorizationHeader = config.getAuthorizationHeader();
+      if (authorizationHeader != null) {
+        headers.putAll(config.getHeadersMap(String.valueOf(authorizationHeader)));
+      }
+
       try {
         URL url = new URL(config.getUrl());
         conn = (HttpURLConnection) url.openConnection();
