@@ -25,14 +25,14 @@ import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.http.common.http.AuthType;
 import io.cdap.plugin.http.common.http.OAuthUtil;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Optional;
-import javax.annotation.Nullable;
 import org.apache.http.Header;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
+import java.io.File;
+import java.io.IOException;
+import java.util.Optional;
+import javax.annotation.Nullable;
+
 
 /**
  *  Base configuration for HTTP Source and HTTP Sink
@@ -260,7 +260,8 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
     @Nullable
     public Boolean isServiceAccountJson() {
         String serviceAccountType = getServiceAccountType();
-        return Strings.isNullOrEmpty(serviceAccountType) ? null : serviceAccountType.equals(PROPERTY_SERVICE_ACCOUNT_JSON);
+        return Strings.isNullOrEmpty(serviceAccountType) ? null :
+                serviceAccountType.equals(PROPERTY_SERVICE_ACCOUNT_JSON);
     }
 
     @Nullable
@@ -271,7 +272,8 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
     }
 
     public boolean validateServiceAccount(FailureCollector collector) {
-        if (containsMacro(PROPERTY_NAME_SERVICE_ACCOUNT_FILE_PATH) || containsMacro(PROPERTY_NAME_SERVICE_ACCOUNT_JSON)) {
+        if (containsMacro(PROPERTY_NAME_SERVICE_ACCOUNT_FILE_PATH) ||
+                containsMacro(PROPERTY_NAME_SERVICE_ACCOUNT_JSON)) {
             return false;
         }
         final Boolean bServiceAccountFilePath = isServiceAccountFilePath();
@@ -284,7 +286,8 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
         }
 
         if (bServiceAccountFilePath != null && bServiceAccountFilePath) {
-            if (!PROPERTY_AUTO_DETECT_VALUE.equals(serviceAccountFilePath) && !new File(serviceAccountFilePath).exists()) {
+            if (!PROPERTY_AUTO_DETECT_VALUE.equals(serviceAccountFilePath) &&
+                    !new File(serviceAccountFilePath).exists()) {
                 collector.addFailure("Service Account File Path is not available.",
                                 "Please provide path to existing Service Account file.")
                         .withConfigProperty(PROPERTY_NAME_SERVICE_ACCOUNT_FILE_PATH);

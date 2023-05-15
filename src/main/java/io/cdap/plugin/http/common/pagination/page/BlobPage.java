@@ -17,8 +17,8 @@ package io.cdap.plugin.http.common.pagination.page;
 
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
-import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.common.http.HttpResponse;
+import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 
 import java.io.IOException;
 

@@ -18,15 +18,15 @@ package io.cdap.plugin.http.source.common.pagination;
 
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.plugin.http.common.http.HttpClient;
 import io.cdap.plugin.http.common.pagination.BaseHttpPaginationIterator;
 import io.cdap.plugin.http.common.pagination.PaginationIteratorFactory;
-import io.cdap.plugin.http.source.batch.HttpBatchSourceConfig;
-import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
-import io.cdap.plugin.http.common.http.HttpClient;
 import io.cdap.plugin.http.common.pagination.page.BasePage;
 import io.cdap.plugin.http.common.pagination.page.JSONUtil;
 import io.cdap.plugin.http.common.pagination.page.PageEntry;
 import io.cdap.plugin.http.common.pagination.page.PageFormat;
+import io.cdap.plugin.http.source.batch.HttpBatchSourceConfig;
+import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.StatusLine;

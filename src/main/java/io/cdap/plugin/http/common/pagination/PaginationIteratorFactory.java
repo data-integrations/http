@@ -15,8 +15,8 @@
  */
 package io.cdap.plugin.http.common.pagination;
 
-import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.common.pagination.state.PaginationIteratorState;
+import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 
 /**
  * A factory which creates instance of {@BaseHttpPaginationIterator} in accordance to pagination type configured in

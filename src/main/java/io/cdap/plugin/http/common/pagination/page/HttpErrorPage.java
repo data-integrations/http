@@ -17,10 +17,10 @@ package io.cdap.plugin.http.common.pagination.page;
 
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.etl.api.InvalidEntry;
-import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.common.error.ErrorHandling;
 import io.cdap.plugin.http.common.error.HttpErrorHandler;
 import io.cdap.plugin.http.common.http.HttpResponse;
+import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 
 /**
  * Represents a page with an error

@@ -25,8 +25,8 @@ import com.nerdforge.unxml.parsers.builders.ObjectNodeParserBuilder;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.format.StructuredRecordStringConverter;
-import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.common.http.HttpResponse;
+import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import org.w3c.dom.Document;
 
 import java.util.Iterator;

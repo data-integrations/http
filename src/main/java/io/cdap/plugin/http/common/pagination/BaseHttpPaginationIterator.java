@@ -15,17 +15,17 @@
  */
 package io.cdap.plugin.http.common.pagination;
 
-import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.common.RetryPolicy;
-import io.cdap.plugin.http.common.error.HttpErrorHandler;
-import io.cdap.plugin.http.common.http.HttpResponse;
 import io.cdap.plugin.http.common.error.ErrorHandling;
+import io.cdap.plugin.http.common.error.HttpErrorHandler;
 import io.cdap.plugin.http.common.error.RetryableErrorHandling;
 import io.cdap.plugin.http.common.http.HttpClient;
+import io.cdap.plugin.http.common.http.HttpResponse;
 import io.cdap.plugin.http.common.pagination.page.BasePage;
 import io.cdap.plugin.http.common.pagination.page.PageFactory;
 import io.cdap.plugin.http.common.pagination.state.PaginationIteratorState;
 import io.cdap.plugin.http.common.pagination.state.UrlPaginationIteratorState;
+import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 import org.awaitility.pollinterval.FixedPollInterval;

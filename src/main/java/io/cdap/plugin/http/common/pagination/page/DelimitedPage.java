@@ -18,8 +18,8 @@ package io.cdap.plugin.http.common.pagination.page;
 
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.format.StructuredRecordStringConverter;
-import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.common.http.HttpResponse;
+import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 
 import java.io.IOException;
 import java.util.NoSuchElementException;

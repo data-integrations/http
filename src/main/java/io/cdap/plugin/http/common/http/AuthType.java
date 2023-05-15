@@ -16,8 +16,8 @@
 
 package io.cdap.plugin.http.common.http;
 
-import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.common.exceptions.InvalidPropertyTypeException;
+import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 
 import java.util.Arrays;
 import java.util.List;

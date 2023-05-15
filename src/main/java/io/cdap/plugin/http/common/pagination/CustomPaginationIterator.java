@@ -15,10 +15,10 @@
  */
 package io.cdap.plugin.http.common.pagination;
 
-import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import io.cdap.plugin.http.common.http.HttpResponse;
 import io.cdap.plugin.http.common.pagination.page.BasePage;
 import io.cdap.plugin.http.common.pagination.state.PaginationIteratorState;
+import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import org.apache.http.Header;
 
 import java.io.IOException;
