@@ -68,10 +68,6 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
 
     public static final String PROPERTY_SERVICE_ACCOUNT_SCOPE = "serviceAccountScope";
 
-    @Name("referenceName")
-    @Description("This will be used to uniquely identify this source/sink for lineage, annotating metadata, etc.")
-    public String referenceName;
-
     @Name(PROPERTY_AUTH_TYPE)
     @Description("Type of authentication used to submit request. \n" +
             "OAuth2, Service account, Basic Authentication types are available.")
