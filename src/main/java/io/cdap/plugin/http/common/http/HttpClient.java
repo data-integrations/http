@@ -15,9 +15,9 @@
  */
 package io.cdap.plugin.http.common.http;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
-import io.cdap.plugin.http.common.BaseHttpConfig;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
@@ -31,7 +31,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
 
 import java.io.Closeable;
@@ -73,7 +72,7 @@ public class HttpClient implements Closeable {
   public CloseableHttpResponse executeHTTP(String uri) throws IOException {
     // lazy init. So we are able to initialize the class for different checks during validations etc.
     if (httpClient == null) {
-      httpClient = createHttpClient();
+      httpClient = createHttpClient(uri);
     }
 
     HttpEntityEnclosingRequestBase request = new HttpRequest(URI.create(uri), config.getHttpMethod());
@@ -92,7 +91,8 @@ public class HttpClient implements Closeable {
     }
   }
 
-  private CloseableHttpClient createHttpClient() throws IOException {
+  @VisibleForTesting
+  public CloseableHttpClient createHttpClient(String pageUriStr) throws IOException {
     HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
     httpClientBuilder.setSSLSocketFactory(new SSLConnectionSocketFactoryCreator(config).create());
 
@@ -108,7 +108,7 @@ public class HttpClient implements Closeable {
     // basic auth
     CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
     if (!Strings.isNullOrEmpty(config.getUsername()) && !Strings.isNullOrEmpty(config.getPassword())) {
-      URI uri = URI.create(config.getUrl());
+      URI uri = URI.create(pageUriStr);
       AuthScope authScope = new AuthScope(new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme()));
       credentialsProvider.setCredentials(authScope,
                                          new UsernamePasswordCredentials(config.getUsername(), config.getPassword()));
