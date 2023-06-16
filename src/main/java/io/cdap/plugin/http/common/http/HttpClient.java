@@ -15,6 +15,7 @@
  */
 package io.cdap.plugin.http.common.http;
 
+import com.google.auth.oauth2.AccessToken;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
@@ -49,9 +50,12 @@ public class HttpClient implements Closeable {
   private final StringEntity requestBody;
   private CloseableHttpClient httpClient;
 
+  private AccessToken accessToken;
+
   public HttpClient(BaseHttpSourceConfig config) {
     this.config = config;
     this.headers = config.getHeadersMap();
+    this.accessToken = null;
 
     String requestBodyString = config.getRequestBody();
     if (requestBodyString != null) {
@@ -80,6 +84,9 @@ public class HttpClient implements Closeable {
     if (requestBody != null) {
       request.setEntity(requestBody);
     }
+
+    // Set the Request Headers(along with Authorization Header) in the HttpRequest
+    request.setHeaders(getRequestHeaders());
 
     return httpClient.execute(request);
   }
@@ -126,12 +133,21 @@ public class HttpClient implements Closeable {
     }
     httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
 
+    return httpClientBuilder.build();
+  }
+
+  private Header[] getRequestHeaders() throws IOException {
     ArrayList<Header> clientHeaders = new ArrayList<>();
 
-    Header authorizationHeader = config.getAuthorizationHeader();
+    if (accessToken == null || OAuthUtil.tokenExpired(accessToken)) {
+      accessToken = OAuthUtil.getAccessToken(config);
+    }
 
-    if (authorizationHeader != null) {
-      clientHeaders.add(authorizationHeader);
+    if (accessToken != null) {
+      Header authorizationHeader = getAuthorizationHeader(accessToken);
+      if (authorizationHeader != null) {
+        clientHeaders.add(authorizationHeader);
+      }
     }
 
     // set default headers
@@ -140,9 +156,12 @@ public class HttpClient implements Closeable {
         clientHeaders.add(new BasicHeader(headerEntry.getKey(), headerEntry.getValue()));
       }
     }
-    httpClientBuilder.setDefaultHeaders(clientHeaders);
 
-    return httpClientBuilder.build();
+    return clientHeaders.toArray(new Header[0]);
+  }
+
+  private Header getAuthorizationHeader(AccessToken accessToken) {
+    return new BasicHeader("Authorization", String.format("Bearer %s", accessToken.getTokenValue()));
   }
 
   /**

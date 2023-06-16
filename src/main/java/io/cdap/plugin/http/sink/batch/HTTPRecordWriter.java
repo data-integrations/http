@@ -16,14 +16,16 @@
 
 package io.cdap.plugin.http.sink.batch;
 
+import com.google.auth.oauth2.AccessToken;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.format.StructuredRecordStringConverter;
-import io.cdap.plugin.http.common.http.HttpClient;
 
+import io.cdap.plugin.http.common.http.OAuthUtil;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.http.Header;
+import org.apache.http.message.BasicHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +40,6 @@ import java.net.URLEncoder;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -62,8 +63,11 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
   private StringBuilder messages = new StringBuilder();
   private String contentType;
 
+  private AccessToken accessToken;
+
   HTTPRecordWriter(HTTPSinkConfig config) {
     this.config = config;
+    this.accessToken = null;
   }
 
   @Override
@@ -110,8 +114,13 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
 
       Map<String, String> headers = config.getRequestHeadersMap();
 
-      Header authorizationHeader = config.getAuthorizationHeader();
-      if (authorizationHeader != null) {
+      if (accessToken == null || OAuthUtil.tokenExpired(accessToken)) {
+        accessToken = OAuthUtil.getAccessToken(config);
+      }
+
+      if (accessToken != null) {
+        Header authorizationHeader = new BasicHeader("Authorization",
+                String.format("Bearer %s", accessToken.getTokenValue()));
         headers.putAll(config.getHeadersMap(String.valueOf(authorizationHeader)));
       }
 
