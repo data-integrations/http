@@ -57,7 +57,7 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
   private String currentPageUrl;
   private boolean currentPageReturned = true;
   private BasePage page;
-  private Integer httpStatusCode;
+  private int httpStatusCode;
   private HttpResponse response;
 
   public BaseHttpPaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state) {

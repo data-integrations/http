@@ -16,6 +16,7 @@
 
 package io.cdap.plugin.http.common;
 
+import com.google.auth.oauth2.AccessToken;
 import com.google.common.base.Strings;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
@@ -25,11 +26,7 @@ import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.http.common.http.AuthType;
 import io.cdap.plugin.http.common.http.OAuthUtil;
-import org.apache.http.Header;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicHeader;
 import java.io.File;
-import java.io.IOException;
 import java.util.Optional;
 import javax.annotation.Nullable;
 
@@ -337,7 +334,7 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
                 boolean propertiesAreValid = validateServiceAccount(failureCollector);
                 if (propertiesAreValid) {
                     try {
-                        String  accessToken = OAuthUtil.getAccessTokenByServiceAccount(this);
+                        AccessToken accessToken = OAuthUtil.getAccessToken(this);
                     } catch (Exception e) {
                         failureCollector.addFailure("Unable to authenticate given service account info. ",
                                         "Please make sure all infomation entered correctly")
@@ -355,30 +352,6 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
                 }
                 break;
         }
-    }
-
-    public Header getAuthorizationHeader() throws IOException {
-
-        // auth check
-        AuthType authType = getAuthType();
-
-        // backward compatibility
-        if (getOauth2Enabled()) {
-            authType = AuthType.OAUTH2;
-        }
-
-        switch (authType) {
-            case OAUTH2:
-                String accessToken = OAuthUtil.getAccessTokenByRefreshToken(HttpClients.createDefault(), getTokenUrl(),
-                        getClientId(), getClientSecret(),
-                        getRefreshToken());
-                return new BasicHeader("Authorization", "Bearer " + accessToken);
-            case SERVICE_ACCOUNT:
-                // get accessToken from service account
-                accessToken = OAuthUtil.getAccessTokenByServiceAccount(this);
-                return new BasicHeader("Authorization", "Bearer " + accessToken);
-        }
-        return null;
     }
 
     public static void assertIsSet(Object propertyValue, String propertyName, String reason) {
