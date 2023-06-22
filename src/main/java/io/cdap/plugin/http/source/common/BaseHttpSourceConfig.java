@@ -714,7 +714,7 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
 
   public void validateSchema() {
     Schema schema = getSchema();
-    if (schema == null) {
+    if (!containsMacro(PROPERTY_SCHEMA) && schema == null) {
       throw new InvalidConfigPropertyException(
               String.format("Output schema cannot be empty"), PROPERTY_SCHEMA);
     }
