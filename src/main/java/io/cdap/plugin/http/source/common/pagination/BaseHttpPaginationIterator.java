@@ -59,6 +59,7 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
   private BasePage page;
   private Integer httpStatusCode;
   private HttpResponse response;
+  private IOException latestException;
 
   public BaseHttpPaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state) {
     this.config = config;
@@ -85,12 +86,23 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
       response.close();
     }
 
-    response = new HttpResponse(getHttpClient().executeHTTP(nextPageUrl));
-    currentPageUrl = nextPageUrl;
-    httpStatusCode = response.getStatusCode();
-    RetryableErrorHandling errorHandlingStrategy = httpErrorHandler.getErrorHandlingStrategy(httpStatusCode);
+    try {
+      response = new HttpResponse(getHttpClient().executeHTTP(nextPageUrl));
+      currentPageUrl = nextPageUrl;
+      httpStatusCode = response.getStatusCode();
+      RetryableErrorHandling errorHandlingStrategy =
+          httpErrorHandler.getErrorHandlingStrategy(httpStatusCode);
 
-    return !errorHandlingStrategy.shouldRetry();
+      return !errorHandlingStrategy.shouldRetry();
+    } catch (IOException ioException) {
+      // Catch the IOException triggered due to the execution of the Http call
+      // Http Status code Integer.Min_Value signifies error in the request channel.
+      currentPageUrl = nextPageUrl;
+      httpStatusCode = -1;
+      latestException = ioException;
+      response = null;
+      return false;
+    }
   }
 
   @Nullable
@@ -113,6 +125,10 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
         .until(this::visitPageAndCheckStatusCode);
     } catch (ConditionTimeoutException ex) {
       // Retries failed. We don't need to do anything here. This will be handled using httpStatusCode below.
+    }
+
+    if (httpStatusCode == -1) {
+      throw latestException;
     }
 
     ErrorHandling postRetryStrategy = httpErrorHandler.getErrorHandlingStrategy(httpStatusCode)
