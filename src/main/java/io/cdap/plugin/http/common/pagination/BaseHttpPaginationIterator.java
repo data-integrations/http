@@ -48,6 +48,11 @@ import javax.annotation.Nullable;
 public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, Closeable {
   private static final Logger LOG = LoggerFactory.getLogger(BaseHttpPaginationIterator.class);
 
+  /**
+   * HTTP code that would be reported to retry strategy for network errors
+   */
+  private static final int CODE_EXCEPTION = -1;
+
   protected final BaseHttpSourceConfig config;
   private final HttpClient httpClient;
   private final HttpErrorHandler httpErrorHandler;
@@ -58,6 +63,7 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
   private boolean currentPageReturned = true;
   private BasePage page;
   private int httpStatusCode;
+  private Exception lastException;
   private HttpResponse response;
 
   public BaseHttpPaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state) {
@@ -85,9 +91,16 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
       response.close();
     }
 
-    response = new HttpResponse(getHttpClient().executeHTTP(nextPageUrl));
-    currentPageUrl = nextPageUrl;
-    httpStatusCode = response.getStatusCode();
+    try {
+      response = new HttpResponse(getHttpClient().executeHTTP(nextPageUrl));
+      currentPageUrl = nextPageUrl;
+      httpStatusCode = response.getStatusCode();
+      lastException = null;
+    } catch (Exception e) {
+      LOG.debug("Error {} connecting to {}", e, nextPageUrl);
+      httpStatusCode = CODE_EXCEPTION;
+      lastException = e;
+    }
     RetryableErrorHandling errorHandlingStrategy = httpErrorHandler.getErrorHandlingStrategy(httpStatusCode);
 
     return !errorHandlingStrategy.shouldRetry();
@@ -123,7 +136,7 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
         break;
       case STOP:
         throw new IllegalStateException(String.format("Fetching from url '%s' returned status code '%d' and body '%s'",
-                                                      nextPageUrl, httpStatusCode, response.getBody()));
+                                                      nextPageUrl, httpStatusCode, response.getBody()), lastException);
       case SKIP:
       case SEND:
         if (!this.supportsSkippingPages()) {

@@ -16,7 +16,9 @@
 package io.cdap.plugin.http.etl;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import com.google.common.collect.ImmutableMap;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
@@ -300,6 +302,46 @@ public abstract class HttpSourceETLTest extends HydratorTestBase {
   }
 
   @Test
+  public void testNonePagination_retry() throws Exception {
+    Schema schema = Schema.recordOf("etlSchemaBody",
+        Schema.Field.of("filename",
+            Schema.of(Schema.Type.STRING)),
+        Schema.Field.of("language",
+            Schema.of(Schema.Type.STRING)),
+        Schema.Field.of("url",
+            Schema.of(Schema.Type.STRING)),
+        Schema.Field.of("name",
+            Schema.of(Schema.Type.STRING))
+    );
+
+    Map<String, String> properties = new ImmutableMap.Builder<String, String>()
+        // https://searchcode.com/api/codesearch_I/?q=cdap
+        .put(BaseHttpSourceConfig.PROPERTY_URL, getServerAddress() + "/api/codesearch_I/?q=cdap")
+        .put(BaseHttpSourceConfig.PROPERTY_FORMAT, "json")
+        .put(BaseHttpSourceConfig.PROPERTY_RESULT_PATH, "/results")
+        .put(BaseHttpSourceConfig.PROPERTY_FIELDS_MAPPING, "repo:repo,language:/language,file:/filename,url:/url")
+        .put(BaseHttpSourceConfig.PROPERTY_SCHEMA, schema.toString())
+        .put(BaseHttpSourceConfig.PROPERTY_PAGINATION_TYPE, "None")
+        .build();
+
+    wireMockRule.stubFor(WireMock.get(
+            WireMock.urlEqualTo("/api/codesearch_I/?q=cdap"))
+        .inScenario("Retry Scenario")
+        .whenScenarioStateIs(Scenario.STARTED)
+        .willReturn(WireMock.aResponse().withFault(Fault.EMPTY_RESPONSE))
+        .willSetStateTo("Failed")
+    );
+    wireMockRule.stubFor(WireMock.get(
+            WireMock.urlEqualTo("/api/codesearch_I/?q=cdap"))
+        .inScenario("Retry Scenario")
+        .whenScenarioStateIs("Failed")
+        .willReturn(WireMock.aResponse()
+            .withBody(readResourceFile("testNonePagination1.txt"))));
+
+    List<StructuredRecord> records = getPipelineResults(properties, 9);
+    Assert.assertEquals(9, records.size());
+  }
+  @Test
   public void testNonePaginationBlob() throws Exception {
     Schema schema = Schema.recordOf("etlSchemaBody",
                                     Schema.Field.of("body",
@@ -487,7 +529,7 @@ public abstract class HttpSourceETLTest extends HydratorTestBase {
       .put("referenceName", testName.getMethodName())
       .put(BaseHttpSourceConfig.PROPERTY_HTTP_METHOD, "GET")
       .put(BaseHttpSourceConfig.PROPERTY_AUTH_TYPE, "none")
-      .put(BaseHttpSourceConfig.PROPERTY_HTTP_ERROR_HANDLING, "2..:Success,.*:Fail")
+      .put(BaseHttpSourceConfig.PROPERTY_HTTP_ERROR_HANDLING, "2..:Success,.*:Retry and fail")
       .put(BaseHttpSourceConfig.PROPERTY_ERROR_HANDLING, "stopOnError")
       .put(BaseHttpSourceConfig.PROPERTY_RETRY_POLICY, "linear")
       .put(BaseHttpSourceConfig.PROPERTY_MAX_RETRY_DURATION, "10")
