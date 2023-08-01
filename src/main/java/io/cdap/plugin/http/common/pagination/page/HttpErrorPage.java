@@ -15,6 +15,7 @@
  */
 package io.cdap.plugin.http.common.pagination.page;
 
+import com.google.common.base.Strings;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.etl.api.InvalidEntry;
 import io.cdap.plugin.http.common.error.ErrorHandling;
@@ -28,10 +29,15 @@ import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 class HttpErrorPage extends BasePage {
   private final BaseHttpSourceConfig config;
   private final HttpErrorHandler httpErrorHandler;
+  private String pageUrl;
+  private int statusCode;
   private boolean isReturned = false;
 
-  HttpErrorPage(BaseHttpSourceConfig config, HttpResponse httpResponse, HttpErrorHandler httpErrorHandler) {
+  HttpErrorPage(String pageUrl, BaseHttpSourceConfig config,
+                HttpResponse httpResponse, HttpErrorHandler httpErrorHandler, int statusCode) {
     super(httpResponse);
+    this.statusCode = statusCode;
+    this.pageUrl = pageUrl;
     this.config = config;
     this.httpErrorHandler = httpErrorHandler;
   }
@@ -39,8 +45,11 @@ class HttpErrorPage extends BasePage {
   @Override
   public String getPrimitiveByPath(String path) {
     // this should never happen, since the validation of configs is done during pipeline deployment
-    throw new UnsupportedOperationException(String.format("Page format '%s' does not support searching by path",
-                                                  config.getFormat()));
+    /*throw new UnsupportedOperationException(String.format("Page format '%s' does not support searching by path",
+                                                  config.getFormat()));*/
+
+    // In case of Http Error there is no defined body hence returning null
+    return null;
   }
 
   @Override
@@ -51,14 +60,21 @@ class HttpErrorPage extends BasePage {
   @Override
   public PageEntry next() {
     isReturned = true;
-    int httpCode = httpResponse.getStatusCode();
-    // Body from blob might be a text for http status codes like 400 etc. That's why we still get body.
-    // If it's not text though, it will only show up as undecodable gibberish.
-    String body = httpResponse.getBody();
+    if (!Strings.isNullOrEmpty(pageUrl)) {
+      InvalidEntry<StructuredRecord> invalidEntry =
+          InvalidEntryCreator.buildStringErrorWithUrl(statusCode, pageUrl, "IOException occurred");
+      return new PageEntry(invalidEntry, config.getErrorHandling());
+    } else {
+      int httpCode = httpResponse.getStatusCode();
+      // Body from blob might be a text for http status codes like 400 etc. That's why we still get body.
+      // If it's not text though, it will only show up as undecodable gibberish.
+      String body = httpResponse.getBody();
 
-    InvalidEntry<StructuredRecord> invalidEntry = InvalidEntryCreator.buildStringError(
-      httpCode, body, String.format("Request failed with '%d' http status code. Body is '%s'", httpCode, body));
-    return new PageEntry(invalidEntry, getErrorHandlingStrategy());
+      InvalidEntry<StructuredRecord> invalidEntry = InvalidEntryCreator.buildStringError(
+          httpCode, body, String.format("Request failed with '%d' http status code. Body is '%s'",
+              pageUrl, httpCode, body));
+      return new PageEntry(invalidEntry, getErrorHandlingStrategy());
+    }
   }
 
   @Override

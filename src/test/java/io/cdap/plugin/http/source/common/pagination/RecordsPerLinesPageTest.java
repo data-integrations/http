@@ -25,6 +25,7 @@ import io.cdap.plugin.http.common.pagination.page.PageFormat;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 
 import org.apache.http.HttpEntity;
+import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.junit.Assert;
 import org.junit.Test;
@@ -38,6 +39,9 @@ public class RecordsPerLinesPageTest {
   @Test
   public void testPageIterationMechanism () throws Exception {
     CloseableHttpResponse clResponse = Mockito.mock(CloseableHttpResponse.class);
+    StatusLine statusLine = Mockito.mock(StatusLine.class);
+    Mockito.when(statusLine.getStatusCode()).thenReturn(200);
+    Mockito.when(clResponse.getStatusLine()).thenReturn(statusLine);
     HttpResponse response = new HttpResponse(clResponse);
     BaseHttpSourceConfig config = Mockito.mock(BaseHttpSourceConfig.class);
     Mockito.when(config.getFormat()).thenReturn(PageFormat.TEXT);

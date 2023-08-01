@@ -19,6 +19,7 @@ import io.cdap.plugin.http.common.RetryPolicy;
 import io.cdap.plugin.http.common.error.ErrorHandling;
 import io.cdap.plugin.http.common.error.HttpErrorHandler;
 import io.cdap.plugin.http.common.error.RetryableErrorHandling;
+import io.cdap.plugin.http.common.http.ErrorHttpResponse;
 import io.cdap.plugin.http.common.http.HttpClient;
 import io.cdap.plugin.http.common.http.HttpResponse;
 import io.cdap.plugin.http.common.pagination.page.BasePage;
@@ -47,6 +48,7 @@ import javax.annotation.Nullable;
  */
 public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, Closeable {
   private static final Logger LOG = LoggerFactory.getLogger(BaseHttpPaginationIterator.class);
+  private static final int CODE_EXCEPTION = -1;
 
   protected final BaseHttpSourceConfig config;
   private final HttpClient httpClient;
@@ -59,7 +61,6 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
   private BasePage page;
   private int httpStatusCode;
   private HttpResponse response;
-  private IOException latestException;
 
   public BaseHttpPaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state) {
     this.config = config;
@@ -88,20 +89,15 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
 
     try {
       response = new HttpResponse(getHttpClient().executeHTTP(nextPageUrl));
-      currentPageUrl = nextPageUrl;
-      httpStatusCode = response.getStatusCode();
-      RetryableErrorHandling errorHandlingStrategy = httpErrorHandler.getErrorHandlingStrategy(httpStatusCode);
-
-      return !errorHandlingStrategy.shouldRetry();
     } catch (IOException ioException) {
-      // Catch the IOException triggered due to the execution of the Http call
-      // Http Status code Integer.Min_Value signifies error in the request channel.
-      currentPageUrl = nextPageUrl;
-      httpStatusCode = Integer.MIN_VALUE;
-      latestException = ioException;
-      response = null;
-      return false;
+      response = new ErrorHttpResponse(CODE_EXCEPTION);
     }
+
+    currentPageUrl = nextPageUrl;
+    httpStatusCode = response.getStatusCode();
+    RetryableErrorHandling errorHandlingStrategy = httpErrorHandler.getErrorHandlingStrategy(httpStatusCode);
+
+    return !errorHandlingStrategy.shouldRetry();
   }
 
   @Nullable
@@ -126,12 +122,8 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
       // Retries failed. We don't need to do anything here. This will be handled using httpStatusCode below.
     }
 
-    // Throw the original IOException in case the Http Status is set to Integer.Min_Value
-    if (httpStatusCode == Integer.MIN_VALUE) {
-      throw latestException;
-    }
-
-    ErrorHandling postRetryStrategy = httpErrorHandler.getErrorHandlingStrategy(httpStatusCode).getAfterRetryStrategy();
+    ErrorHandling postRetryStrategy = httpErrorHandler.getErrorHandlingStrategy(httpStatusCode)
+        .getAfterRetryStrategy();
 
     switch (postRetryStrategy) {
       case SUCCESS:
@@ -154,9 +146,9 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
         throw new IllegalArgumentException(String.format("Unexpected http error handling: '%s'", postRetryStrategy));
     }
 
-    BasePage page = createPageInstance(config, response, postRetryStrategy);
-    nextPageUrl = getNextPageUrl(response, page);
+    BasePage page = createPageInstance(nextPageUrl, config, response, postRetryStrategy, httpStatusCode);
 
+    nextPageUrl = getNextPageUrl(response, page);
     LOG.debug("Next Page Url is '{}'", nextPageUrl);
 
     return page;
@@ -189,9 +181,9 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
   }
 
   // for testing purposes
-  BasePage createPageInstance(BaseHttpSourceConfig config, HttpResponse httpResponse,
-                              ErrorHandling postRetryStrategy) throws IOException {
-    return PageFactory.createInstance(config, httpResponse, httpErrorHandler,
+  BasePage createPageInstance(String pageUrl, BaseHttpSourceConfig config, HttpResponse httpResponse,
+                              ErrorHandling postRetryStrategy, int statusCode) throws IOException {
+    return PageFactory.createInstance(pageUrl, config, httpResponse, httpErrorHandler, statusCode,
                                       !postRetryStrategy.equals(ErrorHandling.SUCCESS));
   }
 

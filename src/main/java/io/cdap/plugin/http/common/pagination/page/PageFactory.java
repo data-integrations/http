@@ -26,10 +26,18 @@ import java.io.IOException;
  * If erroneous page is being handled, {@HttpErrorPage} is returned, which returns a single error entry.
  */
 public class PageFactory {
+
   public static BasePage createInstance(BaseHttpSourceConfig config, HttpResponse httpResponse,
                                         HttpErrorHandler httpErrorHandler, boolean isError) throws IOException {
+    return PageFactory.createInstance(null, config, httpResponse, httpErrorHandler,
+                                      httpResponse.getStatusCode(), isError);
+  }
+
+  public static BasePage createInstance(String pageUrl, BaseHttpSourceConfig config, HttpResponse httpResponse,
+                                        HttpErrorHandler httpErrorHandler,
+                                        int statusCode, boolean isError) throws IOException {
     if (isError) {
-      return new HttpErrorPage(config, httpResponse, httpErrorHandler);
+      return new HttpErrorPage(pageUrl, config, httpResponse, httpErrorHandler, statusCode);
     }
 
     switch(config.getFormat()) {

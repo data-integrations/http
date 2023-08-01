@@ -24,6 +24,12 @@ import io.cdap.cdap.etl.api.InvalidEntry;
  */
 public class InvalidEntryCreator {
   private static final String ERROR_SCHEMA_BODY_PROPERTY = "body";
+  private static final String ERROR_SCHEMA_URL_PROPERTY = "url";
+
+  private static final Schema STRING_URL_ERROR_SCHEMA = Schema.recordOf("stringError",
+                                                                        Schema.Field.of(ERROR_SCHEMA_URL_PROPERTY,
+                                                                              Schema.of(Schema.Type.STRING)));
+
   private static final Schema STRING_ERROR_SCHEMA = Schema.recordOf("stringError",
                                                                     Schema.Field.of(ERROR_SCHEMA_BODY_PROPERTY,
                                                                              Schema.of(Schema.Type.STRING)));
@@ -54,6 +60,12 @@ public class InvalidEntryCreator {
   public static InvalidEntry<StructuredRecord> buildStringError(int code, String recordBody, String errorText) {
     StructuredRecord.Builder builder = StructuredRecord.builder(STRING_ERROR_SCHEMA);
     builder.set(ERROR_SCHEMA_BODY_PROPERTY, recordBody);
+    return new InvalidEntry<>(code, errorText, builder.build());
+  }
+
+  public static InvalidEntry<StructuredRecord> buildStringErrorWithUrl(int code, String pageUrl, String errorText) {
+    StructuredRecord.Builder builder = StructuredRecord.builder(STRING_URL_ERROR_SCHEMA);
+    builder.set(ERROR_SCHEMA_URL_PROPERTY, pageUrl);
     return new InvalidEntry<>(code, errorText, builder.build());
   }
 }
