@@ -59,6 +59,7 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
   private BasePage page;
   private int httpStatusCode;
   private HttpResponse response;
+  private IOException latestException;
 
   public BaseHttpPaginationIterator(BaseHttpSourceConfig config, PaginationIteratorState state) {
     this.config = config;
@@ -85,12 +86,22 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
       response.close();
     }
 
-    response = new HttpResponse(getHttpClient().executeHTTP(nextPageUrl));
-    currentPageUrl = nextPageUrl;
-    httpStatusCode = response.getStatusCode();
-    RetryableErrorHandling errorHandlingStrategy = httpErrorHandler.getErrorHandlingStrategy(httpStatusCode);
+    try {
+      response = new HttpResponse(getHttpClient().executeHTTP(nextPageUrl));
+      currentPageUrl = nextPageUrl;
+      httpStatusCode = response.getStatusCode();
+      RetryableErrorHandling errorHandlingStrategy = httpErrorHandler.getErrorHandlingStrategy(httpStatusCode);
 
-    return !errorHandlingStrategy.shouldRetry();
+      return !errorHandlingStrategy.shouldRetry();
+    } catch (IOException ioException) {
+      // Catch the IOException triggered due to the execution of the Http call
+      // Http Status code Integer.Min_Value signifies error in the request channel.
+      currentPageUrl = nextPageUrl;
+      httpStatusCode = Integer.MIN_VALUE;
+      latestException = ioException;
+      response = null;
+      return false;
+    }
   }
 
   @Nullable
@@ -115,8 +126,12 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
       // Retries failed. We don't need to do anything here. This will be handled using httpStatusCode below.
     }
 
-    ErrorHandling postRetryStrategy = httpErrorHandler.getErrorHandlingStrategy(httpStatusCode)
-      .getAfterRetryStrategy();
+    // Throw the original IOException in case the Http Status is set to Integer.Min_Value
+    if (httpStatusCode == Integer.MIN_VALUE) {
+      throw latestException;
+    }
+
+    ErrorHandling postRetryStrategy = httpErrorHandler.getErrorHandlingStrategy(httpStatusCode).getAfterRetryStrategy();
 
     switch (postRetryStrategy) {
       case SUCCESS:

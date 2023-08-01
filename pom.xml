@@ -21,7 +21,7 @@
   <name>HTTP Plugins</name>
   <groupId>io.cdap</groupId>
   <artifactId>http-plugins</artifactId>
-  <version>1.3.5</version>
+  <version>1.3.6-SNAPSHOT</version>
 
   <licenses>
     <license>
