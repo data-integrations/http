@@ -17,6 +17,7 @@ package io.cdap.plugin.http.source.common.http;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
+import io.cdap.plugin.http.common.http.HttpRequest;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
@@ -145,23 +146,5 @@ public class HttpClient implements Closeable {
     httpClientBuilder.setDefaultHeaders(clientHeaders);
 
     return httpClientBuilder.build();
-  }
-
-  /**
-   * This class allows us to send body not only in POST/PUT but also in other requests.
-   */
-  private static class HttpRequest extends HttpEntityEnclosingRequestBase {
-    private final String methodName;
-
-    HttpRequest(URI uri, String methodName) {
-      super();
-      this.setURI(uri);
-      this.methodName = methodName;
-    }
-
-    @Override
-    public String getMethod() {
-      return methodName;
-    }
   }
 }

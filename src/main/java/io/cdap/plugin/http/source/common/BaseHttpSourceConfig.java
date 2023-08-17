@@ -20,9 +20,12 @@ import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.cdap.etl.api.validation.InvalidStageException;
+import io.cdap.plugin.common.ReferenceNames;
 import io.cdap.plugin.common.ReferencePluginConfig;
+import io.cdap.plugin.http.common.BaseHttpConfig;
 import io.cdap.plugin.http.source.common.error.ErrorHandling;
 import io.cdap.plugin.http.source.common.error.HttpErrorHandlerEntity;
 import io.cdap.plugin.http.source.common.error.RetryableErrorHandling;
@@ -49,7 +52,7 @@ import javax.annotation.Nullable;
 /**
  * Base configuration for HTTP Streaming and Batch plugins.
  */
-public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
+public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
   public static final String PROPERTY_REFERENCE_NAME = "referenceName";
   public static final String PROPERTY_URL = "url";
   public static final String PROPERTY_HTTP_METHOD = "httpMethod";
@@ -59,11 +62,6 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   public static final String PROPERTY_RESULT_PATH = "resultPath";
   public static final String PROPERTY_FIELDS_MAPPING = "fieldsMapping";
   public static final String PROPERTY_CSV_SKIP_FIRST_ROW = "csvSkipFirstRow";
-  public static final String PROPERTY_USERNAME = "username";
-  public static final String PROPERTY_PASSWORD = "password";
-  public static final String PROPERTY_PROXY_URL = "proxyUrl";
-  public static final String PROPERTY_PROXY_USERNAME = "proxyUsername";
-  public static final String PROPERTY_PROXY_PASSWORD = "proxyPassword";
   public static final String PROPERTY_HTTP_ERROR_HANDLING = "httpErrorsHandling";
   public static final String PROPERTY_ERROR_HANDLING = "errorHandling";
   public static final String PROPERTY_RETRY_POLICY = "retryPolicy";
@@ -81,12 +79,6 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   public static final String PROPERTY_CUSTOM_PAGINATION_CODE = "customPaginationCode";
   public static final String PROPERTY_WAIT_TIME_BETWEEN_PAGES = "waitTimeBetweenPages";
   public static final String PROPERTY_OAUTH2_ENABLED = "oauth2Enabled";
-  public static final String PROPERTY_AUTH_URL = "authUrl";
-  public static final String PROPERTY_TOKEN_URL = "tokenUrl";
-  public static final String PROPERTY_CLIENT_ID = "clientId";
-  public static final String PROPERTY_CLIENT_SECRET = "clientSecret";
-  public static final String PROPERTY_SCOPES = "scopes";
-  public static final String PROPERTY_REFRESH_TOKEN = "refreshToken";
   public static final String PROPERTY_VERIFY_HTTPS = "verifyHttps";
   public static final String PROPERTY_KEYSTORE_FILE = "keystoreFile";
   public static final String PROPERTY_KEYSTORE_TYPE = "keystoreType";
@@ -151,36 +143,6 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     "This is usually set if the first row is a header row.")
   @Macro
   protected String csvSkipFirstRow;
-
-  @Nullable
-  @Name(PROPERTY_USERNAME)
-  @Description("Username for basic authentication.")
-  @Macro
-  protected String username;
-
-  @Nullable
-  @Name(PROPERTY_PASSWORD)
-  @Description("Password for basic authentication.")
-  @Macro
-  protected String password;
-
-  @Nullable
-  @Name(PROPERTY_PROXY_URL)
-  @Description("Proxy URL. Must contain a protocol, address and port.")
-  @Macro
-  protected String proxyUrl;
-
-  @Nullable
-  @Name(PROPERTY_PROXY_USERNAME)
-  @Description("Proxy username.")
-  @Macro
-  protected String proxyUsername;
-
-  @Nullable
-  @Name(PROPERTY_PROXY_PASSWORD)
-  @Description("Proxy password.")
-  @Macro
-  protected String proxyPassword;
 
   @Nullable
   @Name(PROPERTY_HTTP_ERROR_HANDLING)
@@ -276,46 +238,6 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   @Macro
   protected Long waitTimeBetweenPages;
 
-  @Name(PROPERTY_OAUTH2_ENABLED)
-  @Description("If true, plugin will perform OAuth2 authentication.")
-  protected String oauth2Enabled;
-
-  @Nullable
-  @Name(PROPERTY_AUTH_URL)
-  @Description("Endpoint for the authorization server used to retrieve the authorization code.")
-  @Macro
-  protected String authUrl;
-
-  @Nullable
-  @Name(PROPERTY_TOKEN_URL)
-  @Description("Endpoint for the resource server, which exchanges the authorization code for an access token.")
-  @Macro
-  protected String tokenUrl;
-
-  @Nullable
-  @Name(PROPERTY_CLIENT_ID)
-  @Description("Client identifier obtained during the Application registration process.")
-  @Macro
-  protected String clientId;
-
-  @Nullable
-  @Name(PROPERTY_CLIENT_SECRET)
-  @Description("Client secret obtained during the Application registration process.")
-  @Macro
-  protected String clientSecret;
-
-  @Nullable
-  @Name(PROPERTY_SCOPES)
-  @Description("Scope of the access request, which might have multiple space-separated values.")
-  @Macro
-  protected String scopes;
-
-  @Nullable
-  @Name(PROPERTY_REFRESH_TOKEN)
-  @Description("Token used to receive accessToken, which is end product of OAuth2.")
-  @Macro
-  protected String refreshToken;
-
   @Name(PROPERTY_VERIFY_HTTPS)
   @Description("If false, untrusted trust certificates (e.g. self signed), will not lead to an" +
     "error. Do not disable this in production environment on a network you do not entirely trust. " +
@@ -384,9 +306,9 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   @Macro
   protected String cipherSuites;
 
+  @Nullable
   @Name(PROPERTY_SCHEMA)
   @Macro
-  @Nullable
   @Description("Output schema. Is required to be set.")
   protected String schema;
 
@@ -428,31 +350,6 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
 
   public Boolean getCsvSkipFirstRow() {
     return Boolean.parseBoolean(csvSkipFirstRow);
-  }
-
-  @Nullable
-  public String getUsername() {
-    return username;
-  }
-
-  @Nullable
-  public String getPassword() {
-    return password;
-  }
-
-  @Nullable
-  public String getProxyUrl() {
-    return proxyUrl;
-  }
-
-  @Nullable
-  public String getProxyUsername() {
-    return proxyUsername;
-  }
-
-  @Nullable
-  public String getProxyPassword() {
-    return proxyPassword;
   }
 
   @Nullable
@@ -529,40 +426,6 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     return waitTimeBetweenPages;
   }
 
-  public Boolean getOauth2Enabled() {
-    return Boolean.parseBoolean(oauth2Enabled);
-  }
-
-  @Nullable
-  public String getAuthUrl() {
-    return authUrl;
-  }
-
-  @Nullable
-  public String getTokenUrl() {
-    return tokenUrl;
-  }
-
-  @Nullable
-  public String getClientId() {
-    return clientId;
-  }
-
-  @Nullable
-  public String getClientSecret() {
-    return clientSecret;
-  }
-
-  @Nullable
-  public String getScopes() {
-    return scopes;
-  }
-
-  @Nullable
-  public String getRefreshToken() {
-    return refreshToken;
-  }
-
   public Boolean getVerifyHttps() {
     return Boolean.parseBoolean(verifyHttps);
   }
@@ -575,6 +438,19 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   @Nullable
   public KeyStoreType getKeystoreType() {
     return getEnumValueByString(KeyStoreType.class, keystoreType, PROPERTY_KEYSTORE_TYPE);
+  }
+
+
+  public void setServiceAccountType(String serviceAccountType) {
+    this.serviceAccountType = serviceAccountType;
+  }
+
+  public void setServiceAccountJson(String serviceAccountJson) {
+    this.serviceAccountJson = serviceAccountJson;
+  }
+
+  public void setServiceAccountFilePath(String serviceAccountFilePath) {
+    this.serviceAccountFilePath = serviceAccountFilePath;
   }
 
   @Nullable
@@ -670,37 +546,43 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     return getListFromString(transportProtocols);
   }
 
-  public void validate() {
+  public String getReferenceNameOrNormalizedFQN() {
+    return Strings.isNullOrEmpty(referenceName) ? ReferenceNames.normalizeFqn(url) : referenceName;
+  }
+
+  public void validate(FailureCollector failureCollector) {
+    super.validate(failureCollector);
+
     // Validate URL
     if (!containsMacro(PROPERTY_URL)) {
       try {
         // replace with placeholder with anything just during pagination
         new URI(getUrl().replaceAll(PAGINATION_INDEX_PLACEHOLDER_REGEX, "0"));
+
+        // Validate HTTP Error Handling Map
+        if (!containsMacro(PROPERTY_HTTP_ERROR_HANDLING)) {
+          List<HttpErrorHandlerEntity> httpErrorsHandlingEntries = getHttpErrorHandlingEntries();
+          boolean supportsSkippingPages = PaginationIteratorFactory
+            .createInstance(this, null).supportsSkippingPages();
+
+          if (!supportsSkippingPages) {
+            for (HttpErrorHandlerEntity httpErrorsHandlingEntry : httpErrorsHandlingEntries) {
+              ErrorHandling postRetryStrategy = httpErrorsHandlingEntry.getStrategy().getAfterRetryStrategy();
+              if (postRetryStrategy.equals(ErrorHandling.SEND) ||
+                postRetryStrategy.equals(ErrorHandling.SKIP)) {
+                throw new InvalidConfigPropertyException(
+                  String.format("Error handling strategy '%s' is not support in combination with pagination type",
+                                httpErrorsHandlingEntry.getStrategy(), getPaginationType()),
+                  PROPERTY_HTTP_ERROR_HANDLING);
+              }
+            }
+          }
+        }
       } catch (URISyntaxException e) {
         throw new InvalidConfigPropertyException(
           String.format("URL value is not valid: '%s'", getUrl()), e, PROPERTY_URL);
       }
     }
-
-    // Validate HTTP Error Handling Map
-    if (!containsMacro(PROPERTY_HTTP_ERROR_HANDLING)) {
-      List<HttpErrorHandlerEntity> httpErrorsHandlingEntries = getHttpErrorHandlingEntries();
-      boolean supportsSkippingPages = PaginationIteratorFactory
-        .createInstance(this, null).supportsSkippingPages();
-
-      if (!supportsSkippingPages) {
-        for (HttpErrorHandlerEntity httpErrorsHandlingEntry : httpErrorsHandlingEntries) {
-          ErrorHandling postRetryStrategy = httpErrorsHandlingEntry.getStrategy().getAfterRetryStrategy();
-          if (postRetryStrategy.equals(ErrorHandling.SEND) ||
-            postRetryStrategy.equals(ErrorHandling.SKIP)) {
-            throw new InvalidConfigPropertyException(
-              String.format("Error handling strategy '%s' is not support in combination with pagination type",
-                            httpErrorsHandlingEntry.getStrategy(), getPaginationType()), PROPERTY_HTTP_ERROR_HANDLING);
-          }
-        }
-      }
-    }
-
 
     // Validate Linear Retry Interval
     if (!containsMacro(PROPERTY_RETRY_POLICY) && getRetryPolicy() == RetryPolicy.LINEAR) {
@@ -741,7 +623,7 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
                                         propertiesShouldBeNull.remove(PROPERTY_INDEX_INCREMENT));
           propertiesShouldBeNull.remove(PROPERTY_MAX_INDEX); // can be both null and non null
 
-          if (!url.contains(PAGINATION_INDEX_PLACEHOLDER)) {
+          if (!containsMacro(PROPERTY_URL) && !url.contains(PAGINATION_INDEX_PLACEHOLDER)) {
             throw new InvalidConfigPropertyException(
               String.format("Url '%s' must contain '%s' placeholder when pagination type is '%s'", getUrl(),
                             PAGINATION_INDEX_PLACEHOLDER, getPaginationType()),
@@ -768,7 +650,6 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
       }
     }
 
-
     // Validate format properties
     if (!containsMacro(PROPERTY_FORMAT)) {
       String reasonFormat = String.format("page format is '%s'", getFormat());
@@ -784,26 +665,6 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
       }
     }
 
-    // Validate OAuth2 properties
-    if (!containsMacro(PROPERTY_OAUTH2_ENABLED) && this.getOauth2Enabled()) {
-      String reasonOauth2 = "OAuth2 is enabled";
-      if (!containsMacro(PROPERTY_AUTH_URL)) {
-        assertIsSet(getAuthUrl(), PROPERTY_AUTH_URL, reasonOauth2);
-      }
-      if (!containsMacro(PROPERTY_TOKEN_URL)) {
-        assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
-      }
-      if (!containsMacro(PROPERTY_CLIENT_ID)) {
-        assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
-      }
-      if (!containsMacro((PROPERTY_CLIENT_SECRET))) {
-        assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
-      }
-      if (!containsMacro(PROPERTY_REFRESH_TOKEN)) {
-        assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
-      }
-    }
-
     if (!containsMacro(PROPERTY_VERIFY_HTTPS) && !getVerifyHttps()) {
       assertIsNotSet(getTrustStoreFile(), PROPERTY_TRUSTSTORE_FILE,
                      String.format("trustore settings are ignored due to disabled %s", PROPERTY_VERIFY_HTTPS));
@@ -811,6 +672,11 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
   }
 
   public void validateSchema() {
+    Schema schema = getSchema();
+    if (!containsMacro(PROPERTY_SCHEMA) && schema == null) {
+      throw new InvalidConfigPropertyException(
+              String.format("Output schema cannot be empty"), PROPERTY_SCHEMA);
+    }
     if (!containsMacro(PROPERTY_FORMAT)) {
       PageFormat format = getFormat();
 
@@ -880,6 +746,9 @@ public abstract class BaseHttpSourceConfig extends ReferencePluginConfig {
     String[] mappings = keyValueString.split(",");
     for (String map : mappings) {
       String[] columns = map.split(":");
+      if (columns.length < 2) { //For scenario where either of key or value not provided
+        throw new IllegalArgumentException(String.format("Missing value for key %s", columns[0]));
+      }
       result.put(columns[0], columns[1]);
     }
     return result;

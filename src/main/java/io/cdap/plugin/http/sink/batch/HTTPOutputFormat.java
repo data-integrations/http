@@ -18,6 +18,7 @@ package io.cdap.plugin.http.sink.batch;
 
 import com.google.gson.Gson;
 import io.cdap.cdap.api.data.format.StructuredRecord;
+import io.cdap.cdap.api.data.schema.Schema;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.OutputCommitter;
@@ -25,18 +26,23 @@ import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
+import java.io.IOException;
+
 /**
  * OutputFormat for HTTP writing
  */
 public class HTTPOutputFormat extends OutputFormat<StructuredRecord, StructuredRecord> {
   private static final Gson GSON = new Gson();
   static final String CONFIG_KEY = "http.sink.config";
+  static final String INPUT_SCHEMA_KEY = "http.sink.input.schema";
 
   @Override
-  public RecordWriter<StructuredRecord, StructuredRecord> getRecordWriter(TaskAttemptContext context) {
+  public RecordWriter<StructuredRecord, StructuredRecord> getRecordWriter(TaskAttemptContext context)
+          throws IOException {
     Configuration hConf = context.getConfiguration();
     HTTPSinkConfig config = GSON.fromJson(hConf.get(CONFIG_KEY), HTTPSinkConfig.class);
-    return new HTTPRecordWriter(config);
+    Schema inputSchema = Schema.parseJson(hConf.get(INPUT_SCHEMA_KEY));
+    return new HTTPRecordWriter(config, inputSchema);
   }
 
   @Override

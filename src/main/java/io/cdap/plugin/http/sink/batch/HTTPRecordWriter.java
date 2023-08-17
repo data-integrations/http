@@ -16,30 +16,57 @@
 
 package io.cdap.plugin.http.sink.batch;
 
+import com.google.auth.oauth2.AccessToken;
+import com.google.common.base.Charsets;
+import com.google.common.base.Strings;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
-import io.cdap.cdap.format.StructuredRecordStringConverter;
+import io.cdap.plugin.http.common.http.HttpRequest;
+import io.cdap.plugin.http.common.http.OAuthUtil;
+import io.cdap.plugin.http.source.common.RetryPolicy;
+import io.cdap.plugin.http.source.common.error.HttpErrorHandler;
+import io.cdap.plugin.http.source.common.error.RetryableErrorHandling;
+
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.http.Header;
+import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicHeader;
+import org.awaitility.Awaitility;
+import org.awaitility.Duration;
+import org.awaitility.pollinterval.FixedPollInterval;
+import org.awaitility.pollinterval.IterativePollInterval;
+import org.awaitility.pollinterval.PollInterval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -52,151 +79,67 @@ import javax.net.ssl.X509TrustManager;
  */
 public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredRecord> {
   private static final Logger LOG = LoggerFactory.getLogger(HTTPRecordWriter.class);
-  private static final String REGEX_HASHED_VAR = "#s*(\\w+)";
+  private static final String REGEX_HASHED_VAR = "#(\\w+)";
+  public static final String REQUEST_METHOD_POST = "POST";
+  public static final String REQUEST_METHOD_PUT = "PUT";
+  public static final String REQUEST_METHOD_DELETE = "DELETE";
 
   private final HTTPSinkConfig config;
-  private StringBuilder messages = new StringBuilder();
+  private final MessageBuffer messageBuffer;
   private String contentType;
+  private String url;
+  private String configURL;
+  private List<PlaceholderBean> placeHolderList;
+  private final Map<String, String> headers;
 
-  HTTPRecordWriter(HTTPSinkConfig config) {
+  private AccessToken accessToken;
+  private final HttpErrorHandler httpErrorHandler;
+  private final PollInterval pollInterval;
+  private int httpStatusCode;
+  private static int retryCount;
+
+  HTTPRecordWriter(HTTPSinkConfig config, Schema inputSchema) {
+    this.headers = config.getRequestHeadersMap();
     this.config = config;
+    this.accessToken = null;
+    this.messageBuffer = new MessageBuffer(
+      config.getMessageFormat(), config.getJsonBatchKey(), config.shouldWriteJsonAsArray(),
+      config.getDelimiterForMessages(), config.getCharset(), config.getBody(), inputSchema
+    );
+    this.httpErrorHandler = new HttpErrorHandler(config);
+    if (config.getRetryPolicy().equals(RetryPolicy.LINEAR)) {
+      pollInterval = FixedPollInterval.fixed(config.getLinearRetryInterval(), TimeUnit.SECONDS);
+    } else {
+      pollInterval = IterativePollInterval.iterative(duration -> duration.multiply(2),
+                                                     Duration.FIVE_HUNDRED_MILLISECONDS);
+    }
+    url = config.getUrl();
+    placeHolderList = getPlaceholderListFromURL();
   }
 
   @Override
   public void write(StructuredRecord input, StructuredRecord unused) throws IOException {
-    String message = null;
-    if (config.getMethod().equals("POST") || config.getMethod().equals("PUT")) {
-      if (config.getMessageFormat().equals("JSON")) {
-        message = StructuredRecordStringConverter.toJsonString(input);
-        contentType = "application/json";
-      } else if (config.getMessageFormat().equals("Form")) {
-        message = createFormMessage(input);
-        contentType = " application/x-www-form-urlencoded";
-      } else if (config.getMessageFormat().equals("Custom")) {
-        message = createCustomMessage(config.getBody(), input);
-        contentType = " text/plain";
-      }
-      messages.append(message).append(config.getDelimiterForMessages());
+    configURL = url;
+    if (config.getMethod().equals(REQUEST_METHOD_POST) || config.getMethod().equals(REQUEST_METHOD_PUT)) {
+      messageBuffer.add(input);
     }
-    StringTokenizer tokens = new StringTokenizer(messages.toString().trim(), config.getDelimiterForMessages());
-    if (config.getBatchSize() == 1 || tokens.countTokens() == config.getBatchSize()) {
-      executeHTTPService();
+
+    if (config.getMethod().equals(REQUEST_METHOD_PUT) || config.getMethod().equals(REQUEST_METHOD_DELETE)
+      && !placeHolderList.isEmpty()) {
+      configURL = updateURLWithPlaceholderValue(input);
+    }
+
+    if (config.getBatchSize() == messageBuffer.size() || config.getMethod().equals(REQUEST_METHOD_DELETE)) {
+      flushMessageBuffer();
     }
   }
 
   @Override
   public void close(TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
     // Process remaining messages after batch executions.
-    if (!messages.toString().isEmpty()) {
-      try {
-        executeHTTPService();
-      } catch (Exception e) {
-        throw new RuntimeException("Error while executing http request for remaining input messages " +
-                                     "after the batch execution. " + e);
-      }
+    if (!config.getMethod().equals(REQUEST_METHOD_DELETE)) {
+      flushMessageBuffer();
     }
-  }
-
-  private void executeHTTPService() throws IOException {
-    int responseCode;
-    int retries = 0;
-    IOException exception = null;
-    do {
-      HttpURLConnection conn = null;
-      Map<String, String> headers = config.getRequestHeadersMap();
-      try {
-        URL url = new URL(config.getUrl());
-        conn = (HttpURLConnection) url.openConnection();
-        if (conn instanceof HttpsURLConnection) {
-          //Disable SSLv3
-          System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2");
-          if (config.getDisableSSLValidation()) {
-            disableSSLValidation();
-          }
-        }
-        conn.setRequestMethod(config.getMethod().toUpperCase());
-        conn.setConnectTimeout(config.getConnectTimeout());
-        conn.setReadTimeout(config.getReadTimeout());
-        conn.setInstanceFollowRedirects(config.getFollowRedirects());
-        conn.addRequestProperty("charset", config.getCharset());
-        for (Map.Entry<String, String> propertyEntry : headers.entrySet()) {
-          conn.addRequestProperty(propertyEntry.getKey(), propertyEntry.getValue());
-        }
-        //Default contentType value would be added in the request properties if user has not added in the headers.
-        if (config.getMethod().equals("POST") || config.getMethod().equals("PUT")) {
-          if (!headers.containsKey("Content-Type")) {
-            conn.addRequestProperty("Content-Type", contentType);
-          }
-        }
-        if (messages.length() > 0) {
-          conn.setDoOutput(true);
-          try (OutputStream outputStream = conn.getOutputStream()) {
-            outputStream.write(messages.toString().trim().getBytes(config.getCharset()));
-          }
-        }
-        responseCode = conn.getResponseCode();
-        messages.setLength(0);
-        if (config.getFailOnNon200Response() && !(responseCode >= 200 && responseCode < 300)) {
-          exception = new IOException("Received error response. Response code: " + responseCode);
-        }
-        break;
-      } catch (MalformedURLException | ProtocolException e) {
-        throw new IllegalStateException("Error opening url connection. Reason: " + e.getMessage(), e);
-      } catch (IOException e) {
-        LOG.warn("Error making {} request to url {} with headers {}.", config.getMethod(), config.getMethod(), headers);
-        exception = e;
-      } finally {
-        if (conn != null) {
-          conn.disconnect();
-        }
-      }
-      retries++;
-    } while (retries < config.getNumRetries());
-    if (exception != null) {
-      throw exception;
-    }
-  }
-
-  private String createFormMessage(StructuredRecord input) {
-    boolean first = true;
-    String formMessage = null;
-    StringBuilder sb = new StringBuilder("");
-    for (Schema.Field field : input.getSchema().getFields()) {
-      if (first) {
-        first = false;
-      } else {
-        sb.append("&");
-      }
-      sb.append(field.getName());
-      sb.append("=");
-      sb.append((String) input.get(field.getName()));
-    }
-    try {
-      formMessage = URLEncoder.encode(sb.toString(), config.getCharset());
-    } catch (UnsupportedEncodingException e) {
-      throw new IllegalStateException("Error encoding Form message. Reason: " + e.getMessage(), e);
-    }
-    return formMessage;
-  }
-
-  private String createCustomMessage(String body, StructuredRecord input) {
-    String customMessage = body;
-    Matcher matcher = Pattern.compile(REGEX_HASHED_VAR).matcher(customMessage);
-    HashMap<String, String> findReplaceMap = new HashMap();
-    while (matcher.find()) {
-      if (input.get(matcher.group(1)) != null) {
-        findReplaceMap.put(matcher.group(1), (String) input.get(matcher.group(1)));
-      } else {
-        throw new IllegalArgumentException(String.format(
-          "Field %s doesnt exist in the input schema.", matcher.group(1)));
-      }
-    }
-    Matcher replaceMatcher = Pattern.compile(REGEX_HASHED_VAR).matcher(customMessage);
-    while (replaceMatcher.find()) {
-      String val = replaceMatcher.group().replace("#", "");
-      customMessage = (customMessage.replace(replaceMatcher.group(), findReplaceMap.get(val)));
-    }
-    return customMessage;
   }
 
   private void disableSSLValidation() {
@@ -227,4 +170,187 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
     };
     HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
   }
+
+  private boolean executeHTTPServiceAndCheckStatusCode() throws IOException {
+    LOG.debug("HTTP Request Attempt No. : {}", ++retryCount);
+    CloseableHttpClient httpClient = createHttpClient(configURL);
+
+    CloseableHttpResponse response = null;
+    try {
+      URL url = new URL(configURL);
+      HttpEntityEnclosingRequestBase request = new HttpRequest(URI.create(String.valueOf(url)),
+        config.getMethod());
+
+      if (url.getProtocol().equalsIgnoreCase("https")) {
+        // Disable SSLv3
+        System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2");
+        if (config.getDisableSSLValidation()) {
+          disableSSLValidation();
+        }
+      }
+
+      if (!messageBuffer.isEmpty()) {
+        String requestBodyString = messageBuffer.getMessage();
+        if (requestBodyString != null) {
+          StringEntity requestBody = new StringEntity(requestBodyString, Charsets.UTF_8.toString());
+          request.setEntity(requestBody);
+        }
+      }
+
+      request.setHeaders(getRequestHeaders());
+
+      response = httpClient.execute(request);
+
+      httpStatusCode = response.getStatusLine().getStatusCode();
+      LOG.debug("Response HTTP Status code: {}", httpStatusCode);
+
+    } catch (MalformedURLException | ProtocolException e) {
+      throw new IllegalStateException("Error opening url connection. Reason: " + e.getMessage(), e);
+    } catch (IOException e) {
+      LOG.warn("Error making {} request to url {}.", config.getMethod(), config.getUrl());
+    } finally {
+      if (response != null) {
+        response.close();
+      }
+    }
+    RetryableErrorHandling errorHandlingStrategy = httpErrorHandler.getErrorHandlingStrategy(httpStatusCode);
+    boolean shouldRetry = errorHandlingStrategy.shouldRetry();
+    if (!shouldRetry) {
+      messageBuffer.clear();
+      retryCount = 0;
+    }
+    return !shouldRetry;
+  }
+
+
+  public CloseableHttpClient createHttpClient(String pageUriStr) throws IOException {
+    HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
+
+    // set timeouts
+    Long connectTimeoutMillis = TimeUnit.SECONDS.toMillis(config.getConnectTimeout());
+    Long readTimeoutMillis = TimeUnit.SECONDS.toMillis(config.getReadTimeout());
+    RequestConfig.Builder requestBuilder = RequestConfig.custom();
+    requestBuilder.setSocketTimeout(readTimeoutMillis.intValue());
+    requestBuilder.setConnectTimeout(connectTimeoutMillis.intValue());
+    requestBuilder.setConnectionRequestTimeout(connectTimeoutMillis.intValue());
+    httpClientBuilder.setDefaultRequestConfig(requestBuilder.build());
+
+    // basic auth
+    CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+    if (!Strings.isNullOrEmpty(config.getUsername()) && !Strings.isNullOrEmpty(config.getPassword())) {
+      URI uri = URI.create(pageUriStr);
+      AuthScope authScope = new AuthScope(new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme()));
+      credentialsProvider.setCredentials(authScope,
+        new UsernamePasswordCredentials(config.getUsername(), config.getPassword()));
+    }
+
+    // proxy and proxy auth
+    if (!Strings.isNullOrEmpty(config.getProxyUrl())) {
+      HttpHost proxyHost = HttpHost.create(config.getProxyUrl());
+      if (!Strings.isNullOrEmpty(config.getProxyUsername()) && !Strings.isNullOrEmpty(config.getProxyPassword())) {
+        credentialsProvider.setCredentials(new AuthScope(proxyHost),
+          new UsernamePasswordCredentials(
+            config.getProxyUsername(), config.getProxyPassword()));
+      }
+      httpClientBuilder.setProxy(proxyHost);
+    }
+    httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+
+    return httpClientBuilder.build();
+  }
+
+  private Header[] getRequestHeaders() throws IOException {
+    ArrayList<Header> clientHeaders = new ArrayList<>();
+
+    if (accessToken == null || OAuthUtil.tokenExpired(accessToken)) {
+      accessToken = OAuthUtil.getAccessToken(config);
+    }
+
+    if (accessToken != null) {
+      Header authorizationHeader = getAuthorizationHeader(accessToken);
+      if (authorizationHeader != null) {
+        clientHeaders.add(authorizationHeader);
+      }
+    }
+
+    headers.put("Request-Method", config.getMethod().toUpperCase());
+    headers.put("Instance-Follow-Redirects", String.valueOf(config.getFollowRedirects()));
+    headers.put("charset", config.getCharset());
+
+    if (config.getMethod().equals(REQUEST_METHOD_POST) || config.getMethod().equals(REQUEST_METHOD_PUT)) {
+      if (!headers.containsKey("Content-Type")) {
+        headers.put("Content-Type", contentType);
+      }
+    }
+
+    // set default headers
+    if (headers != null) {
+      for (Map.Entry<String, String> headerEntry : this.headers.entrySet()) {
+        clientHeaders.add(new BasicHeader(headerEntry.getKey(), headerEntry.getValue()));
+      }
+    }
+
+    return clientHeaders.toArray(new Header[clientHeaders.size()]);
+  }
+
+  private Header getAuthorizationHeader(AccessToken accessToken) {
+    return new BasicHeader("Authorization", String.format("Bearer %s", accessToken.getTokenValue()));
+  }
+
+  /**
+   * @return List of placeholders which should be replaced by actual value in the URL.
+   */
+  private List<PlaceholderBean> getPlaceholderListFromURL() {
+    List<PlaceholderBean> placeholderList = new ArrayList<>();
+    if (!(config.getMethod().equals(REQUEST_METHOD_PUT) || config.getMethod().equals(REQUEST_METHOD_DELETE))) {
+      return placeholderList;
+    }
+    Pattern pattern = Pattern.compile(REGEX_HASHED_VAR);
+    Matcher matcher = pattern.matcher(url);
+    while (matcher.find()) {
+      placeholderList.add(new PlaceholderBean(url, matcher.group(1)));
+    }
+    return placeholderList; // Return blank list if no match found
+  }
+
+  private String updateURLWithPlaceholderValue(StructuredRecord inputRecord) {
+    try {
+      StringBuilder finalURLBuilder = new StringBuilder(url);
+      //Running a loop backwards so that it does not impact the start and end index for next record.
+      for (int i = placeHolderList.size() - 1; i >= 0; i--) {
+        PlaceholderBean key = placeHolderList.get(i);
+        String replacement = inputRecord.get(key.getPlaceHolderKey());
+        if (replacement != null) {
+          String encodedReplacement = URLEncoder.encode(replacement, config.getCharset());
+          finalURLBuilder.replace(key.getStartIndex(), key.getEndIndex(), encodedReplacement);
+        }
+      }
+      return finalURLBuilder.toString();
+    } catch (UnsupportedEncodingException e) {
+      throw new IllegalStateException("Error encoding URL with placeholder value. Reason: " + e.getMessage(), e);
+    }
+  }
+
+  /**
+   * Clears the message buffer if it is empty and the HTTP method is not 'DELETE'.
+   */
+  private void flushMessageBuffer() {
+    if (messageBuffer.isEmpty() && !config.getMethod().equals(REQUEST_METHOD_DELETE)) {
+      return;
+    }
+    contentType = messageBuffer.getContentType();
+    try {
+      Awaitility
+        .await().with()
+        .pollInterval(pollInterval)
+        .pollDelay(config.getReadTimeout() == null ? 0L : config.getReadTimeout(), TimeUnit.MILLISECONDS)
+        .timeout(config.getMaxRetryDuration(), TimeUnit.SECONDS)
+        .until(this::executeHTTPServiceAndCheckStatusCode);
+    } catch (Exception e) {
+      throw new RuntimeException("Error while executing http request for remaining input messages " +
+                                   "after the batch execution. " + e);
+    }
+    messageBuffer.clear();
+  }
+
 }

@@ -21,6 +21,7 @@ import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.annotation.Plugin;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.dataset.DatasetProperties;
+import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.streaming.StreamingContext;
 import io.cdap.cdap.etl.api.streaming.StreamingSource;
@@ -48,16 +49,18 @@ public class HttpStreamingSource extends StreamingSource<StructuredRecord> {
 
   @Override
   public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
+    FailureCollector failureCollector = pipelineConfigurer.getStageConfigurer().getFailureCollector();
     // Verify that reference name meets dataset id constraints
     IdUtils.validateId(config.referenceName);
     pipelineConfigurer.createDataset(config.referenceName, Constants.EXTERNAL_DATASET_TYPE, DatasetProperties.EMPTY);
-    config.validate(); // validate when macros are not substituted
+    config.validate(failureCollector); // validate when macros are not substituted
     config.validateSchema();
   }
 
   @Override
   public JavaDStream<StructuredRecord> getStream(StreamingContext context) {
-    config.validate(); // validate when macros are substituted
+    FailureCollector failureCollector = context.getFailureCollector();
+    config.validate(failureCollector); // validate when macros are substituted
     config.validateSchema();
 
     ClassTag<StructuredRecord> tag = ClassTag$.MODULE$.apply(StructuredRecord.class);
