@@ -40,9 +40,9 @@ import java.net.URLEncoder;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.net.ssl.HostnameVerifier;
@@ -61,6 +61,7 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
 
   private final HTTPSinkConfig config;
   private StringBuilder messages = new StringBuilder();
+  private ArrayList<String> messageBuffer = new ArrayList<>();
   private String contentType;
 
   private AccessToken accessToken;
@@ -84,10 +85,11 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
         message = createCustomMessage(config.getBody(), input);
         contentType = " text/plain";
       }
-      messages.append(message).append(config.getDelimiterForMessages());
+      messageBuffer.add(message);
     }
-    StringTokenizer tokens = new StringTokenizer(messages.toString().trim(), config.getDelimiterForMessages());
-    if (config.getBatchSize() == 1 || tokens.countTokens() == config.getBatchSize()) {
+    int batchSize = Math.max(1 , config.getBatchSize());
+    if (messageBuffer.size() == batchSize) {
+      flushMessageBuffer();
       executeHTTPService();
     }
   }
@@ -95,6 +97,9 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
   @Override
   public void close(TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
     // Process remaining messages after batch executions.
+    if (!messageBuffer.isEmpty()) {
+      flushMessageBuffer();
+    }
     if (!messages.toString().isEmpty()) {
       try {
         executeHTTPService();
@@ -246,5 +251,16 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
       }
     };
     HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+  }
+  private void flushMessageBuffer() {
+    int batchSize = Math.max(1 , config.getBatchSize());
+    if (config.getMessageFormat().equals("JSON")) {
+      messages.append(batchSize == 1 ? "" : "[")
+              .append(String.join(",", messageBuffer))
+              .append(batchSize == 1 ? "" : "]");
+    } else if (config.getMessageFormat().equals("Custom")) {
+      messages.append(String.join(config.getDelimiterForMessages(), messageBuffer));
+    }
+    messageBuffer.clear();
   }
 }
