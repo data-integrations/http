@@ -39,6 +39,30 @@
           }
         },
         {
+          "name": "writeJsonAsArray",
+          "label": "Write JSON As Array",
+          "widget-type": "toggle",
+          "widget-attributes": {
+            "on": {
+              "value": "true",
+              "label": "True"
+            },
+            "off": {
+              "value": "false",
+              "label": "False"
+            },
+            "default": "false"
+          }
+        },
+        {
+            "widget-type": "textbox",
+            "label": "Json Batch Key",
+            "name": "jsonBatchKey",
+            "widget-attributes": {
+              "default": ""
+            }
+        },
+        {
           "widget-type": "select",
           "label": "Message Format",
           "name": "messageFormat",
@@ -293,6 +317,30 @@
   ],
   "outputs": [],
   "filters": [
+    {
+      "name": "Should Write Json As Array",
+        "condition": {
+            "expression": "messageFormat == 'JSON'"
+        },
+      "show": [
+        {
+          "type": "property",
+          "name": "writeJsonAsArray"
+        }
+      ]
+    },
+    {
+        "name": "JsonBatchKey",
+        "condition": {
+          "expression": "messageFormat == 'JSON'"
+        },
+        "show": [
+          {
+            "type": "property",
+            "name": "jsonBatchKey"
+          }
+        ]
+    },
     {
       "name": "Authenticate with Basic Auth",
       "condition": {

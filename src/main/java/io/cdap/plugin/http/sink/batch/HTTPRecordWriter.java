@@ -17,11 +17,11 @@
 package io.cdap.plugin.http.sink.batch;
 
 import com.google.auth.oauth2.AccessToken;
+
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
-import io.cdap.cdap.format.StructuredRecordStringConverter;
-
 import io.cdap.plugin.http.common.http.OAuthUtil;
+
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.http.Header;
@@ -31,20 +31,15 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.StringTokenizer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -57,52 +52,34 @@ import javax.net.ssl.X509TrustManager;
  */
 public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredRecord> {
   private static final Logger LOG = LoggerFactory.getLogger(HTTPRecordWriter.class);
-  private static final String REGEX_HASHED_VAR = "#s*(\\w+)";
-
   private final HTTPSinkConfig config;
-  private StringBuilder messages = new StringBuilder();
+  private final MessageBuffer messageBuffer;
   private String contentType;
-
   private AccessToken accessToken;
 
-  HTTPRecordWriter(HTTPSinkConfig config) {
+  HTTPRecordWriter(HTTPSinkConfig config, Schema inputSchema) {
     this.config = config;
     this.accessToken = null;
+    this.messageBuffer = new MessageBuffer(
+            config.getMessageFormat(), config.getJsonBatchKey(), config.shouldWriteJsonAsArray(),
+            config.getDelimiterForMessages(), config.getCharset(), config.getBody(), inputSchema
+    );
   }
 
   @Override
   public void write(StructuredRecord input, StructuredRecord unused) throws IOException {
-    String message = null;
     if (config.getMethod().equals("POST") || config.getMethod().equals("PUT")) {
-      if (config.getMessageFormat().equals("JSON")) {
-        message = StructuredRecordStringConverter.toJsonString(input);
-        contentType = "application/json";
-      } else if (config.getMessageFormat().equals("Form")) {
-        message = createFormMessage(input);
-        contentType = " application/x-www-form-urlencoded";
-      } else if (config.getMessageFormat().equals("Custom")) {
-        message = createCustomMessage(config.getBody(), input);
-        contentType = " text/plain";
-      }
-      messages.append(message).append(config.getDelimiterForMessages());
+      messageBuffer.add(input);
     }
-    StringTokenizer tokens = new StringTokenizer(messages.toString().trim(), config.getDelimiterForMessages());
-    if (config.getBatchSize() == 1 || tokens.countTokens() == config.getBatchSize()) {
-      executeHTTPService();
+    if (config.getBatchSize() == messageBuffer.size()) {
+      flushMessageBuffer();
     }
   }
 
   @Override
-  public void close(TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
+  public void close(TaskAttemptContext taskAttemptContext) throws IOException {
     // Process remaining messages after batch executions.
-    if (!messages.toString().isEmpty()) {
-      try {
-        executeHTTPService();
-      } catch (Exception e) {
-        throw new RuntimeException("Error while executing http request for remaining input messages " +
-                                     "after the batch execution. " + e);
-      }
-    }
+    flushMessageBuffer();
   }
 
   private void executeHTTPService() throws IOException {
@@ -110,6 +87,7 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
     int retries = 0;
     IOException exception = null;
     do {
+      exception = null;
       HttpURLConnection conn = null;
 
       Map<String, String> headers = config.getRequestHeadersMap();
@@ -148,14 +126,14 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
             conn.addRequestProperty("Content-Type", contentType);
           }
         }
-        if (messages.length() > 0) {
+        if (!messageBuffer.isEmpty()) {
           conn.setDoOutput(true);
           try (OutputStream outputStream = conn.getOutputStream()) {
-            outputStream.write(messages.toString().trim().getBytes(config.getCharset()));
+            outputStream.write(messageBuffer.getMessage().trim().getBytes(config.getCharset()));
           }
         }
         responseCode = conn.getResponseCode();
-        messages.setLength(0);
+        messageBuffer.clear();
         if (config.getFailOnNon200Response() && !(responseCode >= 200 && responseCode < 300)) {
           exception = new IOException("Received error response. Response code: " + responseCode);
         }
@@ -175,48 +153,6 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
     if (exception != null) {
       throw exception;
     }
-  }
-
-  private String createFormMessage(StructuredRecord input) {
-    boolean first = true;
-    String formMessage = null;
-    StringBuilder sb = new StringBuilder("");
-    for (Schema.Field field : input.getSchema().getFields()) {
-      if (first) {
-        first = false;
-      } else {
-        sb.append("&");
-      }
-      sb.append(field.getName());
-      sb.append("=");
-      sb.append((String) input.get(field.getName()));
-    }
-    try {
-      formMessage = URLEncoder.encode(sb.toString(), config.getCharset());
-    } catch (UnsupportedEncodingException e) {
-      throw new IllegalStateException("Error encoding Form message. Reason: " + e.getMessage(), e);
-    }
-    return formMessage;
-  }
-
-  private String createCustomMessage(String body, StructuredRecord input) {
-    String customMessage = body;
-    Matcher matcher = Pattern.compile(REGEX_HASHED_VAR).matcher(customMessage);
-    HashMap<String, String> findReplaceMap = new HashMap();
-    while (matcher.find()) {
-      if (input.get(matcher.group(1)) != null) {
-        findReplaceMap.put(matcher.group(1), (String) input.get(matcher.group(1)));
-      } else {
-        throw new IllegalArgumentException(String.format(
-          "Field %s doesnt exist in the input schema.", matcher.group(1)));
-      }
-    }
-    Matcher replaceMatcher = Pattern.compile(REGEX_HASHED_VAR).matcher(customMessage);
-    while (replaceMatcher.find()) {
-      String val = replaceMatcher.group().replace("#", "");
-      customMessage = (customMessage.replace(replaceMatcher.group(), findReplaceMap.get(val)));
-    }
-    return customMessage;
   }
 
   private void disableSSLValidation() {
@@ -247,4 +183,14 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
     };
     HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
   }
+
+  private void flushMessageBuffer() throws IOException {
+    if (messageBuffer.isEmpty()) {
+      return;
+    }
+    contentType = messageBuffer.getContentType();
+    executeHTTPService();
+    messageBuffer.clear();
+  }
+
 }
