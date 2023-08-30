@@ -8,7 +8,9 @@ Sink plugin to send the messages from the pipeline to an external http endpoint.
 Properties
 ----------
 
-**url:** The URL to post data to. (Macro enabled)
+**url:** The URL to post data to. Additionally, a placeholder like #columnName can be added to the URL that can be 
+substituted with column value at the runtime. E.g. https://customer-url/user/#user_id. Here user_id column should exist 
+in input schema. (Macro enabled)
 
 **method:** The HTTP request method. Defaults to POST. (Macro enabled)
 
@@ -47,13 +49,41 @@ delimited by a colon (":") and each pair is delimited by a newline ("\n"). (Macr
 
 **disableSSLValidation:**  If user enables SSL validation, they will be expected to add the certificate to the trustStore on each machine. Defaults to true. (Macro enabled)
 
-**numRetries:** The number of times the request should be retried if the request fails. Defaults to 3. (Macro enabled)
+### Error Handling
+
+**HTTP Errors Handling:** Defines the error handling strategy to use for certain HTTP response codes.
+The left column contains a regular expression for HTTP status code. The right column contains an action which
+is done in case of match. If HTTP status code matches multiple regular expressions, the first specified in mapping
+is matched.
+
+Example:
+
+| HTTP Code Regexp  | Error Handling          |
+| ----------------- |:-----------------------:|
+| 2..               | Success                 |
+| 401               | Retry and fail          |
+| 4..               | Fail                    |
+| 5..               | Retry and send to error |
+| .*                | Fail                    |
+
+Note: pagination types "Link in response header", "Link in response body", "Token in response body" do not support
+"Send to error", "Skip", "Retry and send to error", "Retry and skip" options.
+
+**Non-HTTP Error Handling:** Error handling strategy to use when the HTTP response cannot be transformed to an output record.
+Possible values are:  
+Stop on error - Fails pipeline due to erroneous record.  
+Send to error - Sends erroneous record's text to error port and continues.  
+Skip on error - Ignores erroneous records.
+
+**Retry Policy:** Policy used to calculate delay between retries.
+
+**Linear Retry Interval:** Interval in seconds between retries. Is only used if retry policy is "linear".
+
+**Max Retry Duration:** Maximum time in seconds retries can take.
 
 **connectTimeout:** The time in milliseconds to wait for a connection. Set to 0 for infinite. Defaults to 60000 (1 minute). (Macro enabled)
 
 **readTimeout:** The time in milliseconds to wait for a read. Set to 0 for infinite. Defaults to 60000 (1 minute). (Macro enabled)
-
-**failOnNon200Response** Whether to fail the pipeline on non-200 response from the http end point. Defaults to true. (Macro enabled)
 
 Example
 -------
@@ -70,7 +100,6 @@ This example performs HTTP POST request to http://example.com/data.
             "charset": "UTF-8",
             "followRedirects": "true",
             "disableSSLValidation": "true",
-            "numRetries": 0,
             "connectTimeout": 60000,
             "readTimeout": 60000
         }
