@@ -14,6 +14,20 @@ Properties
 
 **batchSize:** Batch size. Defaults to 1. (Macro enabled)
 
+**Write JSON As Array:** Whether to write the JSON as an array. Defaults to false. (Macro enabled)
+
+When set to true, the payload will be written as an array of JSON objects.
+Example - If batch size is 2, then the payload will be `[{"key":"val"}, {"key":"val"}]`
+
+When false, the payload will be JSON objects separated by a delimiter.
+Example - If batch size is 2, delimiter is "\n" , then the payload will be `{"key":"val"}\n{"key":"val"}`
+
+**Json Batch Key** Optional key to be used for wrapping json array as object
+Leave empty for no wrapping of the array. Ignored if Write JSON As Array is set to false. (Macro Enabled)
+
+Example - If batch size is 2 and json batch key is "data", then the payload will be
+`{"data": [{"key":"val"}, {"key":"val"}]}` instead of `[{"key":"val"}, {"key":"val"}]`
+
 **messageFormat:** Format to send messsage in. Options are JSON, Form, Custom. Defaults to JSON. (Macro enabled)
 
 **body:** Optional custom message. This is required if the message format is set to 'Custom'.

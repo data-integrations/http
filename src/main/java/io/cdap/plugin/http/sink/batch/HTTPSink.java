@@ -16,6 +16,7 @@
 
 package io.cdap.plugin.http.sink.batch;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Name;
@@ -78,7 +79,7 @@ public class HTTPSink extends BatchSink<StructuredRecord, StructuredRecord, Stru
     lineageRecorder.recordWrite("Write", String.format("Wrote to HTTP '%s'", config.getUrl()), fields);
 
     context.addOutput(Output.of(config.getReferenceNameOrNormalizedFQN(),
-                                new HTTPSink.HTTPOutputFormatProvider(config)));
+                                new HTTPSink.HTTPOutputFormatProvider(config, inputSchema)));
   }
 
   /**
@@ -87,9 +88,11 @@ public class HTTPSink extends BatchSink<StructuredRecord, StructuredRecord, Stru
   private static class HTTPOutputFormatProvider implements OutputFormatProvider {
     private static final Gson GSON = new Gson();
     private final HTTPSinkConfig config;
+    private final Schema inputSchema;
 
-    HTTPOutputFormatProvider(HTTPSinkConfig config) {
+    HTTPOutputFormatProvider(HTTPSinkConfig config, Schema inputSchema) {
       this.config = config;
+      this.inputSchema = inputSchema;
     }
 
     @Override
@@ -99,7 +102,8 @@ public class HTTPSink extends BatchSink<StructuredRecord, StructuredRecord, Stru
 
     @Override
     public Map<String, String> getOutputFormatConfiguration() {
-      return Collections.singletonMap("http.sink.config", GSON.toJson(config));
+      return ImmutableMap.of("http.sink.config", GSON.toJson(config),
+                             "http.sink.input.schema", inputSchema == null ? "" : inputSchema.toString());
     }
   }
 
