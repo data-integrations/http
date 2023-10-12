@@ -15,8 +15,20 @@
  */
 package io.cdap.plugin.http.source.batch;
 
+import com.google.auth.oauth2.AccessToken;
 import io.cdap.cdap.etl.api.FailureCollector;
+import io.cdap.plugin.http.common.http.AuthType;
+import io.cdap.plugin.http.common.http.HttpClient;
+import io.cdap.plugin.http.common.http.OAuthUtil;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
+
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+
+import java.io.IOException;
+
+
 
 /**
  * Provides all the configurations required for configuring the {@link HttpBatchSource} plugin.
@@ -29,6 +41,35 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
   @Override
   public void validate(FailureCollector failureCollector) {
     super.validate(failureCollector);
+    validateCredentials(failureCollector);
+  }
+
+  public void validateCredentials(FailureCollector collector) {
+    try {
+      if (getAuthType() == AuthType.OAUTH2) {
+        validateOAuth2Credentials(collector);
+      } else if (getAuthType() == AuthType.BASIC_AUTH) {
+        validateBasicAuthCredentials(collector);
+      }
+    } catch (IOException e) {
+      throw new IllegalStateException("Unable to authenticate the given info", e);
+    }
+  }
+
+  private void validateOAuth2Credentials(FailureCollector collector) throws IOException {
+    try (CloseableHttpClient client = HttpClients.createDefault()) {
+      AccessToken accessToken = OAuthUtil.getAccessTokenByRefreshToken(client, this);
+    }
+  }
+
+  private void validateBasicAuthCredentials(FailureCollector collector) throws IOException {
+    HttpClient httpClient = new HttpClient(this);
+    CloseableHttpResponse response = httpClient.executeHTTP(getUrl());
+
+    if (response.getStatusLine().getStatusCode() != 200) {
+      collector.addFailure("Error encountered while configuring the stage: 'Unable to authenticate the given " +
+        "username and password'", null);
+    }
   }
 
   private HttpBatchSourceConfig(HttpBatchSourceConfigBuilder builder) {

@@ -105,7 +105,7 @@ public class OAuthUtil {
    * @return
    * @throws IOException
    */
-  private static AccessToken getAccessTokenByRefreshToken(CloseableHttpClient httpclient,
+  public static AccessToken getAccessTokenByRefreshToken(CloseableHttpClient httpclient,
                                                          BaseHttpConfig config) throws IOException {
     URI uri;
     try {
