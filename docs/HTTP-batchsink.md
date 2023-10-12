@@ -85,6 +85,14 @@ Skip on error - Ignores erroneous records.
 
 **readTimeout:** The time in milliseconds to wait for a read. Set to 0 for infinite. Defaults to 60000 (1 minute). (Macro enabled)
 
+### HTTP Proxy
+
+**Proxy URL:** Proxy URL. Must contain a protocol, address and port.
+
+**Username:** Proxy username.
+
+**Password:** Proxy password.
+
 Example
 -------
 This example performs HTTP POST request to http://example.com/data.

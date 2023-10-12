@@ -26,6 +26,7 @@ import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.http.common.http.AuthType;
 import io.cdap.plugin.http.common.http.OAuthUtil;
+
 import java.io.File;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -44,6 +45,9 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
     public static final String PROPERTY_CLIENT_SECRET = "clientSecret";
     public static final String PROPERTY_SCOPES = "scopes";
     public static final String PROPERTY_REFRESH_TOKEN = "refreshToken";
+    public static final String PROPERTY_PROXY_URL = "proxyUrl";
+    public static final String PROPERTY_PROXY_USERNAME = "proxyUsername";
+    public static final String PROPERTY_PROXY_PASSWORD = "proxyPassword";
 
     public static final String PROPERTY_AUTH_TYPE_LABEL = "Auth type";
 
@@ -64,6 +68,8 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
     public static final String PROPERTY_AUTO_DETECT_VALUE = "auto-detect";
 
     public static final String PROPERTY_SERVICE_ACCOUNT_SCOPE = "serviceAccountScope";
+
+    public static final String REGEX_PROXY_URL = "^(?i)(https?)://.*$";
 
     @Name(PROPERTY_AUTH_TYPE)
     @Description("Type of authentication used to submit request. \n" +
@@ -86,6 +92,24 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
     @Description("Endpoint for the resource server, which exchanges the authorization code for an access token.")
     @Macro
     protected String tokenUrl;
+
+    @Nullable
+    @Name(PROPERTY_PROXY_URL)
+    @Description("Proxy URL. Must contain a protocol, address and port.")
+    @Macro
+    protected String proxyUrl;
+
+    @Nullable
+    @Name(PROPERTY_PROXY_USERNAME)
+    @Description("Proxy username.")
+    @Macro
+    protected String proxyUsername;
+
+    @Nullable
+    @Name(PROPERTY_PROXY_PASSWORD)
+    @Description("Proxy password.")
+    @Macro
+    protected String proxyPassword;
 
     @Nullable
     @Name(PROPERTY_CLIENT_ID)
@@ -258,6 +282,21 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
     }
 
     @Nullable
+    public String getProxyUrl() {
+        return proxyUrl;
+    }
+
+    @Nullable
+    public String getProxyUsername() {
+        return proxyUsername;
+    }
+
+    @Nullable
+    public String getProxyPassword() {
+        return proxyPassword;
+    }
+
+    @Nullable
     public Boolean isServiceAccountFilePath() {
         String serviceAccountType = getServiceAccountType();
         return Strings.isNullOrEmpty(serviceAccountType) ? null :
@@ -297,10 +336,12 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
     }
 
     public void validate(FailureCollector failureCollector) {
+        if (!containsMacro(PROPERTY_PROXY_URL) && !Strings.isNullOrEmpty(getProxyUrl())) {
+            validateProxy();
+        }
         // Validate OAuth2 properties
         if (!containsMacro(PROPERTY_OAUTH2_ENABLED) && this.getOauth2Enabled()) {
             String reasonOauth2 = "OAuth2 is enabled";
-            assertIsSet(getAuthUrl(), PROPERTY_AUTH_URL, reasonOauth2);
             assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
             assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
             assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
@@ -312,9 +353,6 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
         switch (authType) {
             case OAUTH2:
                 String reasonOauth2 = "OAuth2 is enabled";
-                if (!containsMacro(PROPERTY_AUTH_URL)) {
-                    assertIsSet(getAuthUrl(), PROPERTY_AUTH_URL, reasonOauth2);
-                }
                 if (!containsMacro(PROPERTY_TOKEN_URL)) {
                     assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
                 }
@@ -351,6 +389,12 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
                     assertIsSet(getPassword(), PROPERTY_PASSWORD, reasonBasicAuth);
                 }
                 break;
+        }
+    }
+
+    public void validateProxy() {
+        if (!getProxyUrl().matches(REGEX_PROXY_URL)) {
+            throw new IllegalArgumentException(String.format("Proxy URL format is wrong: %s.", getProxyUrl()));
         }
     }
 

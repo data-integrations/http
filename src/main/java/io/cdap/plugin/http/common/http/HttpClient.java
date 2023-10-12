@@ -167,10 +167,10 @@ public class HttpClient implements Closeable {
   /**
    * This class allows us to send body not only in POST/PUT but also in other requests.
    */
-  private static class HttpRequest extends HttpEntityEnclosingRequestBase {
+  public static class HttpRequest extends HttpEntityEnclosingRequestBase {
     private final String methodName;
 
-    HttpRequest(URI uri, String methodName) {
+    public HttpRequest(URI uri, String methodName) {
       super();
       this.setURI(uri);
       this.methodName = methodName;
