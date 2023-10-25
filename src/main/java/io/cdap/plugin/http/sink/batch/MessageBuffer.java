@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
  * The message is then returned to the HTTPRecordWriter.
  */
 public class MessageBuffer {
-  private static final String REGEX_HASHED_VAR = "#s*(\\w+)";
+  private static final String REGEX_HASHED_VAR = "#(\\w+)";
   private final List<StructuredRecord> buffer;
   private final String jsonBatchKey;
   private final Boolean shouldWriteJsonAsArray;

@@ -24,18 +24,30 @@ import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
+import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.plugin.common.ReferenceNames;
 
 import io.cdap.plugin.http.common.BaseHttpConfig;
+import io.cdap.plugin.http.common.EnumWithValue;
+import io.cdap.plugin.http.common.RetryPolicy;
+import io.cdap.plugin.http.common.error.ErrorHandling;
+import io.cdap.plugin.http.common.error.HttpErrorHandlerEntity;
+import io.cdap.plugin.http.common.error.RetryableErrorHandling;
 import io.cdap.plugin.http.common.http.MessageFormatType;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.ws.rs.HttpMethod;
 
@@ -55,17 +67,24 @@ public class HTTPSinkConfig extends BaseHttpConfig {
   public static final String CHARSET = "charset";
   public static final String FOLLOW_REDIRECTS = "followRedirects";
   public static final String DISABLE_SSL_VALIDATION = "disableSSLValidation";
-  public static final String NUM_RETRIES = "numRetries";
+  public static final String PROPERTY_HTTP_ERROR_HANDLING = "httpErrorsHandling";
+  public static final String PROPERTY_ERROR_HANDLING = "errorHandling";
+  public static final String PROPERTY_RETRY_POLICY = "retryPolicy";
+  public static final String PROPERTY_LINEAR_RETRY_INTERVAL = "linearRetryInterval";
+  public static final String PROPERTY_MAX_RETRY_DURATION = "maxRetryDuration";
   public static final String CONNECTION_TIMEOUT = "connectTimeout";
   public static final String READ_TIMEOUT = "readTimeout";
-  public static final String FAIL_ON_NON_200_RESPONSE = "failOnNon200Response";
   private static final String KV_DELIMITER = ":";
   private static final String DELIMITER = "\n";
+  private static final String REGEX_HASHED_VAR = "#(\\w+)";
+  private static final String PLACEHOLDER_FORMAT = "#%s";
   private static final Set<String> METHODS = ImmutableSet.of(HttpMethod.GET, HttpMethod.POST,
                                                              HttpMethod.PUT, HttpMethod.DELETE);
 
   @Name(URL)
-  @Description("The URL to post data to. (Macro Enabled)")
+  @Description("The URL to post data to. Additionally, a placeholder like #columnName can be added to the URL that " +
+    "can be substituted with column value at the runtime. E.g. https://customer-url/user/#user_id. Here user_id " +
+    "column should exist in input schema. (Macro Enabled)")
   @Macro
   private final String url;
 
@@ -88,7 +107,7 @@ public class HTTPSinkConfig extends BaseHttpConfig {
   @Name(JSON_BATCH_KEY)
   @Nullable
   @Description("Optional key to be used for wrapping json array as object. " +
-          "Leave empty for no wrapping of the array (Macro Enabled)")
+    "Leave empty for no wrapping of the array (Macro Enabled)")
   @Macro
   private final String jsonBatchKey;
 
@@ -135,11 +154,32 @@ public class HTTPSinkConfig extends BaseHttpConfig {
   @Macro
   private final Boolean disableSSLValidation;
 
-  @Name(NUM_RETRIES)
-  @Description("The number of times the request should be retried if the request fails. Defaults to 3. " +
-    "(Macro enabled)")
+  @Nullable
+  @Name(PROPERTY_HTTP_ERROR_HANDLING)
+  @Description("Defines the error handling strategy to use for certain HTTP response codes." +
+    "The left column contains a regular expression for HTTP status code. The right column contains an action which" +
+    "is done in case of match. If HTTP status code matches multiple regular expressions, " +
+    "the first specified in mapping is matched.")
+  protected String httpErrorsHandling;
+
+  @Name(PROPERTY_ERROR_HANDLING)
+  @Description("Error handling strategy to use when the HTTP response cannot be transformed to an output record.")
+  protected String errorHandling;
+
+  @Name(PROPERTY_RETRY_POLICY)
+  @Description("Policy used to calculate delay between retries.")
+  protected String retryPolicy;
+
+  @Nullable
+  @Name(PROPERTY_LINEAR_RETRY_INTERVAL)
+  @Description("Interval in seconds between retries. Is only used if retry policy is \"linear\".")
   @Macro
-  private final Integer numRetries;
+  protected Long linearRetryInterval;
+
+  @Name(PROPERTY_MAX_RETRY_DURATION)
+  @Description("Maximum time in seconds retries can take.")
+  @Macro
+  protected Long maxRetryDuration;
 
   @Name(CONNECTION_TIMEOUT)
   @Description("Sets the connection timeout in milliseconds. Set to 0 for infinite. Default is 60000 (1 minute). " +
@@ -155,17 +195,12 @@ public class HTTPSinkConfig extends BaseHttpConfig {
   @Macro
   private final Integer readTimeout;
 
-  @Name(FAIL_ON_NON_200_RESPONSE)
-  @Description("Whether to fail the pipeline on non-200 response from the http end point. Defaults to true. " +
-    "(Macro enabled)")
-  @Macro
-  private final Boolean failOnNon200Response;
-
   public HTTPSinkConfig(String referenceName, String url, String method, Integer batchSize,
                         @Nullable String delimiterForMessages, String messageFormat, @Nullable String body,
                         @Nullable String requestHeaders, String charset,
-                        boolean followRedirects, boolean disableSSLValidation, @Nullable int numRetries,
-                        @Nullable int readTimeout, @Nullable int connectTimeout, boolean failOnNon200Response,
+                        boolean followRedirects, boolean disableSSLValidation, @Nullable String httpErrorsHandling,
+                        String errorHandling, String retryPolicy, @Nullable Long linearRetryInterval,
+                        Long maxRetryDuration, @Nullable int readTimeout, @Nullable int connectTimeout,
                         String oauth2Enabled, String authType, @Nullable String jsonBatchKey,
                         Boolean writeJsonAsArray) {
     super(referenceName);
@@ -179,10 +214,13 @@ public class HTTPSinkConfig extends BaseHttpConfig {
     this.charset = charset;
     this.followRedirects = followRedirects;
     this.disableSSLValidation = disableSSLValidation;
-    this.numRetries = numRetries;
+    this.httpErrorsHandling = httpErrorsHandling;
+    this.errorHandling = errorHandling;
+    this.retryPolicy = retryPolicy;
+    this.linearRetryInterval = linearRetryInterval;
+    this.maxRetryDuration = maxRetryDuration;
     this.readTimeout = readTimeout;
     this.connectTimeout = connectTimeout;
-    this.failOnNon200Response = failOnNon200Response;
     this.jsonBatchKey = jsonBatchKey;
     this.writeJsonAsArray = writeJsonAsArray;
     this.oauth2Enabled = oauth2Enabled;
@@ -201,10 +239,8 @@ public class HTTPSinkConfig extends BaseHttpConfig {
     charset = builder.charset;
     followRedirects = builder.followRedirects;
     disableSSLValidation = builder.disableSSLValidation;
-    numRetries = builder.numRetries;
     connectTimeout = builder.connectTimeout;
     readTimeout = builder.readTimeout;
-    failOnNon200Response = builder.failOnNon200Response;
     jsonBatchKey = builder.jsonBatchKey;
     writeJsonAsArray = builder.writeJsonAsArray;
     oauth2Enabled = builder.oauth2Enabled;
@@ -228,10 +264,8 @@ public class HTTPSinkConfig extends BaseHttpConfig {
     builder.charset = copy.getCharset();
     builder.followRedirects = copy.getFollowRedirects();
     builder.disableSSLValidation = copy.getDisableSSLValidation();
-    builder.numRetries = copy.getNumRetries();
     builder.connectTimeout = copy.getConnectTimeout();
     builder.readTimeout = copy.getReadTimeout();
-    builder.failOnNon200Response = copy.getFailOnNon200Response();
     builder.oauth2Enabled = copy.getOAuth2Enabled();
     builder.authType = copy.getAuthTypeString();
     return builder;
@@ -257,6 +291,7 @@ public class HTTPSinkConfig extends BaseHttpConfig {
     return jsonBatchKey;
   }
 
+  @Nullable
   public String getDelimiterForMessages() {
     return Strings.isNullOrEmpty(delimiterForMessages) ? "\n" : delimiterForMessages;
   }
@@ -287,8 +322,35 @@ public class HTTPSinkConfig extends BaseHttpConfig {
     return disableSSLValidation;
   }
 
-  public Integer getNumRetries() {
-    return numRetries;
+  @Nullable
+  public String getHttpErrorsHandling() {
+    return httpErrorsHandling;
+  }
+
+  public ErrorHandling getErrorHandling() {
+    return getEnumValueByString(ErrorHandling.class, errorHandling, PROPERTY_ERROR_HANDLING);
+  }
+
+  public RetryPolicy getRetryPolicy() {
+    return getEnumValueByString(RetryPolicy.class, retryPolicy, PROPERTY_RETRY_POLICY);
+  }
+
+  private static <T extends EnumWithValue> T
+  getEnumValueByString(Class<T> enumClass, String stringValue, String propertyName) {
+    return Stream.of(enumClass.getEnumConstants())
+      .filter(keyType -> keyType.getValue().equalsIgnoreCase(stringValue))
+      .findAny()
+      .orElseThrow(() -> new InvalidConfigPropertyException(
+        String.format("Unsupported value for '%s': '%s'", propertyName, stringValue), propertyName));
+  }
+
+  @Nullable
+  public Long getLinearRetryInterval() {
+    return linearRetryInterval;
+  }
+
+  public Long getMaxRetryDuration() {
+    return maxRetryDuration;
   }
 
   @Nullable
@@ -301,10 +363,6 @@ public class HTTPSinkConfig extends BaseHttpConfig {
     return readTimeout;
   }
 
-  public Boolean getFailOnNon200Response() {
-    return failOnNon200Response;
-  }
-
   public Map<String, String> getRequestHeadersMap() {
     return convertHeadersToMap(requestHeaders);
   }
@@ -315,6 +373,44 @@ public class HTTPSinkConfig extends BaseHttpConfig {
 
   public String getReferenceNameOrNormalizedFQN() {
     return Strings.isNullOrEmpty(referenceName) ? ReferenceNames.normalizeFqn(url) : referenceName;
+  }
+
+  public List<HttpErrorHandlerEntity> getHttpErrorHandlingEntries() {
+    Map<String, String> httpErrorsHandlingMap = getMapFromKeyValueString(httpErrorsHandling);
+    List<HttpErrorHandlerEntity> results = new ArrayList<>(httpErrorsHandlingMap.size());
+
+    for (Map.Entry<String, String> entry : httpErrorsHandlingMap.entrySet()) {
+      String regex = entry.getKey();
+      try {
+        results.add(new HttpErrorHandlerEntity(Pattern.compile(regex),
+                                               getEnumValueByString(RetryableErrorHandling.class,
+                                                                    entry.getValue(), PROPERTY_HTTP_ERROR_HANDLING)));
+      } catch (PatternSyntaxException e) {
+        // We embed causing exception message into this one. Since this message is shown on UI when validation fails.
+        throw new InvalidConfigPropertyException(
+          String.format(
+            "Error handling regex '%s' is not valid. %s", regex, e.getMessage()), PROPERTY_HTTP_ERROR_HANDLING);
+      }
+    }
+    return results;
+  }
+
+  public static Map<String, String> getMapFromKeyValueString(String keyValueString) {
+    Map<String, String> result = new LinkedHashMap<>();
+
+    if (Strings.isNullOrEmpty(keyValueString)) {
+      return result;
+    }
+
+    String[] mappings = keyValueString.split(",");
+    for (String map : mappings) {
+      String[] columns = map.split(":");
+      if (columns.length < 2) { //For scenario where either of key or value not provided
+        throw new IllegalArgumentException(String.format("Missing value for key %s", columns[0]));
+      }
+      result.put(columns[0], columns[1]);
+    }
+    return result;
   }
 
   public void validate(FailureCollector collector) {
@@ -348,13 +444,13 @@ public class HTTPSinkConfig extends BaseHttpConfig {
     }
 
     if (!containsMacro(BATCH_SIZE) && batchSize != null && batchSize < 1) {
-         collector.addFailure("Batch size must be greater than 0.", null)
-                 .withConfigProperty(BATCH_SIZE);
+      collector.addFailure("Batch size must be greater than 0.", null)
+        .withConfigProperty(BATCH_SIZE);
     }
 
-    if (!containsMacro(NUM_RETRIES) && numRetries < 0) {
-      collector.addFailure("Number of Retries cannot be a negative number.", null)
-        .withConfigProperty(NUM_RETRIES);
+    // Validate Linear Retry Interval
+    if (!containsMacro(PROPERTY_RETRY_POLICY) && getRetryPolicy() == RetryPolicy.LINEAR) {
+      assertIsSet(getLinearRetryInterval(), PROPERTY_LINEAR_RETRY_INTERVAL, "retry policy is linear");
     }
 
     if (!containsMacro(READ_TIMEOUT) && Objects.nonNull(readTimeout) && readTimeout < 0) {
@@ -377,6 +473,16 @@ public class HTTPSinkConfig extends BaseHttpConfig {
     if (fields == null || fields.isEmpty()) {
       collector.addFailure("Schema must contain at least one field", null);
       throw collector.getOrThrowException();
+    }
+    
+    if ((method.equals("PUT") || method.equals("DELETE")) && url.contains(PLACEHOLDER_FORMAT)) {
+      Pattern pattern = Pattern.compile(REGEX_HASHED_VAR);
+      Matcher matcher = pattern.matcher(url);
+      while (matcher.find()) {
+        if (!fields.contains(matcher.group(1))) {
+          collector.addFailure("Schema must contain all fields mentioned in the url", null);
+        }
+      }
     }
   }
 
@@ -412,10 +518,8 @@ public class HTTPSinkConfig extends BaseHttpConfig {
     private String charset;
     private Boolean followRedirects;
     private Boolean disableSSLValidation;
-    private Integer numRetries;
     private Integer connectTimeout;
     private Integer readTimeout;
-    private Boolean failOnNon200Response;
     private String oauth2Enabled;
     private String authType;
 
@@ -487,11 +591,6 @@ public class HTTPSinkConfig extends BaseHttpConfig {
       return this;
     }
 
-    public Builder setNumRetries(Integer numRetries) {
-      this.numRetries = numRetries;
-      return this;
-    }
-
     public Builder setConnectTimeout(Integer connectTimeout) {
       this.connectTimeout = connectTimeout;
       return this;
@@ -499,11 +598,6 @@ public class HTTPSinkConfig extends BaseHttpConfig {
 
     public Builder setReadTimeout(Integer readTimeout) {
       this.readTimeout = readTimeout;
-      return this;
-    }
-
-    public Builder setFailOnNon200Response(Boolean failOnNon200Response) {
-      this.failOnNon200Response = failOnNon200Response;
       return this;
     }
 

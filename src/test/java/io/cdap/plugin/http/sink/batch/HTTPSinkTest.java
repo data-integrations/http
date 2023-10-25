@@ -124,12 +124,15 @@ public class HTTPSinkTest extends HydratorTestBase {
       .put("batchSize", "1")
       .put("referenceName", "HTTPSinkReference")
       .put("delimiterForMessages", "\n")
-      .put("numRetries", "3")
       .put("followRedirects", "true")
       .put("disableSSLValidation", "true")
+      .put("httpErrorsHandling", "2..:Success,.*:Fail")
+      .put("errorHandling", "stopOnError")
+      .put("retryPolicy", "exponential")
+      .put("maxRetryDuration", "600")
       .put("connectTimeout", "60000")
       .put("readTimeout", "60000")
-      .put("failOnNon200Response", "true")
+      .put("authType", "none")
       .build();
 
     ETLStage sink = new ETLStage("HTTP", new ETLPlugin("HTTP", BatchSink.PLUGIN_TYPE, properties, null));
@@ -193,12 +196,15 @@ public class HTTPSinkTest extends HydratorTestBase {
       .put("batchSize", "1")
       .put("referenceName", "HTTPSinkReference")
       .put("delimiterForMessages", "\n")
-      .put("numRetries", "3")
       .put("followRedirects", "true")
       .put("disableSSLValidation", "true")
+      .put("httpErrorsHandling", "2..:Success,.*:Fail")
+      .put("errorHandling", "stopOnError")
+      .put("retryPolicy", "exponential")
+      .put("maxRetryDuration", "600")
       .put("connectTimeout", "60000")
       .put("readTimeout", "60000")
-      .put("failOnNon200Response", "true")
+      .put("authType", "none")
       .build();
 
     ImmutableMap<String, String> runtimeProperties =

@@ -55,12 +55,12 @@
           }
         },
         {
-            "widget-type": "textbox",
-            "label": "Json Batch Key",
-            "name": "jsonBatchKey",
-            "widget-attributes": {
-              "default": ""
-            }
+          "widget-type": "textbox",
+          "label": "Json Batch Key",
+          "name": "jsonBatchKey",
+          "widget-attributes": {
+            "default": ""
+          }
         },
         {
           "widget-type": "select",
@@ -139,27 +139,6 @@
           }
         },
         {
-          "widget-type": "select",
-          "label": "Number of Retries",
-          "name": "numRetries",
-          "widget-attributes": {
-            "values": [
-              "3",
-              "0",
-              "1",
-              "2",
-              "4",
-              "5",
-              "6",
-              "7",
-              "8",
-              "9",
-              "10"
-            ],
-            "default": "3"
-          }
-        },
-        {
           "widget-type": "textbox",
           "label": "Connection Timeout (milliseconds)",
           "name": "connectTimeout",
@@ -176,15 +155,82 @@
           }
         },
         {
-          "widget-type": "select",
-          "label": "Fail Pipeline On Non-200 Response ?",
-          "name": "failOnNon200Response",
+          "widget-type": "keyvalue-dropdown",
+          "label": "HTTP Errors Handling",
+          "name": "httpErrorsHandling",
           "widget-attributes": {
-            "values": [
-              "true",
-              "false"
+            "default": "2..:Success,.*:Fail",
+            "showDelimiter": "false",
+            "dropdownOptions": [
+              "Success",
+              "Fail",
+              "Skip",
+              "Send to error",
+              "Retry and fail",
+              "Retry and skip",
+              "Retry and send to error"
             ],
-            "default": "true"
+            "key-placeholder": "HTTP Status Code Regex"
+          }
+        },
+        {
+          "widget-type": "radio-group",
+          "label": "Non-HTTP Error Handling",
+          "name": "errorHandling",
+          "widget-attributes": {
+            "layout": "inline",
+            "default": "stopOnError",
+            "options": [
+              {
+                "id": "stopOnError",
+                "label": "Stop on error"
+              },
+              {
+                "id": "sendToError",
+                "label": "Send to error"
+              },
+              {
+                "id": "skipOnError",
+                "label": "Skip on error"
+              }
+            ]
+          }
+        },
+        {
+          "widget-type": "radio-group",
+          "label": "Retry Policy",
+          "name": "retryPolicy",
+          "widget-attributes": {
+            "layout": "inline",
+            "default": "exponential",
+            "options": [
+              {
+                "id": "exponential",
+                "label": "Exponential"
+              },
+              {
+                "id": "linear",
+                "label": "Linear"
+              }
+            ]
+          }
+        },
+        {
+          "widget-type": "number",
+          "label": "Linear Retry Interval",
+          "name": "linearRetryInterval",
+          "widget-attributes": {
+            "min": "0",
+            "default": "30"
+          }
+        },
+        {
+          "widget-type": "number",
+          "label": "Max Retry Duration",
+          "name": "maxRetryDuration",
+          "widget-attributes": {
+            "min": "0",
+            "default": "600"
           }
         }
       ]
@@ -318,10 +364,24 @@
   "outputs": [],
   "filters": [
     {
+      "name": "Linear Retry Interval",
+      "condition": {
+        "property": "retryPolicy",
+        "operator": "equal to",
+        "value": "linear"
+      },
+      "show": [
+        {
+          "name": "linearRetryInterval",
+          "type": "property"
+        }
+      ]
+    },
+    {
       "name": "Should Write Json As Array",
-        "condition": {
-            "expression": "messageFormat == 'JSON'"
-        },
+      "condition": {
+        "expression": "messageFormat == 'JSON'"
+      },
       "show": [
         {
           "type": "property",
@@ -330,16 +390,16 @@
       ]
     },
     {
-        "name": "JsonBatchKey",
-        "condition": {
-          "expression": "messageFormat == 'JSON'"
-        },
-        "show": [
-          {
-            "type": "property",
-            "name": "jsonBatchKey"
-          }
-        ]
+      "name": "JsonBatchKey",
+      "condition": {
+        "expression": "messageFormat == 'JSON'"
+      },
+      "show": [
+        {
+          "type": "property",
+          "name": "jsonBatchKey"
+        }
+      ]
     },
     {
       "name": "Authenticate with Basic Auth",
