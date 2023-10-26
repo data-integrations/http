@@ -45,18 +45,14 @@ public class HTTPSinkConfigTest {
     "UTF8",
     true,
     true,
-    "2..:Success,.*:Fail",
-    "stopOnError",
-    "exponential",
-    30L,
-    600L,
     1,
     1,
-    "false",
-    "none",
-    "results",
-    false
-  );
+    1,
+    true,
+          "false",
+          "none",
+          "results",
+          false);
 
   @Test
   public void testValidConfig() {
@@ -110,6 +106,17 @@ public class HTTPSinkConfigTest {
   }
 
   @Test
+  public void testInvalidNumRetries() {
+    HTTPSinkConfig config = HTTPSinkConfig.newBuilder(VALID_CONFIG)
+      .setNumRetries(-1)
+      .build();
+
+    MockFailureCollector failureCollector = new MockFailureCollector(MOCK_STAGE);
+    config.validate(failureCollector);
+    assertPropertyValidationFailed(failureCollector, HTTPSinkConfig.NUM_RETRIES);
+  }
+
+  @Test
   public void testInvalidReadTimeout() {
     HTTPSinkConfig config = HTTPSinkConfig.newBuilder(VALID_CONFIG)
       .setReadTimeout(-1)
@@ -154,38 +161,38 @@ public class HTTPSinkConfigTest {
     Assert.assertTrue(collector.getValidationFailures().isEmpty());
   }
 
-  @Test(expected = ValidationException.class)
-  public void testHTTPSinkWithNegativeBatchSize() {
-    HTTPSinkConfig config = HTTPSinkConfig.newBuilder(VALID_CONFIG)
-      .setBatchSize(-1)
-      .build();
+    @Test(expected = ValidationException.class)
+    public void testHTTPSinkWithNegativeBatchSize() {
+      HTTPSinkConfig config = HTTPSinkConfig.newBuilder(VALID_CONFIG)
+        .setBatchSize(-1)
+        .build();
 
-    MockFailureCollector collector = new MockFailureCollector("httpsinkwithnegativebatchsize");
-    config.validate(collector);
-    collector.getOrThrowException();
-  }
+      MockFailureCollector collector = new MockFailureCollector("httpsinkwithnegativebatchsize");
+      config.validate(collector);
+      collector.getOrThrowException();
+    }
 
-  @Test(expected = ValidationException.class)
-  public void testHTTPSinkWithZeroBatchSize() {
-    HTTPSinkConfig config = HTTPSinkConfig.newBuilder(VALID_CONFIG)
-      .setBatchSize(0)
-      .build();
+    @Test(expected = ValidationException.class)
+    public void testHTTPSinkWithZeroBatchSize() {
+      HTTPSinkConfig config = HTTPSinkConfig.newBuilder(VALID_CONFIG)
+        .setBatchSize(0)
+        .build();
 
-    MockFailureCollector collector = new MockFailureCollector("httpsinkwithzerobatchsize");
-    config.validate(collector);
-    collector.getOrThrowException();
-  }
+      MockFailureCollector collector = new MockFailureCollector("httpsinkwithzerobatchsize");
+      config.validate(collector);
+      collector.getOrThrowException();
+    }
 
-  @Test
-  public void testHTTPSinkWithPositiveBatchSize() {
-    HTTPSinkConfig config = HTTPSinkConfig.newBuilder(VALID_CONFIG)
-      .setBatchSize(42)
-      .build();
+    @Test
+    public void testHTTPSinkWithPositiveBatchSize() {
+      HTTPSinkConfig config = HTTPSinkConfig.newBuilder(VALID_CONFIG)
+        .setBatchSize(42)
+        .build();
 
-    MockFailureCollector collector = new MockFailureCollector("httpsinkwithpositivebatchsize");
-    config.validate(collector);
-    Assert.assertTrue(collector.getValidationFailures().isEmpty());
-  }
+      MockFailureCollector collector = new MockFailureCollector("httpsinkwithpositivebatchsize");
+      config.validate(collector);
+      Assert.assertTrue(collector.getValidationFailures().isEmpty());
+    }
 
   public static void assertPropertyValidationFailed(MockFailureCollector failureCollector, String paramName) {
     List<ValidationFailure> failureList = failureCollector.getValidationFailures();

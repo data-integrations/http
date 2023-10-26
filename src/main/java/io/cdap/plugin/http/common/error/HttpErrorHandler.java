@@ -15,7 +15,6 @@
  */
 package io.cdap.plugin.http.common.error;
 
-import io.cdap.plugin.http.sink.batch.HTTPSinkConfig;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,10 +31,6 @@ public class HttpErrorHandler {
   private List<HttpErrorHandlerEntity> httpErrorsHandlingEntries;
 
   public HttpErrorHandler(BaseHttpSourceConfig config) {
-    this.httpErrorsHandlingEntries = config.getHttpErrorHandlingEntries();
-  }
-
-  public HttpErrorHandler(HTTPSinkConfig config) {
     this.httpErrorsHandlingEntries = config.getHttpErrorHandlingEntries();
   }
 
