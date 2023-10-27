@@ -26,6 +26,7 @@ import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.http.common.http.AuthType;
 import io.cdap.plugin.http.common.http.OAuthUtil;
+
 import java.io.File;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -44,6 +45,9 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
     public static final String PROPERTY_CLIENT_SECRET = "clientSecret";
     public static final String PROPERTY_SCOPES = "scopes";
     public static final String PROPERTY_REFRESH_TOKEN = "refreshToken";
+    public static final String PROPERTY_PROXY_URL = "proxyUrl";
+    public static final String PROPERTY_PROXY_USERNAME = "proxyUsername";
+    public static final String PROPERTY_PROXY_PASSWORD = "proxyPassword";
 
     public static final String PROPERTY_AUTH_TYPE_LABEL = "Auth type";
 
@@ -86,6 +90,24 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
     @Description("Endpoint for the resource server, which exchanges the authorization code for an access token.")
     @Macro
     protected String tokenUrl;
+
+    @Nullable
+    @Name(PROPERTY_PROXY_URL)
+    @Description("Proxy URL. Must contain a protocol, address and port.")
+    @Macro
+    protected String proxyUrl;
+
+    @Nullable
+    @Name(PROPERTY_PROXY_USERNAME)
+    @Description("Proxy username.")
+    @Macro
+    protected String proxyUsername;
+
+    @Nullable
+    @Name(PROPERTY_PROXY_PASSWORD)
+    @Description("Proxy password.")
+    @Macro
+    protected String proxyPassword;
 
     @Nullable
     @Name(PROPERTY_CLIENT_ID)
@@ -255,6 +277,21 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
         String serviceAccountType = getServiceAccountType();
         return Strings.isNullOrEmpty(serviceAccountType) ? null :
                 serviceAccountType.equals(PROPERTY_SERVICE_ACCOUNT_JSON);
+    }
+
+    @Nullable
+    public String getProxyUrl() {
+        return proxyUrl;
+    }
+
+    @Nullable
+    public String getProxyUsername() {
+        return proxyUsername;
+    }
+
+    @Nullable
+    public String getProxyPassword() {
+        return proxyPassword;
     }
 
     @Nullable
