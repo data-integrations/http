@@ -67,9 +67,6 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
   public static final String PROPERTY_RESULT_PATH = "resultPath";
   public static final String PROPERTY_FIELDS_MAPPING = "fieldsMapping";
   public static final String PROPERTY_CSV_SKIP_FIRST_ROW = "csvSkipFirstRow";
-  public static final String PROPERTY_PROXY_URL = "proxyUrl";
-  public static final String PROPERTY_PROXY_USERNAME = "proxyUsername";
-  public static final String PROPERTY_PROXY_PASSWORD = "proxyPassword";
   public static final String PROPERTY_HTTP_ERROR_HANDLING = "httpErrorsHandling";
   public static final String PROPERTY_ERROR_HANDLING = "errorHandling";
   public static final String PROPERTY_RETRY_POLICY = "retryPolicy";
@@ -151,24 +148,6 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
     "This is usually set if the first row is a header row.")
   @Macro
   protected String csvSkipFirstRow;
-
-  @Nullable
-  @Name(PROPERTY_PROXY_URL)
-  @Description("Proxy URL. Must contain a protocol, address and port.")
-  @Macro
-  protected String proxyUrl;
-
-  @Nullable
-  @Name(PROPERTY_PROXY_USERNAME)
-  @Description("Proxy username.")
-  @Macro
-  protected String proxyUsername;
-
-  @Nullable
-  @Name(PROPERTY_PROXY_PASSWORD)
-  @Description("Proxy password.")
-  @Macro
-  protected String proxyPassword;
 
   @Nullable
   @Name(PROPERTY_HTTP_ERROR_HANDLING)
@@ -376,21 +355,6 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
 
   public Boolean getCsvSkipFirstRow() {
     return Boolean.parseBoolean(csvSkipFirstRow);
-  }
-
-  @Nullable
-  public String getProxyUrl() {
-    return proxyUrl;
-  }
-
-  @Nullable
-  public String getProxyUsername() {
-    return proxyUsername;
-  }
-
-  @Nullable
-  public String getProxyPassword() {
-    return proxyPassword;
   }
 
   @Nullable

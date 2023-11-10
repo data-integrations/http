@@ -75,15 +75,23 @@ Stop on error - Fails pipeline due to erroneous record.
 Send to error - Sends erroneous record's text to error port and continues.  
 Skip on error - Ignores erroneous records.
 
-**Retry Policy:** Policy used to calculate delay between retries.
+**Retry Policy:** Policy used to calculate delay between retries. Default Retry Policy is Exponential.
 
 **Linear Retry Interval:** Interval in seconds between retries. Is only used if retry policy is "linear".
 
-**Max Retry Duration:** Maximum time in seconds retries can take.
+**Max Retry Duration:** Maximum time in seconds retries can take. Default value is 600 seconds (10 minute).
 
 **connectTimeout:** The time in milliseconds to wait for a connection. Set to 0 for infinite. Defaults to 60000 (1 minute). (Macro enabled)
 
 **readTimeout:** The time in milliseconds to wait for a read. Set to 0 for infinite. Defaults to 60000 (1 minute). (Macro enabled)
+
+### HTTP Proxy
+
+**Proxy URL:** Proxy URL. Must contain a protocol, address and port.
+
+**Username:** Proxy username.
+
+**Password:** Proxy password.
 
 Example
 -------

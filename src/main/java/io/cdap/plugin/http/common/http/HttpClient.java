@@ -163,22 +163,4 @@ public class HttpClient implements Closeable {
   private Header getAuthorizationHeader(AccessToken accessToken) {
     return new BasicHeader("Authorization", String.format("Bearer %s", accessToken.getTokenValue()));
   }
-
-  /**
-   * This class allows us to send body not only in POST/PUT but also in other requests.
-   */
-  private static class HttpRequest extends HttpEntityEnclosingRequestBase {
-    private final String methodName;
-
-    HttpRequest(URI uri, String methodName) {
-      super();
-      this.setURI(uri);
-      this.methodName = methodName;
-    }
-
-    @Override
-    public String getMethod() {
-      return methodName;
-    }
-  }
 }
