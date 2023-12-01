@@ -546,10 +546,6 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
     return getListFromString(transportProtocols);
   }
 
-  public String getReferenceNameOrNormalizedFQN() {
-    return Strings.isNullOrEmpty(referenceName) ? ReferenceNames.normalizeFqn(url) : referenceName;
-  }
-
   public void validate(FailureCollector failureCollector) {
     super.validate(failureCollector);
 

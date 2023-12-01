@@ -30,13 +30,8 @@ import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.StageConfigurer;
 import io.cdap.cdap.etl.api.batch.BatchSink;
 import io.cdap.cdap.etl.api.batch.BatchSinkContext;
-import io.cdap.plugin.common.Asset;
-import io.cdap.plugin.common.LineageRecorder;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Sink plugin to send the messages from the pipeline to an external http endpoint.
@@ -67,18 +62,8 @@ public class HTTPSink extends BatchSink<StructuredRecord, StructuredRecord, Stru
     config.validate(collector);
     config.validateSchema(context.getInputSchema(), collector);
     collector.getOrThrowException();
-
     Schema inputSchema = context.getInputSchema();
-    Asset asset = Asset.builder(config.getReferenceNameOrNormalizedFQN())
-      .setFqn(config.getUrl()).build();
-    LineageRecorder lineageRecorder = new LineageRecorder(context, asset);
-    lineageRecorder.createExternalDataset(context.getInputSchema());
-    List<String> fields = inputSchema == null ?
-      Collections.emptyList() :
-      inputSchema.getFields().stream().map(Schema.Field::getName).collect(Collectors.toList());
-    lineageRecorder.recordWrite("Write", String.format("Wrote to HTTP '%s'", config.getUrl()), fields);
-
-    context.addOutput(Output.of(config.getReferenceNameOrNormalizedFQN(),
+    context.addOutput(Output.of(config.referenceName,
                                 new HTTPSink.HTTPOutputFormatProvider(config, inputSchema)));
   }
 

@@ -26,9 +26,6 @@ import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 
-
-import io.cdap.plugin.common.ReferenceNames;
-import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.http.common.BaseHttpConfig;
 import io.cdap.plugin.http.source.common.EnumWithValue;
 import io.cdap.plugin.http.source.common.RetryPolicy;
@@ -381,10 +378,6 @@ public class HTTPSinkConfig extends BaseHttpConfig {
 
   public Map<String, String> getHeadersMap(String header) {
     return convertHeadersToMap(header);
-  }
-
-  public String getReferenceNameOrNormalizedFQN() {
-    return Strings.isNullOrEmpty(referenceName) ? ReferenceNames.normalizeFqn(url) : referenceName;
   }
 
   public List<HttpErrorHandlerEntity> getHttpErrorHandlingEntries() {
