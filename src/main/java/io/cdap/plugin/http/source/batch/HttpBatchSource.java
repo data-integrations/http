@@ -62,20 +62,28 @@ public class HttpBatchSource extends BatchSource<NullWritable, BasePage, Structu
   @Override
   public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
     FailureCollector failureCollector = pipelineConfigurer.getStageConfigurer().getFailureCollector();
-    config.validate(failureCollector); // validate when macros not yet substituted
+    config.validate(failureCollector);
+    Schema schema = config.getSchema();
+    if (schema == null && config.canDetectSchema()) {
+      HttpInputFormatProvider httpInputFormatProvider = new HttpInputFormatProvider(config);
+      schema = httpInputFormatProvider.getSchema(failureCollector);
+    }
+    config.setConfigSchema(schema);
     config.validateSchema();
-
-    pipelineConfigurer.getStageConfigurer().setOutputSchema(config.getSchema());
+    pipelineConfigurer.getStageConfigurer().setOutputSchema(schema);
   }
 
   @Override
   public void prepareRun(BatchSourceContext context) {
     FailureCollector failureCollector = context.getFailureCollector();
     config.validate(failureCollector); // validate when macros are already substituted
-    config.validateSchema();
-
     schema = config.getSchema();
-
+    if (schema == null && config.canDetectSchema()) {
+      HttpInputFormatProvider httpInputFormatProvider = new HttpInputFormatProvider(config);
+      schema = httpInputFormatProvider.getSchema(failureCollector);
+    }
+    config.setConfigSchema(schema);
+    config.validateSchema();
     Asset asset = Asset.builder(config.getReferenceNameOrNormalizedFQN())
       .setFqn(config.getUrl()).build();
     LineageRecorder lineageRecorder = new LineageRecorder(context, asset);

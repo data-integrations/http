@@ -20,8 +20,17 @@ import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.cdap.cdap.api.data.batch.InputFormatProvider;
+import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.etl.api.FailureCollector;
+import io.cdap.plugin.http.common.http.HttpClient;
+import io.cdap.plugin.http.common.http.HttpResponse;
+import io.cdap.plugin.http.common.pagination.page.PageFormat;
+import io.cdap.plugin.http.source.common.DelimitedSchemaDetector;
+import io.cdap.plugin.http.source.common.RawStringPerLine;
 
+import java.io.IOException;
 import java.util.Map;
+import javax.annotation.Nullable;
 
 /**
  * InputFormatProvider used by cdap to provide configurations to mapreduce job
@@ -31,11 +40,13 @@ public class HttpInputFormatProvider implements InputFormatProvider {
   private static final Gson gson = new GsonBuilder().create();
 
   private final Map<String, String> conf;
+  private final HttpBatchSourceConfig config;
 
   HttpInputFormatProvider(HttpBatchSourceConfig config) {
     this.conf = new ImmutableMap.Builder<String, String>()
       .put(PROPERTY_CONFIG_JSON, gson.toJson(config))
       .build();
+    this.config = config;
   }
 
   @Override
@@ -46,5 +57,26 @@ public class HttpInputFormatProvider implements InputFormatProvider {
   @Override
   public Map<String, String> getInputFormatConfiguration() {
     return conf;
+  }
+
+  @Nullable
+  public Schema getSchema(FailureCollector failureCollector) {
+    PageFormat format = config.getFormat();
+    switch (format) {
+      case CSV:
+      case TSV:
+        String delimiter = format == PageFormat.CSV ? "," : "\t";
+        try (HttpClient client = new HttpClient(config)) {
+          RawStringPerLine rawStringPerLine = new RawStringPerLine(
+            new HttpResponse(client.executeHTTP(config.getUrl())));
+          return DelimitedSchemaDetector.detectSchema(config, delimiter, rawStringPerLine, failureCollector);
+        } catch (IOException e) {
+          failureCollector.addFailure(String.format("Error while reading the file to infer the schema. Error: %s",
+                                                   e.getMessage()), null);
+        }
+        return null;
+      default:
+        return null;
+    }
   }
 }
