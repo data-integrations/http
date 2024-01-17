@@ -17,6 +17,7 @@ package io.cdap.plugin.http.source.batch;
 
 import com.google.common.base.Strings;
 import com.google.gson.JsonSyntaxException;
+import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.http.common.http.AuthType;
 import io.cdap.plugin.http.common.http.HttpClient;
@@ -50,6 +51,10 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
   @Override
   public void validate(FailureCollector failureCollector) {
     super.validate(failureCollector);
+    if (!containsMacro(PROPERTY_SAMPLE_SIZE) && getSampleSize() < 1) {
+      failureCollector.addFailure("Sample size must be greater than 0.", null)
+        .withConfigProperty(PROPERTY_SAMPLE_SIZE);
+    }
     validateCredentials(failureCollector);
   }
 
@@ -127,6 +132,9 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
     this.httpMethod = builder.httpMethod;
     this.headers = builder.headers;
     this.format = builder.format;
+    this.schema = builder.schema;
+    this.csvSkipFirstRow = builder.csvSkipFirstRow;
+    this.enableQuotesValues = builder.enableQuotesValues;
     this.oauth2Enabled = builder.oauth2Enabled;
     this.errorHandling = builder.errorHandling;
     this.retryPolicy = builder.retryPolicy;
@@ -161,7 +169,10 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
     private String url;
     private String httpMethod;
     private String headers;
+    private String schema;
     private String format;
+    private String csvSkipFirstRow;
+    private Boolean enableQuotesValues;
     private String oauth2Enabled;
     private String errorHandling;
     private String retryPolicy;
@@ -258,8 +269,23 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
       return this;
     }
 
+    public HttpBatchSourceConfigBuilder setSchema(String schema) {
+      this.schema = schema;
+      return this;
+    }
+
     public HttpBatchSourceConfigBuilder setFormat(String format) {
       this.format = format;
+      return this;
+    }
+
+    public HttpBatchSourceConfigBuilder setCsvSkipFirstRow(String csvSkipFirstRow) {
+      this.csvSkipFirstRow = csvSkipFirstRow;
+      return this;
+    }
+
+    public HttpBatchSourceConfigBuilder setEnableQuotesValues(Boolean enableQuotesValues) {
+      this.enableQuotesValues = enableQuotesValues;
       return this;
     }
 

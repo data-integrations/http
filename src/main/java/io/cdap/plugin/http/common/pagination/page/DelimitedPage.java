@@ -16,12 +16,17 @@
 
 package io.cdap.plugin.http.common.pagination.page;
 
+import com.google.common.base.Splitter;
 import io.cdap.cdap.api.data.format.StructuredRecord;
-import io.cdap.cdap.format.StructuredRecordStringConverter;
+import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.plugin.format.delimited.common.DelimitedStructuredRecordStringConverter;
+import io.cdap.plugin.format.delimited.input.SplitQuotesIterator;
 import io.cdap.plugin.http.common.http.HttpResponse;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 
+
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
@@ -39,7 +44,14 @@ public class DelimitedPage extends RecordPerLinePage {
 
   @Override
   protected StructuredRecord getStructedRecordByString(String line) {
-    return StructuredRecordStringConverter.fromDelimitedString(line, delimiter, schema);
+    StructuredRecord.Builder builder = StructuredRecord.builder(schema);
+    Iterator<String> splitsIterator = getSplitsIterator(config.getEnableQuotesValues(), line, delimiter);
+    Iterator<Schema.Field> fields = schema.getFields().iterator();
+    while (splitsIterator.hasNext()) {
+      Schema.Field field = fields.next();
+      DelimitedStructuredRecordStringConverter.parseAndSetFieldValue(builder, field, splitsIterator.next());
+    }
+    return builder.build();
   }
 
   @Override
@@ -52,5 +64,13 @@ public class DelimitedPage extends RecordPerLinePage {
       isLineRead = false;
     }
     return super.next();
+  }
+
+  private Iterator<String> getSplitsIterator(boolean enableQuotesValue, String delimitedString, String delimiter) {
+    if (enableQuotesValue) {
+      return new SplitQuotesIterator(delimitedString, delimiter, null, false);
+    } else {
+      return Splitter.on(delimiter).split(delimitedString).iterator();
+    }
   }
 }

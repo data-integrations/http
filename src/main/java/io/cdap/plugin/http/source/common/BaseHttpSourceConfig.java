@@ -24,21 +24,17 @@ import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.cdap.etl.api.validation.InvalidStageException;
 import io.cdap.plugin.common.ReferenceNames;
-import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.http.common.BaseHttpConfig;
 import io.cdap.plugin.http.common.EnumWithValue;
 import io.cdap.plugin.http.common.RetryPolicy;
 import io.cdap.plugin.http.common.error.ErrorHandling;
 import io.cdap.plugin.http.common.error.HttpErrorHandlerEntity;
 import io.cdap.plugin.http.common.error.RetryableErrorHandling;
-import io.cdap.plugin.http.common.http.AuthType;
 import io.cdap.plugin.http.common.http.KeyStoreType;
-import io.cdap.plugin.http.common.http.OAuthUtil;
 import io.cdap.plugin.http.common.pagination.PaginationIteratorFactory;
 import io.cdap.plugin.http.common.pagination.PaginationType;
 import io.cdap.plugin.http.common.pagination.page.PageFormat;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -64,9 +60,11 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
   public static final String PROPERTY_HEADERS = "headers";
   public static final String PROPERTY_REQUEST_BODY = "requestBody";
   public static final String PROPERTY_FORMAT = "format";
+  public static final String PROPERTY_SAMPLE_SIZE = "sampleSize";
   public static final String PROPERTY_RESULT_PATH = "resultPath";
   public static final String PROPERTY_FIELDS_MAPPING = "fieldsMapping";
   public static final String PROPERTY_CSV_SKIP_FIRST_ROW = "csvSkipFirstRow";
+  public static final String PROPERTY_ENABLE_QUOTES_VALUES = "enableQuotedValues";
   public static final String PROPERTY_HTTP_ERROR_HANDLING = "httpErrorsHandling";
   public static final String PROPERTY_ERROR_HANDLING = "errorHandling";
   public static final String PROPERTY_RETRY_POLICY = "retryPolicy";
@@ -82,7 +80,6 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
   public static final String PROPERTY_NEXT_PAGE_TOKEN_PATH = "nextPageTokenPath";
   public static final String PROPERTY_NEXT_PAGE_URL_PARAMETER = "nextPageUrlParameter";
   public static final String PROPERTY_CUSTOM_PAGINATION_CODE = "customPaginationCode";
-  public static final String PROPERTY_WAIT_TIME_BETWEEN_PAGES = "waitTimeBetweenPages";
   public static final String PROPERTY_OAUTH2_ENABLED = "oauth2Enabled";
   public static final String PROPERTY_VERIFY_HTTPS = "verifyHttps";
   public static final String PROPERTY_KEYSTORE_FILE = "keystoreFile";
@@ -127,6 +124,12 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
   @Macro
   protected String format;
 
+  @Macro
+  @Nullable
+  @Name(PROPERTY_SAMPLE_SIZE)
+  @Description("The maximum number of rows that will get investigated for automatic data type detection.")
+  private Long sampleSize;
+
   @Nullable
   @Name(PROPERTY_RESULT_PATH)
   @Description("Path to the results. When the format is XML, this is an XPath. " +
@@ -148,6 +151,13 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
     "This is usually set if the first row is a header row.")
   @Macro
   protected String csvSkipFirstRow;
+
+  @Nullable
+  @Name(PROPERTY_ENABLE_QUOTES_VALUES)
+  @Description("Values Whether to treat content between quotes as a value. " +
+          "This value will only be used if the format is ‘csv’, ‘tsv’. Default value is false.")
+  @Macro
+  protected Boolean enableQuotesValues;
 
   @Nullable
   @Name(PROPERTY_HTTP_ERROR_HANDLING)
@@ -236,12 +246,6 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
   @Description("[Pagination: Custom] A code which implements retrieving a next page url based " +
     "on previous page contents and headers.")
   protected String customPaginationCode;
-
-  @Name(PROPERTY_WAIT_TIME_BETWEEN_PAGES)
-  @Nullable
-  @Description("Time in milliseconds to wait between HTTP requests for the next page.")
-  @Macro
-  protected Long waitTimeBetweenPages;
 
   @Name(PROPERTY_VERIFY_HTTPS)
   @Description("If false, untrusted trust certificates (e.g. self signed), will not lead to an" +
@@ -343,6 +347,10 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
     return getEnumValueByString(PageFormat.class, format, PROPERTY_FORMAT);
   }
 
+  public Long getSampleSize() {
+    return sampleSize == null ? 100L : sampleSize;
+  }
+
   @Nullable
   public String getResultPath() {
     return resultPath;
@@ -355,6 +363,10 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
 
   public Boolean getCsvSkipFirstRow() {
     return Boolean.parseBoolean(csvSkipFirstRow);
+  }
+
+  public boolean getEnableQuotesValues() {
+    return enableQuotesValues != null && enableQuotesValues;
   }
 
   @Nullable
@@ -424,11 +436,6 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
   @Nullable
   public String getCustomPaginationCode() {
     return customPaginationCode;
-  }
-
-  @Nullable
-  public Long getWaitTimeBetweenPages() {
-    return waitTimeBetweenPages;
   }
 
   public Boolean getVerifyHttps() {
@@ -510,7 +517,8 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
 
   @Nullable
   public Map<String, String> getHeadersMap() {
-    return getMapFromKeyValueString(headers);
+    Map<String, String> headerMap = getMapFromKeyValueString(headers);
+    return headerMap.isEmpty() ? null : Collections.unmodifiableMap(headerMap);
   }
 
   public List<HttpErrorHandlerEntity> getHttpErrorHandlingEntries() {
@@ -676,18 +684,49 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
     }
   }
 
+  public boolean canDetectSchema() {
+    return !(containsMacro(PROPERTY_SCHEMA) || containsMacro(PROPERTY_FORMAT) || containsMacro(PROPERTY_URL) ||
+            containsMacro(PROPERTY_PROXY_URL) || containsMacro(PROPERTY_PROXY_USERNAME) ||
+            containsMacro(PROPERTY_PROXY_PASSWORD) || containsMacro(PROPERTY_CSV_SKIP_FIRST_ROW) ||
+            containsMacro(PROPERTY_ENABLE_QUOTES_VALUES) || containsMacro(PROPERTY_USERNAME) ||
+            containsMacro(PROPERTY_PASSWORD) || containsMacro(PROPERTY_AUTH_URL) || containsMacro(PROPERTY_TOKEN_URL) ||
+            containsMacro(PROPERTY_CLIENT_ID) || containsMacro(PROPERTY_CLIENT_SECRET) ||
+            containsMacro(PROPERTY_SCOPES) || containsMacro(PROPERTY_REFRESH_TOKEN) ||
+            containsMacro(PROPERTY_NAME_SERVICE_ACCOUNT_FILE_PATH) ||
+            containsMacro(PROPERTY_VERIFY_HTTPS) || containsMacro(PROPERTY_KEYSTORE_FILE) ||
+            containsMacro(PROPERTY_KEYSTORE_TYPE) || containsMacro(PROPERTY_KEYSTORE_PASSWORD) ||
+            containsMacro(PROPERTY_KEYSTORE_KEY_ALGORITHM) || containsMacro(PROPERTY_TRUSTSTORE_FILE) ||
+            containsMacro(PROPERTY_TRUSTSTORE_TYPE) || containsMacro(PROPERTY_TRUSTSTORE_PASSWORD) ||
+            containsMacro(PROPERTY_TRUSTSTORE_KEY_ALGORITHM) || containsMacro(PROPERTY_TRANSPORT_PROTOCOLS) ||
+            containsMacro(PROPERTY_CIPHER_SUITES) || containsMacro(PROPERTY_HEADERS) ||
+            containsMacro(PROPERTY_HTTP_METHOD) || containsMacro(PROPERTY_SAMPLE_SIZE));
+  }
+
+  public void setConfigSchema(Schema schema) {
+    this.schema = schema == null ? null : schema.toString();
+  }
+
   public void validateSchema() {
     Schema schema = getSchema();
     if (!containsMacro(PROPERTY_SCHEMA) && schema == null) {
-      throw new InvalidConfigPropertyException(
-              String.format("Output schema cannot be empty"), PROPERTY_SCHEMA);
+      // If format is not macro must be csv or tsv else schema is required
+      if (!containsMacro(PROPERTY_FORMAT)) {
+        switch (getFormat()) {
+          case CSV:
+          case TSV:
+            break;
+          default:
+            throw new InvalidConfigPropertyException(
+                    String.format("Output schema cannot be empty"), PROPERTY_SCHEMA);
+        }
+      }
     }
     if (!containsMacro(PROPERTY_FORMAT)) {
       PageFormat format = getFormat();
 
       if (format.equals(PageFormat.TEXT) || format.equals(PageFormat.BLOB)) {
         Schema.Type expectedFieldType = format.equals(PageFormat.TEXT) ? Schema.Type.STRING : Schema.Type.BYTES;
-        List<Schema.Field> fields = getSchema().getFields();
+        List<Schema.Field> fields = schema.getFields();
         if (fields == null || fields.size() != 1 || fields.get(0).getSchema().getType() != expectedFieldType) {
           throw new InvalidStageException(String.format("Schema must be a record with a single %s field.",
                                                         expectedFieldType.toString().toLowerCase()));
