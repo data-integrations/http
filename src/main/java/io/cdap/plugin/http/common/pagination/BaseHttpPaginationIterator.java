@@ -101,7 +101,7 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
     }
 
     // response being null, means it's the first page we are loading
-    Long delay = (response == null || config.getWaitTimeBetweenPages() == null) ? 0L : config.getWaitTimeBetweenPages();
+    long delay = response == null ? 0L : config.getWaitTimeBetweenPages();
     LOG.debug("Fetching '{}'", nextPageUrl);
 
     try {

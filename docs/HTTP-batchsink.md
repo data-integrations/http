@@ -85,6 +85,8 @@ Skip on error - Ignores erroneous records.
 
 **readTimeout:** The time in milliseconds to wait for a read. Set to 0 for infinite. Defaults to 60000 (1 minute). (Macro enabled)
 
+**Wait Time Between Request:** Time in milliseconds to wait between HTTP requests. Defaults to 0. (Macro enabled)
+
 ### HTTP Proxy
 
 **Proxy URL:** Proxy URL. Must contain a protocol, address and port.

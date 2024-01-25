@@ -69,6 +69,14 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
 
     public static final String PROPERTY_SERVICE_ACCOUNT_SCOPE = "serviceAccountScope";
 
+    public static final String PROPERTY_WAIT_TIME_BETWEEN_PAGES = "waitTimeBetweenPages";
+
+    @Name(PROPERTY_WAIT_TIME_BETWEEN_PAGES)
+    @Nullable
+    @Description("Time in milliseconds to wait between HTTP requests. Default is 0.")
+    @Macro
+    protected Long waitTimeBetweenPages;
+
     @Name(PROPERTY_AUTH_TYPE)
     @Description("Type of authentication used to submit request. \n" +
             "OAuth2, Service account, Basic Authentication types are available.")
@@ -175,6 +183,10 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
             "for more information.")
     @Macro
     protected String serviceAccountScope;
+
+    public long getWaitTimeBetweenPages() {
+        return waitTimeBetweenPages == null ? 0L : Math.max(0, waitTimeBetweenPages);
+    }
 
     public BaseHttpConfig(String referenceName) {
         super(referenceName);
