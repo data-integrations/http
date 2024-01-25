@@ -80,7 +80,6 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
   public static final String PROPERTY_NEXT_PAGE_TOKEN_PATH = "nextPageTokenPath";
   public static final String PROPERTY_NEXT_PAGE_URL_PARAMETER = "nextPageUrlParameter";
   public static final String PROPERTY_CUSTOM_PAGINATION_CODE = "customPaginationCode";
-  public static final String PROPERTY_WAIT_TIME_BETWEEN_PAGES = "waitTimeBetweenPages";
   public static final String PROPERTY_OAUTH2_ENABLED = "oauth2Enabled";
   public static final String PROPERTY_VERIFY_HTTPS = "verifyHttps";
   public static final String PROPERTY_KEYSTORE_FILE = "keystoreFile";
@@ -247,12 +246,6 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
   @Description("[Pagination: Custom] A code which implements retrieving a next page url based " +
     "on previous page contents and headers.")
   protected String customPaginationCode;
-
-  @Name(PROPERTY_WAIT_TIME_BETWEEN_PAGES)
-  @Nullable
-  @Description("Time in milliseconds to wait between HTTP requests for the next page.")
-  @Macro
-  protected Long waitTimeBetweenPages;
 
   @Name(PROPERTY_VERIFY_HTTPS)
   @Description("If false, untrusted trust certificates (e.g. self signed), will not lead to an" +
@@ -443,11 +436,6 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
   @Nullable
   public String getCustomPaginationCode() {
     return customPaginationCode;
-  }
-
-  @Nullable
-  public Long getWaitTimeBetweenPages() {
-    return waitTimeBetweenPages;
   }
 
   public Boolean getVerifyHttps() {
