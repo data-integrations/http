@@ -84,7 +84,7 @@
     <hadoop.version>2.3.0</hadoop.version>
     <httpcomponents.version>4.5.9</httpcomponents.version>
     <hydrator.version>2.10.0-SNAPSHOT</hydrator.version>
-    <jackson.version>2.9.9</jackson.version>
+    <jackson.version>2.12.7.1</jackson.version>
     <junit.version>4.11</junit.version>
     <jython.version>2.7.1</jython.version>
     <mockito.version>2.24.0</mockito.version>
