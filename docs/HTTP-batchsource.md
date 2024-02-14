@@ -36,6 +36,10 @@ listed in schema.
 Text - transforms a single line of text into a single record with a string field `body` containing the result.  
 BLOB - transforms the entire response into a single record with a byte array field `body` containing the result.
 
+**Get Schema:** Auto-detects schema from file. Supported formats are: csv, tsv.
+
+**Sample Size:** The maximum number of rows in a file that will get investigated for automatic data type detection. Default is 100.
+
 **JSON/XML Result Path:** Path to the results. When the format is XML, this is an XPath. When the format is JSON, this is a JSON path.
 
 JSON path example:
@@ -201,7 +205,12 @@ Note, that field `key` was mapped without being included into the mapping. Mappi
 can be omitted as long as the field is present in schema.
   
 
-**CSV Skip First Row:** Whether to skip the first row of the HTTP response. This is usually set if the first row is a header row.
+**CSV/TSV Skip First Row:** Whether to skip the first row of the HTTP response. This is usually set if the first row is a header row.
+
+**Enable Quoted Values** Whether to treat content between quotes as a value. This value will only be used if the format
+is 'csv', 'tsv'. For example, if this is set to true, a line that looks like `1, "a, b, c"` will output two fields.
+The first field will have `1` as its value and the second will have `a, b, c` as its value. The quote characters will be trimmed.
+The newline delimiter cannot be within quotes.
 
 ### Authentication
 * **OAuth2**

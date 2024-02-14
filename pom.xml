@@ -84,6 +84,7 @@
     <hadoop.version>2.3.0</hadoop.version>
     <httpcomponents.version>4.5.9</httpcomponents.version>
     <hydrator.version>2.10.0-SNAPSHOT</hydrator.version>
+    <cdap.plugin.version>2.12.0</cdap.plugin.version>
     <jackson.version>2.9.9</jackson.version>
     <junit.version>4.11</junit.version>
     <jython.version>2.7.1</jython.version>
@@ -125,6 +126,11 @@
       <groupId>io.cdap.plugin</groupId>
       <artifactId>hydrator-common</artifactId>
       <version>${hydrator.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.cdap.plugin</groupId>
+      <artifactId>format-delimited</artifactId>
+      <version>${cdap.plugin.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
