@@ -155,6 +155,15 @@
           }
         },
         {
+          "widget-type": "number",
+          "label": "Wait Time Between Request (milliseconds)",
+          "name": "waitTimeBetweenPages",
+          "widget-attributes": {
+            "min": "0",
+            "default": "0"
+          }
+        },
+        {
           "widget-type": "keyvalue-dropdown",
           "label": "HTTP Errors Handling",
           "name": "httpErrorsHandling",

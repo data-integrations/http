@@ -343,7 +343,7 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
       Awaitility
         .await().with()
         .pollInterval(pollInterval)
-        .pollDelay(config.getReadTimeout() == null ? 0L : config.getReadTimeout(), TimeUnit.MILLISECONDS)
+        .pollDelay(config.getWaitTimeBetweenPages(), TimeUnit.MILLISECONDS)
         .timeout(config.getMaxRetryDuration(), TimeUnit.SECONDS)
         .until(this::executeHTTPServiceAndCheckStatusCode);
     } catch (Exception e) {
