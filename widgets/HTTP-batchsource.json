@@ -69,6 +69,19 @@
           }
         },
         {
+          "widget-type": "number",
+          "label": "Sample Size",
+          "name": "sampleSize",
+          "widget-attributes": {
+            "default": "100",
+            "minimum": "1"
+          }
+        },
+        {
+          "widget-type": "get-schema",
+          "widget-category": "plugin"
+        },
+        {
           "widget-type": "textbox",
           "label": "JSON/XML Result Path",
           "name": "resultPath"
@@ -83,8 +96,27 @@
         },
         {
           "widget-type": "radio-group",
-          "label": "CSV Skip First Row",
+          "label": "CSV/TSV Skip First Row",
           "name": "csvSkipFirstRow",
+          "widget-attributes": {
+            "layout": "inline",
+            "default": "false",
+            "options": [
+              {
+                "id": "true",
+                "label": "true"
+              },
+              {
+                "id": "false",
+                "label": "false"
+              }
+            ]
+          }
+        },
+        {
+          "widget-type": "radio-group",
+          "label": "Enable Quoted Values",
+          "name": "enableQuotedValues",
           "widget-attributes": {
             "layout": "inline",
             "default": "false",
@@ -559,6 +591,18 @@
   ],
   "filters": [
     {
+      "name": "GetSchema CSV TSV",
+      "condition": {
+        "expression": "format == 'csv' || format == 'tsv'"
+      },
+      "show": [
+        {
+          "widget-type": "getSchema",
+          "type": "property"
+        }
+      ]
+    },
+    {
       "name": "Proxy authentication",
       "condition": {
         "property": "proxyUrl",
@@ -768,15 +812,37 @@
       ]
     },
     {
+      "name": "Sample Size For CSV TSV",
+      "condition": {
+        "expression": "format == 'csv' || format == 'tsv'"
+      },
+      "show": [
+        {
+          "name": "sampleSize",
+          "type": "property"
+        }
+      ]
+    },
+    {
       "name": "CSV Formatting",
       "condition": {
-        "property": "format",
-        "operator": "equal to",
-        "value": "csv"
+        "expression": "format == 'csv' || format == 'tsv'"
       },
       "show": [
         {
           "name": "csvSkipFirstRow",
+          "type": "property"
+        }
+      ]
+    },
+    {
+      "name": "Quoted Values",
+      "condition": {
+        "expression": "format == 'csv' || format == 'tsv'"
+      },
+      "show": [
+        {
+          "name": "enableQuotedValues",
           "type": "property"
         }
       ]
