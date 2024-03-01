@@ -71,8 +71,12 @@ public class HttpInputFormatProvider implements InputFormatProvider {
             new HttpResponse(client.executeHTTP(config.getUrl())));
           return DelimitedSchemaDetector.detectSchema(config, delimiter, rawStringPerLine, failureCollector);
         } catch (IOException e) {
+          String errorMessage = e.getMessage();
+          if (Strings.isNullOrEmpty(errorMessage) && e.getCause() != null) {
+            errorMessage = e.getCause().getMessage();
+          }
           failureCollector.addFailure(String.format("Error while reading the file to infer the schema. Error: %s",
-                                                   e.getMessage()), null);
+                                                    errorMessage), null);
         }
         return null;
       default:
