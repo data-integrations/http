@@ -16,6 +16,7 @@
 package io.cdap.plugin.http.source.batch;
 
 import io.cdap.plugin.http.common.pagination.page.BasePage;
+import io.cdap.plugin.http.common.pagination.page.PageEntry;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -37,7 +38,7 @@ public class HttpInputFormat extends InputFormat {
   }
 
   @Override
-  public RecordReader<NullWritable, BasePage> createRecordReader(
+  public RecordReader<NullWritable, PageEntry> createRecordReader(
     InputSplit inputSplit, TaskAttemptContext taskAttemptContext) {
     return new HttpRecordReader();
   }
