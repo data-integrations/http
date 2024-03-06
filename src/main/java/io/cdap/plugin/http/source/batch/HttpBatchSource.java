@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
 @Plugin(type = BatchSource.PLUGIN_TYPE)
 @Name(HttpBatchSource.NAME)
 @Description("Read data from HTTP endpoint.")
-public class HttpBatchSource extends BatchSource<NullWritable, BasePage, StructuredRecord> {
+public class HttpBatchSource extends BatchSource<NullWritable, PageEntry, StructuredRecord> {
   static final String NAME = "HTTP";
 
   private static final Logger LOG = LoggerFactory.getLogger(HttpBatchSource.class);
@@ -103,28 +103,25 @@ public class HttpBatchSource extends BatchSource<NullWritable, BasePage, Structu
   }
 
   @Override
-  public void transform(KeyValue<NullWritable, BasePage> input, Emitter<StructuredRecord> emitter) {
-    BasePage page = input.getValue();
-    while (page.hasNext()) {
-      PageEntry pageEntry = page.next();
+  public void transform(KeyValue<NullWritable, PageEntry> input, Emitter<StructuredRecord> emitter) {
+    PageEntry pageEntry = input.getValue();
 
-      if (!pageEntry.isError()) {
-        emitter.emit(pageEntry.getRecord());
-      } else {
-        InvalidEntry<StructuredRecord> invalidEntry = pageEntry.getError();
-        switch (pageEntry.getErrorHandling()) {
-          case SKIP:
-            LOG.warn(invalidEntry.getErrorMsg());
-            break;
-          case SEND:
-            emitter.emitError(invalidEntry);
-            break;
-          case STOP:
-            throw new RuntimeException(invalidEntry.getErrorMsg());
-          default:
-            throw new UnexpectedFormatException(
-              String.format("Unknown error handling strategy '%s'", config.getErrorHandling()));
-        }
+    if (!pageEntry.isError()) {
+      emitter.emit(pageEntry.getRecord());
+    } else {
+      InvalidEntry<StructuredRecord> invalidEntry = pageEntry.getError();
+      switch (pageEntry.getErrorHandling()) {
+        case SKIP:
+          LOG.warn(invalidEntry.getErrorMsg());
+          break;
+        case SEND:
+          emitter.emitError(invalidEntry);
+          break;
+        case STOP:
+          throw new RuntimeException(invalidEntry.getErrorMsg());
+        default:
+          throw new UnexpectedFormatException(
+            String.format("Unknown error handling strategy '%s'", config.getErrorHandling()));
       }
     }
   }
