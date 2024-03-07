@@ -36,8 +36,8 @@ import io.cdap.plugin.http.common.pagination.PaginationType;
 import io.cdap.plugin.http.common.pagination.page.PageFormat;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -570,7 +570,7 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
     if (!containsMacro(PROPERTY_URL)) {
       try {
         // replace with placeholder with anything just during pagination
-        new URI(getUrl().replaceAll(PAGINATION_INDEX_PLACEHOLDER_REGEX, "0"));
+        new URL(getUrl().replaceAll(PAGINATION_INDEX_PLACEHOLDER_REGEX, "0"));
 
         // Validate HTTP Error Handling Map
         if (!containsMacro(PROPERTY_HTTP_ERROR_HANDLING)) {
@@ -591,7 +591,7 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
             }
           }
         }
-      } catch (URISyntaxException e) {
+      } catch (MalformedURLException e) {
         throw new InvalidConfigPropertyException(
           String.format("URL value is not valid: '%s'", getUrl()), e, PROPERTY_URL);
       }
