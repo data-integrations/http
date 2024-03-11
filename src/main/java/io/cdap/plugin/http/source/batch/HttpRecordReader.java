@@ -20,6 +20,7 @@ import com.google.gson.GsonBuilder;
 import io.cdap.plugin.http.common.pagination.BaseHttpPaginationIterator;
 import io.cdap.plugin.http.common.pagination.PaginationIteratorFactory;
 import io.cdap.plugin.http.common.pagination.page.BasePage;
+import io.cdap.plugin.http.common.pagination.page.PageEntry;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -34,12 +35,13 @@ import java.io.IOException;
  * RecordReader implementation, which reads text records representations and http codes
  * using {@link BaseHttpPaginationIterator} subclasses.
  */
-public class HttpRecordReader extends RecordReader<NullWritable, BasePage> {
+public class HttpRecordReader extends RecordReader<NullWritable, PageEntry> {
   private static final Logger LOG = LoggerFactory.getLogger(HttpRecordReader.class);
   private static final Gson gson = new GsonBuilder().create();
 
   private BaseHttpPaginationIterator httpPaginationIterator;
-  private BasePage value;
+  private BasePage currentBasePage;
+  private PageEntry value;
 
   /**
    * Initialize an iterator and config.
@@ -57,10 +59,22 @@ public class HttpRecordReader extends RecordReader<NullWritable, BasePage> {
 
   @Override
   public boolean nextKeyValue() {
-    if (!httpPaginationIterator.hasNext()) {
-      return false;
+    // If there is no current page or no next line in the current page
+    if (currentBasePage == null || !currentBasePage.hasNext()) {
+      if (!httpPaginationIterator.hasNext()) {
+        // If there is no next page, return false
+        // All pages are read
+        return false;
+      }
+      // Get the next page
+      currentBasePage = httpPaginationIterator.next();
+      // Check if the new page has any lines
+      if (!currentBasePage.hasNext()) {
+        // If the new page has no lines, we stop.
+        return false;
+      }
     }
-    value = httpPaginationIterator.next();
+    value = currentBasePage.next();
     return true;
   }
 
@@ -70,7 +84,7 @@ public class HttpRecordReader extends RecordReader<NullWritable, BasePage> {
   }
 
   @Override
-  public BasePage getCurrentValue() {
+  public PageEntry getCurrentValue() {
     return value;
   }
 
