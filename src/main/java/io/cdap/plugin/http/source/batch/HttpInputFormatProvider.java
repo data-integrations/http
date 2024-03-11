@@ -16,6 +16,7 @@
 
 package io.cdap.plugin.http.source.batch;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
