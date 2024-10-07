@@ -26,7 +26,8 @@
               "POST",
               "PUT",
               "DELETE",
-              "HEAD"
+              "HEAD",
+              "PATCH"
             ],
             "default": "GET"
           }

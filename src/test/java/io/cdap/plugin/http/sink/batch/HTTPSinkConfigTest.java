@@ -154,6 +154,18 @@ public class HTTPSinkConfigTest {
     Assert.assertTrue(collector.getValidationFailures().isEmpty());
   }
 
+  @Test()
+  public void testValidInputWithPlaceHoldersWithPATCH() {
+    Schema schema = Schema.recordOf("record",
+                                    Schema.Field.of("id", Schema.of(Schema.Type.LONG)),
+                                    Schema.Field.of("name", Schema.of(Schema.Type.STRING)));
+    String dynamicUrl = "http://example.com/api/v1/book/#id";
+    HTTPSinkConfig config = HTTPSinkConfig.newBuilder(VALID_CONFIG).setMethod("PATCH").setUrl(dynamicUrl).build();
+    MockFailureCollector collector = new MockFailureCollector("httpsinkwithvalidinputschema");
+    config.validateSchema(schema, collector);
+    Assert.assertTrue(collector.getValidationFailures().isEmpty());
+  }
+
   @Test(expected = ValidationException.class)
   public void testHTTPSinkWithNegativeBatchSize() {
     HTTPSinkConfig config = HTTPSinkConfig.newBuilder(VALID_CONFIG)

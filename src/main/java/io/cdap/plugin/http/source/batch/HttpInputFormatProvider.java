@@ -28,6 +28,7 @@ import io.cdap.plugin.http.common.http.HttpResponse;
 import io.cdap.plugin.http.common.pagination.page.PageFormat;
 import io.cdap.plugin.http.source.common.DelimitedSchemaDetector;
 import io.cdap.plugin.http.source.common.RawStringPerLine;
+import org.apache.http.client.methods.CloseableHttpResponse;
 
 import java.io.IOException;
 import java.util.Map;
@@ -68,8 +69,14 @@ public class HttpInputFormatProvider implements InputFormatProvider {
       case TSV:
         String delimiter = format == PageFormat.CSV ? "," : "\t";
         try (HttpClient client = new HttpClient(config)) {
-          RawStringPerLine rawStringPerLine = new RawStringPerLine(
-            new HttpResponse(client.executeHTTP(config.getUrl())));
+          CloseableHttpResponse closeableHttpResponse = client.executeHTTP(config.getUrl());
+          int statusCode = closeableHttpResponse.getStatusLine().getStatusCode();
+          if (statusCode < 200 || statusCode >= 300) {
+            failureCollector.addFailure(String.format("Failed to read the file, non 2xx status code received: %s",
+                                                      statusCode), null);
+            return null;
+          }
+          RawStringPerLine rawStringPerLine = new RawStringPerLine(new HttpResponse(closeableHttpResponse));
           return DelimitedSchemaDetector.detectSchema(config, delimiter, rawStringPerLine, failureCollector);
         } catch (IOException e) {
           String errorMessage = e.getMessage();

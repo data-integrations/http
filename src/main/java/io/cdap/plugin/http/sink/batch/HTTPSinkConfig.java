@@ -80,7 +80,7 @@ public class HTTPSinkConfig extends BaseHttpConfig {
   private static final String REGEX_HASHED_VAR = "#(\\w+)";
   private static final String PLACEHOLDER = "#";
   private static final Set<String> METHODS = ImmutableSet.of(HttpMethod.GET, HttpMethod.POST,
-                                                             HttpMethod.PUT, HttpMethod.DELETE);
+                                                             HttpMethod.PUT, HttpMethod.DELETE, "PATCH");
 
   @Name(URL)
   @Description("The URL to post data to. Additionally, a placeholder like #columnName can be added to the URL that " +
@@ -462,7 +462,6 @@ public class HTTPSinkConfig extends BaseHttpConfig {
     if (!containsMacro(PROPERTY_RETRY_POLICY) && getRetryPolicy() == RetryPolicy.LINEAR) {
       assertIsSet(getLinearRetryInterval(), PROPERTY_LINEAR_RETRY_INTERVAL, "retry policy is linear");
     }
-
     if (!containsMacro(READ_TIMEOUT) && Objects.nonNull(readTimeout) && readTimeout < 0) {
       collector.addFailure("Read Timeout cannot be a negative number.", null)
         .withConfigProperty(READ_TIMEOUT);
@@ -494,7 +493,7 @@ public class HTTPSinkConfig extends BaseHttpConfig {
       return;
     }
     
-    if ((method.equals("PUT") || method.equals("DELETE")) && url.contains(PLACEHOLDER)) {
+    if ((method.equals("PUT") || method.equals("PATCH") || method.equals("DELETE")) && url.contains(PLACEHOLDER)) {
       Pattern pattern = Pattern.compile(REGEX_HASHED_VAR);
       Matcher matcher = pattern.matcher(url);
       List<String> fieldNames = fields.stream().map(field -> field.getName()).collect(Collectors.toList());
