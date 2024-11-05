@@ -25,7 +25,8 @@
               "POST",
               "GET",
               "PUT",
-              "DELETE"
+              "DELETE",
+              "PATCH"
             ],
             "default": "POST"
           }

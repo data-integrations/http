@@ -22,9 +22,11 @@ import com.google.common.base.Strings;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.http.common.RetryPolicy;
+import io.cdap.plugin.http.common.error.ErrorHandling;
 import io.cdap.plugin.http.common.error.HttpErrorHandler;
 import io.cdap.plugin.http.common.error.RetryableErrorHandling;
 import io.cdap.plugin.http.common.http.HttpRequest;
+import io.cdap.plugin.http.common.http.HttpResponse;
 import io.cdap.plugin.http.common.http.OAuthUtil;
 
 import org.apache.hadoop.mapreduce.RecordWriter;
@@ -83,6 +85,7 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
   public static final String REQUEST_METHOD_POST = "POST";
   public static final String REQUEST_METHOD_PUT = "PUT";
   public static final String REQUEST_METHOD_DELETE = "DELETE";
+  public static final String REQUEST_METHOD_PATCH = "PATCH";
 
   private final HTTPSinkConfig config;
   private final MessageBuffer messageBuffer;
@@ -96,6 +99,7 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
   private final HttpErrorHandler httpErrorHandler;
   private final PollInterval pollInterval;
   private int httpStatusCode;
+  private String httpResponseBody;
   private static int retryCount;
 
   HTTPRecordWriter(HTTPSinkConfig config, Schema inputSchema) {
@@ -120,11 +124,13 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
   @Override
   public void write(StructuredRecord input, StructuredRecord unused) throws IOException {
     configURL = url;
-    if (config.getMethod().equals(REQUEST_METHOD_POST) || config.getMethod().equals(REQUEST_METHOD_PUT)) {
+    if (config.getMethod().equals(REQUEST_METHOD_POST) || config.getMethod().equals(REQUEST_METHOD_PUT) ||
+      config.getMethod().equals(REQUEST_METHOD_PATCH)) {
       messageBuffer.add(input);
     }
 
-    if (config.getMethod().equals(REQUEST_METHOD_PUT) || config.getMethod().equals(REQUEST_METHOD_DELETE)
+    if (config.getMethod().equals(REQUEST_METHOD_PUT) || config.getMethod().equals(REQUEST_METHOD_PATCH) ||
+      config.getMethod().equals(REQUEST_METHOD_DELETE)
       && !placeHolderList.isEmpty()) {
       configURL = updateURLWithPlaceholderValue(input);
     }
@@ -200,9 +206,9 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
       request.setHeaders(getRequestHeaders());
 
       response = httpClient.execute(request);
-
       httpStatusCode = response.getStatusLine().getStatusCode();
       LOG.debug("Response HTTP Status code: {}", httpStatusCode);
+      httpResponseBody = new HttpResponse(response).getBody();
 
     } catch (MalformedURLException | ProtocolException e) {
       throw new IllegalStateException("Error opening url connection. Reason: " + e.getMessage(), e);
@@ -277,7 +283,9 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
     headers.put("Instance-Follow-Redirects", String.valueOf(config.getFollowRedirects()));
     headers.put("charset", config.getCharset());
 
-    if (config.getMethod().equals(REQUEST_METHOD_POST) || config.getMethod().equals(REQUEST_METHOD_PUT)) {
+    if (config.getMethod().equals(REQUEST_METHOD_POST)
+      || config.getMethod().equals(REQUEST_METHOD_PATCH)
+      || config.getMethod().equals(REQUEST_METHOD_PUT)) {
       if (!headers.containsKey("Content-Type")) {
         headers.put("Content-Type", contentType);
       }
@@ -302,7 +310,8 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
    */
   private List<PlaceholderBean> getPlaceholderListFromURL() {
     List<PlaceholderBean> placeholderList = new ArrayList<>();
-    if (!(config.getMethod().equals(REQUEST_METHOD_PUT) || config.getMethod().equals(REQUEST_METHOD_DELETE))) {
+    if (!(config.getMethod().equals(REQUEST_METHOD_PUT) || config.getMethod().equals(REQUEST_METHOD_PATCH) ||
+      config.getMethod().equals(REQUEST_METHOD_DELETE))) {
       return placeholderList;
     }
     Pattern pattern = Pattern.compile(REGEX_HASHED_VAR);
@@ -351,6 +360,25 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
                                    "after the batch execution. " + e);
     }
     messageBuffer.clear();
+
+    ErrorHandling postRetryStrategy = httpErrorHandler.getErrorHandlingStrategy(httpStatusCode)
+      .getAfterRetryStrategy();
+
+    switch (postRetryStrategy) {
+      case SUCCESS:
+        break;
+      case STOP:
+        throw new IllegalStateException(String.format("Fetching from url '%s' returned status code '%d' and body '%s'",
+                                                      config.getUrl(), httpStatusCode, httpResponseBody));
+      case SKIP:
+      case SEND:
+        LOG.warn(String.format("Fetching from url '%s' returned status code '%d' and body '%s'",
+                               config.getUrl(), httpStatusCode, httpResponseBody));
+        break;
+      default:
+        throw new IllegalArgumentException(String.format("Unexpected http error handling: '%s'", postRetryStrategy));
+    }
+
   }
 
 }
