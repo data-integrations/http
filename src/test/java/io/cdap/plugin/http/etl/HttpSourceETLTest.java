@@ -135,6 +135,7 @@ public abstract class HttpSourceETLTest extends HydratorTestBase {
       .put(BaseHttpSourceConfig.PROPERTY_PAGINATION_TYPE, "Increment an index")
       .put(BaseHttpSourceConfig.PROPERTY_START_INDEX, "0")
       .put(BaseHttpSourceConfig.PROPERTY_INDEX_INCREMENT, "20")
+      .put(BaseHttpSourceConfig.PROPERTY_MAX_INDEX, "100")
       .build();
 
     wireMockRule.stubFor(WireMock.get(

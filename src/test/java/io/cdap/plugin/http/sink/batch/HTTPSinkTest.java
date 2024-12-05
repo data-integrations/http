@@ -75,8 +75,7 @@ public class HTTPSinkTest extends HydratorTestBase {
   protected static final ArtifactId BATCH_ARTIFACT_ID = NamespaceId.DEFAULT.artifact("data-pipeline", "4.0.0");
   protected static final ArtifactSummary BATCH_ARTIFACT = new ArtifactSummary("data-pipeline", "4.0.0");
   private static final Schema inputSchema = Schema.recordOf(
-    "input-record",
-    Schema.Field.of("id", Schema.of(Schema.Type.STRING)));
+    "input-record", Schema.Field.of("id", Schema.of(Schema.Type.STRING)));
   private static NettyHttpService httpService;
   protected static String baseURL;
 

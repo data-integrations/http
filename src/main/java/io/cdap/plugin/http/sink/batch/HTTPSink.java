@@ -102,8 +102,10 @@ public class HTTPSink extends BatchSink<StructuredRecord, StructuredRecord, Stru
 
     @Override
     public Map<String, String> getOutputFormatConfiguration() {
+      Schema defaultValidSchema = Schema.recordOf("schema", Schema.Field.of("body", Schema.of(Schema.Type.STRING)));
       return ImmutableMap.of("http.sink.config", GSON.toJson(config),
-                             "http.sink.input.schema", inputSchema == null ? "" : inputSchema.toString());
+                             "http.sink.input.schema",
+                             inputSchema == null ? defaultValidSchema.toString() : inputSchema.toString());
     }
   }
 

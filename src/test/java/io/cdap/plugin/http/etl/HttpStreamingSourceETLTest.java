@@ -19,7 +19,6 @@ package io.cdap.plugin.http.etl;
 import io.cdap.cdap.api.artifact.ArtifactSummary;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.dataset.table.Table;
-import io.cdap.cdap.common.conf.Constants;
 import io.cdap.cdap.datastreams.DataStreamsApp;
 import io.cdap.cdap.datastreams.DataStreamsSparkLauncher;
 import io.cdap.cdap.etl.api.streaming.StreamingSource;
@@ -27,7 +26,6 @@ import io.cdap.cdap.etl.mock.batch.MockSink;
 import io.cdap.cdap.etl.proto.v2.DataStreamsConfig;
 import io.cdap.cdap.etl.proto.v2.ETLPlugin;
 import io.cdap.cdap.etl.proto.v2.ETLStage;
-import io.cdap.cdap.etl.spark.Compat;
 import io.cdap.cdap.proto.ProgramRunStatus;
 import io.cdap.cdap.proto.artifact.AppRequest;
 import io.cdap.cdap.proto.id.ApplicationId;
@@ -37,12 +35,10 @@ import io.cdap.cdap.test.ApplicationManager;
 import io.cdap.cdap.test.DataSetManager;
 import io.cdap.cdap.test.ProgramManager;
 import io.cdap.cdap.test.SparkManager;
-import io.cdap.cdap.test.TestConfiguration;
 import io.cdap.plugin.http.source.streaming.HttpStreamingSource;
 import org.awaitility.Awaitility;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,11 +52,6 @@ public class HttpStreamingSourceETLTest extends HttpSourceETLTest {
   private static final ArtifactSummary APP_ARTIFACT = new ArtifactSummary("data-streams", "1.0.0");
   private static final int WAIT_FOR_RECORDS_TIMEOUT_SECONDS = 60;
   private static final long WAIT_FOR_RECORDS_POLLING_INTERVAL_MS = 100;
-
-  @ClassRule
-  public static final TestConfiguration CONFIG =
-    new TestConfiguration(Constants.Explore.EXPLORE_ENABLED, false,
-                          Constants.AppFabric.SPARK_COMPAT, Compat.SPARK_COMPAT);
 
   @BeforeClass
   public static void setupTest() throws Exception {
