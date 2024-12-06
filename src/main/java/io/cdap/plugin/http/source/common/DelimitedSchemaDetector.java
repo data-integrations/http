@@ -46,12 +46,12 @@ public class DelimitedSchemaDetector {
         if (rowIndex == 0) {
           columnNames = DataTypeDetectorUtils.setColumnNames(line, config.getCsvSkipFirstRow(),
                   config.getEnableQuotesValues(), delimiter);
-          if (config.getCsvSkipFirstRow()) {
+          if (Boolean.TRUE.equals(config.getCsvSkipFirstRow())) {
             continue;
           }
         }
-        DataTypeDetectorUtils.detectDataTypeOfRowValues(new HashMap<>(), dataTypeDetectorStatusKeeper, columnNames,
-                rowValue);
+        DataTypeDetectorUtils.detectDataTypeOfRowValues(
+          new HashMap<>(), dataTypeDetectorStatusKeeper, columnNames, rowValue);
       }
       dataTypeDetectorStatusKeeper.validateDataTypeDetector();
     } catch (Exception e) {
@@ -60,8 +60,8 @@ public class DelimitedSchemaDetector {
               .withStacktrace(e.getStackTrace());
       return null;
     }
-    List<Schema.Field> fields = DataTypeDetectorUtils.detectDataTypeOfEachDatasetColumn(
-            new HashMap<>(), columnNames, dataTypeDetectorStatusKeeper);
+    List<Schema.Field> fields = DataTypeDetectorUtils.detectDataTypeOfEachDatasetColumn(new HashMap<>(),
+      columnNames, dataTypeDetectorStatusKeeper);
     return Schema.recordOf("text", fields);
   }
 

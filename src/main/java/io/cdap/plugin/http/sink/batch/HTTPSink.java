@@ -30,8 +30,10 @@ import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.StageConfigurer;
 import io.cdap.cdap.etl.api.batch.BatchSink;
 import io.cdap.cdap.etl.api.batch.BatchSinkContext;
+import io.cdap.cdap.etl.api.exception.ErrorDetailsProviderSpec;
 import io.cdap.plugin.common.Asset;
 import io.cdap.plugin.common.LineageRecorder;
+import io.cdap.plugin.http.common.HttpErrorDetailsProvider;
 
 import java.util.Collections;
 import java.util.List;
@@ -45,7 +47,7 @@ import java.util.stream.Collectors;
 @Name("HTTP")
 @Description("Sink plugin to send the messages from the pipeline to an external http endpoint.")
 public class HTTPSink extends BatchSink<StructuredRecord, StructuredRecord, StructuredRecord> {
-  private HTTPSinkConfig config;
+  private final HTTPSinkConfig config;
 
   public HTTPSink(HTTPSinkConfig config) {
     this.config = config;
@@ -78,6 +80,8 @@ public class HTTPSink extends BatchSink<StructuredRecord, StructuredRecord, Stru
       inputSchema.getFields().stream().map(Schema.Field::getName).collect(Collectors.toList());
     lineageRecorder.recordWrite("Write", String.format("Wrote to HTTP '%s'", config.getUrl()), fields);
 
+    context.setErrorDetailsProvider(
+      new ErrorDetailsProviderSpec(HttpErrorDetailsProvider.class.getName()));
     context.addOutput(Output.of(config.getReferenceNameOrNormalizedFQN(),
                                 new HTTPSink.HTTPOutputFormatProvider(config, inputSchema)));
   }
@@ -108,5 +112,4 @@ public class HTTPSink extends BatchSink<StructuredRecord, StructuredRecord, Stru
                              inputSchema == null ? defaultValidSchema.toString() : inputSchema.toString());
     }
   }
-
 }

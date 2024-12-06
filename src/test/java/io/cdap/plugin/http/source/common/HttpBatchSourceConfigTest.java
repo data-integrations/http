@@ -220,9 +220,9 @@ public class HttpBatchSourceConfigTest {
     Mockito.when(response.getEntity()).thenReturn(entity);
     config.validateBasicAuthResponse(failureCollector, httpClient);
     Assert.assertEquals(1, failureCollector.getValidationFailures().size());
-    Assert.assertEquals("Credential validation request failed with Http Status code: '400', Response: 'null'",
-      failureCollector
-      .getValidationFailures().get(0).getMessage());
+    Assert.assertEquals(
+        "Credential validation request failed with status code: '400', with response: 'null'",
+        failureCollector.getValidationFailures().get(0).getMessage());
   }
 
 }

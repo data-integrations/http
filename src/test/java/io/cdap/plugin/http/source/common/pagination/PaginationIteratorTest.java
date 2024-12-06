@@ -18,6 +18,7 @@ package io.cdap.plugin.http.source.common.pagination;
 
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.api.exception.ProgramFailureException;
 import io.cdap.plugin.http.common.http.HttpClient;
 import io.cdap.plugin.http.common.pagination.BaseHttpPaginationIterator;
 import io.cdap.plugin.http.common.pagination.PaginationIteratorFactory;
@@ -198,7 +199,7 @@ public class PaginationIteratorTest {
     assertResults(results, responses, config);
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test(expected = ProgramFailureException.class)
   public void testErrorHttpStatus() throws IOException {
     class TestConfig extends BaseTestConfig {
       TestConfig(String referenceName) {

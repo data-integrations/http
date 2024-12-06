@@ -55,7 +55,7 @@ public class CustomPaginationIterator extends BaseHttpPaginationIterator {
   }
 
   @Override
-  public void close() throws IOException {
+  public void close() {
     try {
       super.close();
     } finally {

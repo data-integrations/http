@@ -15,6 +15,11 @@
  */
 package io.cdap.plugin.http.common.pagination;
 
+import io.cdap.cdap.api.exception.ErrorCategory;
+import io.cdap.cdap.api.exception.ErrorCodeType;
+import io.cdap.cdap.api.exception.ErrorType;
+import io.cdap.cdap.api.exception.ErrorUtils;
+import io.cdap.plugin.http.common.HttpErrorDetailsProvider;
 import io.cdap.plugin.http.common.RetryPolicy;
 import io.cdap.plugin.http.common.error.ErrorHandling;
 import io.cdap.plugin.http.common.error.HttpErrorHandler;
@@ -80,12 +85,30 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
   protected abstract String getNextPageUrl(HttpResponse httpResponse, BasePage page);
   public abstract boolean supportsSkippingPages();
 
-  protected boolean visitPageAndCheckStatusCode() throws IOException {
+  protected boolean visitPageAndCheckStatusCode() {
     if (response != null) { // close previous response
-      response.close();
+      try {
+        response.close();
+      } catch (IOException e) {
+        String errorReason = String.format("Failed to close response from '%s'", currentPageUrl);
+        String errorMessage = String.format("Failed to close response from '%s' with message: %s",
+            currentPageUrl, e.getMessage());
+        throw ErrorUtils.getProgramFailureException(
+            new ErrorCategory(ErrorCategory.ErrorCategoryEnum.PLUGIN), errorReason, errorMessage,
+            ErrorType.SYSTEM, true, e);
+      }
     }
 
-    response = new HttpResponse(getHttpClient().executeHTTP(nextPageUrl));
+    try {
+      response = new HttpResponse(getHttpClient().executeHTTP(nextPageUrl));
+    } catch (IOException e) {
+      String errorMessage = String.format("Failed to execute request to '%s' with message: %s",
+          nextPageUrl, e.getMessage());
+      String errorReason = String.format("Failed to execute request to '%s'", nextPageUrl);
+      throw ErrorUtils.getProgramFailureException(
+          new ErrorCategory(ErrorCategory.ErrorCategoryEnum.PLUGIN), errorReason, errorMessage,
+          ErrorType.SYSTEM, true, e);
+    }
     currentPageUrl = nextPageUrl;
     httpStatusCode = response.getStatusCode();
     RetryableErrorHandling errorHandlingStrategy = httpErrorHandler.getErrorHandlingStrategy(httpStatusCode);
@@ -94,7 +117,7 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
   }
 
   @Nullable
-  protected BasePage getNextPage() throws IOException {
+  protected BasePage getNextPage() {
     // no more pages
     if (nextPageUrl == null) {
       return null;
@@ -122,8 +145,18 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
       case SUCCESS:
         break;
       case STOP:
-        throw new IllegalStateException(String.format("Fetching from url '%s' returned status code '%d' and body '%s'",
-                                                      nextPageUrl, httpStatusCode, response.getBody()));
+        ErrorUtils.ActionErrorPair pair = ErrorUtils.getActionErrorByStatusCode(httpStatusCode);
+        String errorReason = String.format(
+            "Unable to read new page: %s. %s. For more details, see %s", httpStatusCode,
+            pair.getCorrectiveAction(), HttpErrorDetailsProvider.getSupportedDocumentUrl());
+        String errorMessage = String.format(
+            "Retry failed! Unable to read new page and execute request. "
+                + "Fetching from '%s' returned http error status code '%s'.", config.getUrl(),
+            httpStatusCode);
+        throw ErrorUtils.getProgramFailureException(
+            new ErrorCategory(ErrorCategory.ErrorCategoryEnum.PLUGIN), errorReason, errorMessage,
+            pair.getErrorType(), true, ErrorCodeType.HTTP, String.valueOf(httpStatusCode),
+            HttpErrorDetailsProvider.getSupportedDocumentUrl(), null);
       case SKIP:
       case SEND:
         if (!this.supportsSkippingPages()) {
@@ -156,16 +189,11 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
    * False if no more pages to load or the page loaded has no elements.
    */
   protected boolean ensurePageIterable() {
-    try {
-      if (currentPageReturned) {
-        page = getNextPage();
-        currentPageReturned = false;
-      }
-
-      return page != null && page.hasNext(); // check hasNext() to stop on first empty page.
-    } catch (IOException e) {
-      throw new IllegalStateException("Failed to the load page", e);
+    if (currentPageReturned) {
+      page = getNextPage();
+      currentPageReturned = false;
     }
+    return page != null && page.hasNext(); // check hasNext() to stop on first empty page.
   }
 
   // for testing purposes
@@ -175,9 +203,9 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
 
   // for testing purposes
   BasePage createPageInstance(BaseHttpSourceConfig config, HttpResponse httpResponse,
-                              ErrorHandling postRetryStrategy) throws IOException {
+                              ErrorHandling postRetryStrategy)  {
     return PageFactory.createInstance(config, httpResponse, httpErrorHandler,
-                                      !postRetryStrategy.equals(ErrorHandling.SUCCESS));
+        !postRetryStrategy.equals(ErrorHandling.SUCCESS));
   }
 
   public PaginationIteratorState getCurrentState() {
@@ -204,14 +232,34 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
   }
 
   @Override
-  public void close() throws IOException {
+  public void close() {
     try {
       if (getHttpClient() != null) {
         getHttpClient().close();
       }
+    } catch (IOException e) {
+      ErrorUtils.ActionErrorPair pair = ErrorUtils.getActionErrorByStatusCode(httpStatusCode);
+      String errorReason = String.format(
+          "Failed to close http client: %s. %s. For more details, see %s", httpStatusCode,
+          pair.getCorrectiveAction(), HttpErrorDetailsProvider.getSupportedDocumentUrl());
+      String errorMessage = String.format(
+          "Failed to close http client with status code %s with message %s.", httpStatusCode,
+          e.getMessage());
+      throw ErrorUtils.getProgramFailureException(
+          new ErrorCategory(ErrorCategory.ErrorCategoryEnum.PLUGIN), errorReason, errorMessage,
+          pair.getErrorType(), true, ErrorCodeType.HTTP, String.valueOf(httpStatusCode),
+          HttpErrorDetailsProvider.getSupportedDocumentUrl(), e);
     } finally {
       if (response != null) {
-        response.close();
+        try {
+          response.close();
+        } catch (IOException e) {
+          String errorMessage = String.format("Failed to close http response with message: %s.",
+              e.getMessage());
+          throw ErrorUtils.getProgramFailureException(
+              new ErrorCategory(ErrorCategory.ErrorCategoryEnum.PLUGIN), errorMessage, errorMessage,
+              ErrorType.SYSTEM, true, e);
+        }
       }
     }
   }
