@@ -19,6 +19,10 @@ package io.cdap.plugin.http.sink.batch;
 import com.google.common.base.Strings;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.api.exception.ErrorCategory;
+import io.cdap.cdap.api.exception.ErrorType;
+import io.cdap.cdap.api.exception.ErrorUtils;
+import io.cdap.cdap.api.exception.ProgramFailureException;
 import io.cdap.cdap.format.StructuredRecordStringConverter;
 import io.cdap.plugin.http.common.http.MessageFormatType;
 
@@ -134,26 +138,26 @@ public class MessageBuffer {
   /**
    * Converts the buffer to the appropriate format and returns the message.
    */
-  public String getMessage() throws IOException {
+  public String getMessage() {
     return messageFormatter.apply(buffer);
   }
 
   private String formatAsJson(List<StructuredRecord> buffer) {
-    try {
-      return formatAsJsonInternal(buffer);
-    } catch (IOException e) {
-      throw new IllegalStateException("Error formatting JSON message. Reason: " + e.getMessage(), e);
-    }
+    return formatAsJsonInternal(buffer);
   }
 
-  private String formatAsJsonInternal(List<StructuredRecord> buffer) throws IOException {
+  private String formatAsJsonInternal(List<StructuredRecord> buffer) {
     boolean useJsonBatchKey = !Strings.isNullOrEmpty(jsonBatchKey);
-    if (!shouldWriteJsonAsArray || !useJsonBatchKey) {
+    if (Boolean.TRUE.equals(!shouldWriteJsonAsArray) || !useJsonBatchKey) {
       return getBufferAsJsonList();
     }
     StructuredRecord wrappedMessageRecord = StructuredRecord.builder(wrappedMessageSchema)
             .set(jsonBatchKey, buffer).build();
-    return StructuredRecordStringConverter.toJsonString(wrappedMessageRecord);
+    try {
+      return StructuredRecordStringConverter.toJsonString(wrappedMessageRecord);
+    } catch (IOException e) {
+      throw getProgramFailureExceptionDue(e);
+    }
   }
 
   private String formatAsForm(List<StructuredRecord> buffer) {
@@ -168,38 +172,50 @@ public class MessageBuffer {
             .collect(Collectors.joining(delimiterForMessages));
   }
 
-  private String getBufferAsJsonList() throws IOException {
+  private String getBufferAsJsonList() {
     StringBuilder sb = new StringBuilder();
-    String delimiter = shouldWriteJsonAsArray ? "," : delimiterForMessages;
-    if (shouldWriteJsonAsArray) {
+    String delimiter = Boolean.TRUE.equals(shouldWriteJsonAsArray) ? "," : delimiterForMessages;
+    if (Boolean.TRUE.equals(shouldWriteJsonAsArray)) {
       sb.append("[");
     }
     for (StructuredRecord record : buffer) {
-      sb.append(StructuredRecordStringConverter.toJsonString(record));
+      try {
+        sb.append(StructuredRecordStringConverter.toJsonString(record));
+      } catch (IOException e) {
+        throw getProgramFailureExceptionDue(e);
+      }
       sb.append(delimiter);
     }
     if (!buffer.isEmpty()) {
       sb.setLength(sb.length() - delimiter.length());
     }
-    if (shouldWriteJsonAsArray) {
+    if (Boolean.TRUE.equals(shouldWriteJsonAsArray)) {
       sb.append("]");
     }
     return sb.toString();
   }
 
+  private static ProgramFailureException getProgramFailureExceptionDue(IOException exception) {
+    String errorMessage = "Error formatting JSON message. Reason: " + exception.getMessage();
+    return ErrorUtils.getProgramFailureException(new ErrorCategory(ErrorCategory.ErrorCategoryEnum.PLUGIN),
+      errorMessage, errorMessage, ErrorType.SYSTEM, false, exception);
+  }
+
   private String createFormMessage(StructuredRecord input) {
     boolean first = true;
     String formMessage = null;
-    StringBuilder sb = new StringBuilder("");
-    for (Schema.Field field : input.getSchema().getFields()) {
-      if (first) {
-        first = false;
-      } else {
-        sb.append("&");
+    StringBuilder sb = new StringBuilder();
+    if (input != null && input.getSchema() != null) {
+      for (Schema.Field field : input.getSchema().getFields()) {
+        if (first) {
+          first = false;
+        } else {
+          sb.append("&");
+        }
+        sb.append(field.getName());
+        sb.append("=");
+        sb.append((String) input.get(field.getName()));
       }
-      sb.append(field.getName());
-      sb.append("=");
-      sb.append((String) input.get(field.getName()));
     }
     try {
       formMessage = URLEncoder.encode(sb.toString(), charset);
@@ -212,13 +228,13 @@ public class MessageBuffer {
   private String createCustomMessage(StructuredRecord input) {
     String customMessage = customMessageBody;
     Matcher matcher = Pattern.compile(REGEX_HASHED_VAR).matcher(customMessage);
-    HashMap<String, String> findReplaceMap = new HashMap();
+    HashMap<String, String> findReplaceMap = new HashMap<>();
     while (matcher.find()) {
       if (input.get(matcher.group(1)) != null) {
         findReplaceMap.put(matcher.group(1), (String) input.get(matcher.group(1)));
       } else {
         throw new IllegalArgumentException(String.format(
-                "Field %s doesnt exist in the input schema.", matcher.group(1)));
+                "Field %s doesn't exist in the input schema.", matcher.group(1)));
       }
     }
     Matcher replaceMatcher = Pattern.compile(REGEX_HASHED_VAR).matcher(customMessage);
@@ -228,5 +244,4 @@ public class MessageBuffer {
     }
     return customMessage;
   }
-
 }

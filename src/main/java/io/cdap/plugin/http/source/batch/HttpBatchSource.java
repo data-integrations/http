@@ -24,6 +24,9 @@ import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.format.UnexpectedFormatException;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.api.dataset.lib.KeyValue;
+import io.cdap.cdap.api.exception.ErrorCategory;
+import io.cdap.cdap.api.exception.ErrorType;
+import io.cdap.cdap.api.exception.ErrorUtils;
 import io.cdap.cdap.etl.api.Emitter;
 import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.InvalidEntry;
@@ -31,9 +34,10 @@ import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSource;
 import io.cdap.cdap.etl.api.batch.BatchSourceContext;
+import io.cdap.cdap.etl.api.exception.ErrorDetailsProviderSpec;
 import io.cdap.plugin.common.Asset;
 import io.cdap.plugin.common.LineageRecorder;
-import io.cdap.plugin.http.common.pagination.page.BasePage;
+import io.cdap.plugin.http.common.HttpErrorDetailsProvider;
 import io.cdap.plugin.http.common.pagination.page.PageEntry;
 import org.apache.hadoop.io.NullWritable;
 import org.slf4j.Logger;
@@ -88,11 +92,18 @@ public class HttpBatchSource extends BatchSource<NullWritable, PageEntry, Struct
       .setFqn(config.getUrl()).build();
     LineageRecorder lineageRecorder = new LineageRecorder(context, asset);
     lineageRecorder.createExternalDataset(schema);
-    lineageRecorder.recordRead("Read", String.format("Read from HTTP '%s'", config.getUrl()),
-      Preconditions.checkNotNull(schema.getFields()).stream()
-        .map(Schema.Field::getName)
-        .collect(Collectors.toList()));
+    try {
+      lineageRecorder.recordRead("Read", String.format("Read from HTTP '%s'", config.getUrl()),
+        Preconditions.checkNotNull(schema.getFields()).stream().map(Schema.Field::getName)
+          .collect(Collectors.toList()));
+    } catch (NullPointerException e) {
+      String errorReason = "Schema is not set";
+      throw ErrorUtils.getProgramFailureException(new ErrorCategory(ErrorCategory.ErrorCategoryEnum.PLUGIN),
+        errorReason, errorReason, ErrorType.USER, false, e);
+    }
 
+    // set error details provider
+    context.setErrorDetailsProvider(new ErrorDetailsProviderSpec(HttpErrorDetailsProvider.class.getName()));
     context.setInput(Input.of(config.getReferenceNameOrNormalizedFQN(), new HttpInputFormatProvider(config)));
   }
 

@@ -200,13 +200,12 @@ public class HTTPSinkConfig extends BaseHttpConfig {
   private final Integer readTimeout;
 
   public HTTPSinkConfig(String referenceName, String url, String method, Integer batchSize,
-                        @Nullable String delimiterForMessages, String messageFormat, @Nullable String body,
-                        @Nullable String requestHeaders, String charset,
-                        boolean followRedirects, boolean disableSSLValidation, @Nullable String httpErrorsHandling,
-                        String errorHandling, String retryPolicy, @Nullable Long linearRetryInterval,
-                        Long maxRetryDuration, @Nullable int readTimeout, @Nullable int connectTimeout,
-                        String oauth2Enabled, String authType, @Nullable String jsonBatchKey,
-                        Boolean writeJsonAsArray) {
+      @Nullable String delimiterForMessages, String messageFormat, @Nullable String body,
+      @Nullable String requestHeaders, String charset, boolean followRedirects,
+      boolean disableSSLValidation, @Nullable String httpErrorsHandling, String errorHandling,
+      String retryPolicy, @Nullable Long linearRetryInterval, Long maxRetryDuration,
+      int readTimeout, int connectTimeout, String oauth2Enabled, String authType,
+      @Nullable String jsonBatchKey, Boolean writeJsonAsArray) {
     super(referenceName);
     this.url = url;
     this.method = method;
@@ -471,6 +470,12 @@ public class HTTPSinkConfig extends BaseHttpConfig {
       && body == null) {
       collector.addFailure("For Custom message format, message cannot be null.", null)
         .withConfigProperty(MESSAGE_FORMAT);
+    }
+
+    if (!containsMacro(PROPERTY_LINEAR_RETRY_INTERVAL) && Objects.nonNull(linearRetryInterval) &&
+      linearRetryInterval < 0) {
+      collector.addFailure("Linear Retry Interval cannot be a negative number.", null)
+        .withConfigProperty(PROPERTY_LINEAR_RETRY_INTERVAL);
     }
 
     if (!containsMacro(PROPERTY_MAX_RETRY_DURATION) && Objects.nonNull(maxRetryDuration) && maxRetryDuration < 0) {

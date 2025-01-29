@@ -22,13 +22,12 @@ package io.cdap.plugin.http.sink.batch;
 public class PlaceholderBean {
   private static final String PLACEHOLDER_FORMAT = "#%s";
   private final String placeHolderKey;
-  private final String placeHolderKeyWithPrefix;
   private final int startIndex;
   private final int endIndex;
 
   public PlaceholderBean(String url, String placeHolderKey) {
+    String placeHolderKeyWithPrefix = String.format(PLACEHOLDER_FORMAT, placeHolderKey);
     this.placeHolderKey = placeHolderKey;
-    this.placeHolderKeyWithPrefix = String.format(PLACEHOLDER_FORMAT, placeHolderKey);
     this.startIndex = url.indexOf(placeHolderKeyWithPrefix);
     this.endIndex = startIndex + placeHolderKeyWithPrefix.length();
   }

@@ -59,16 +59,15 @@ class JsonPage extends BasePage {
     } else {
       this.insideElementJsonPathPart = config.getResultPath() == null ? "" : config.getResultPath();
     }
-
-    if (jsonElement.isJsonArray()) {
+    if (jsonElement != null && jsonElement.isJsonArray()) {
       this.iterator = jsonElement.getAsJsonArray().iterator();
-    } else if (jsonElement.isJsonObject()) {
+    } else if (jsonElement != null && jsonElement.isJsonObject()) {
       this.iterator = Collections.singleton(jsonElement).iterator();
     } else {
-      throw new IllegalArgumentException(String.format("Element found by '%s' json path is expected to be an object " +
-                                                         "or an array. Primitive found", config.getResultPath()));
+      throw new IllegalArgumentException(
+        String.format("Element found by '%s' json path is expected to be an object or an array. Primitive found",
+          config.getResultPath()));
     }
-
     this.fieldsMapping = config.getFullFieldsMapping();
   }
 

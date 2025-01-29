@@ -349,10 +349,16 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
         // Validate OAuth2 properties
         if (!containsMacro(PROPERTY_OAUTH2_ENABLED) && this.getOauth2Enabled()) {
             String reasonOauth2 = "OAuth2 is enabled";
-            assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
-            assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
-            assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
-            assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
+            assertIsSetWithFailureCollector(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2, failureCollector);
+            assertIsSetWithFailureCollector(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2, failureCollector);
+            assertIsSetWithFailureCollector(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2, failureCollector);
+            assertIsSetWithFailureCollector(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2, failureCollector);
+        }
+
+        if (!containsMacro(PROPERTY_WAIT_TIME_BETWEEN_PAGES) && waitTimeBetweenPages != null
+          && waitTimeBetweenPages < 0) {
+            failureCollector.addFailure("Wait Time Between Pages cannot be a negative number.",
+              null).withConfigProperty(PROPERTY_WAIT_TIME_BETWEEN_PAGES);
         }
 
         // Validate Authentication properties
@@ -361,16 +367,18 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
             case OAUTH2:
                 String reasonOauth2 = "OAuth2 is enabled";
                 if (!containsMacro(PROPERTY_TOKEN_URL)) {
-                    assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
+                    assertIsSetWithFailureCollector(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2, failureCollector);
                 }
                 if (!containsMacro(PROPERTY_CLIENT_ID)) {
-                    assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
+                    assertIsSetWithFailureCollector(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2, failureCollector);
                 }
                 if (!containsMacro((PROPERTY_CLIENT_SECRET))) {
-                    assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
+                    assertIsSetWithFailureCollector(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2,
+                      failureCollector);
                 }
                 if (!containsMacro(PROPERTY_REFRESH_TOKEN)) {
-                    assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
+                    assertIsSetWithFailureCollector(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2,
+                      failureCollector);
                 }
                 break;
             case SERVICE_ACCOUNT:
@@ -390,10 +398,12 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
             case BASIC_AUTH:
                 String reasonBasicAuth = "Basic Authentication is enabled";
                 if (!containsMacro(PROPERTY_USERNAME)) {
-                    assertIsSet(getUsername(), PROPERTY_USERNAME, reasonBasicAuth);
+                    assertIsSetWithFailureCollector(getUsername(), PROPERTY_USERNAME, reasonBasicAuth,
+                            failureCollector);
                 }
                 if (!containsMacro(PROPERTY_PASSWORD)) {
-                    assertIsSet(getPassword(), PROPERTY_PASSWORD, reasonBasicAuth);
+                    assertIsSetWithFailureCollector(getPassword(), PROPERTY_PASSWORD, reasonBasicAuth,
+                            failureCollector);
                 }
                 break;
         }
@@ -403,6 +413,14 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
         if (propertyValue == null) {
             throw new InvalidConfigPropertyException(
                     String.format("Property '%s' must be set, since %s", propertyName, reason), propertyName);
+        }
+    }
+
+    public static void assertIsSetWithFailureCollector(Object propertyValue, String propertyName, String reason,
+                                                       FailureCollector failureCollector) {
+        if (propertyValue == null) {
+            failureCollector.addFailure(String.format("Property '%s' must be set, since %s", propertyName, reason),
+              null).withConfigProperty(propertyName);
         }
     }
 }

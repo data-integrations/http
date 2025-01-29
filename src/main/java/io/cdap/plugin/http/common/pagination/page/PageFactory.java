@@ -15,11 +15,18 @@
  */
 package io.cdap.plugin.http.common.pagination.page;
 
+import io.cdap.cdap.api.exception.ErrorCategory;
+import io.cdap.cdap.api.exception.ErrorCodeType;
+import io.cdap.cdap.api.exception.ErrorType;
+import io.cdap.cdap.api.exception.ErrorUtils;
+import io.cdap.cdap.api.exception.ProgramFailureException;
+import io.cdap.plugin.http.common.HttpErrorDetailsProvider;
 import io.cdap.plugin.http.common.error.HttpErrorHandler;
 import io.cdap.plugin.http.common.http.HttpResponse;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 
 /**
  * A factory which creates instance of {@BasePage} in accordance to format configured in input config.
@@ -27,26 +34,72 @@ import java.io.IOException;
  */
 public class PageFactory {
   public static BasePage createInstance(BaseHttpSourceConfig config, HttpResponse httpResponse,
-                                        HttpErrorHandler httpErrorHandler, boolean isError) throws IOException {
+                                        HttpErrorHandler httpErrorHandler, boolean isError) {
     if (isError) {
       return new HttpErrorPage(config, httpResponse, httpErrorHandler);
     }
 
     switch(config.getFormat()) {
       case JSON:
-        return new JsonPage(config, httpResponse);
+        try {
+          return new JsonPage(config, httpResponse);
+        } catch (Exception e) {
+          throw getProgramFailureExceptionBasedOnStatusCode(httpResponse, "JSON", e);
+        }
       case XML:
-        return new XmlPage(config, httpResponse);
+        try {
+          return new XmlPage(config, httpResponse);
+        } catch (Exception e) {
+          throw getProgramFailureExceptionBasedOnStatusCode(httpResponse, "XML", e);
+        }
       case TSV:
-        return new DelimitedPage(config, httpResponse, "\t");
+        try {
+          return new DelimitedPage(config, httpResponse, "\t");
+        } catch (IOException e) {
+          throw getProgramFailureExceptionBasedOnStatusCode(httpResponse, "TSV", e);
+        }
       case CSV:
-        return new DelimitedPage(config, httpResponse, ",");
+        try {
+          return new DelimitedPage(config, httpResponse, ",");
+        } catch (IOException e) {
+          throw getProgramFailureExceptionBasedOnStatusCode(httpResponse, "CSV", e);
+        }
       case TEXT:
-        return new TextPage(config, httpResponse);
+        try {
+          return new TextPage(config, httpResponse);
+        } catch (IOException e) {
+          throw getProgramFailureExceptionBasedOnStatusCode(httpResponse, "TEXT", e);
+        }
       case BLOB:
         return new BlobPage(config, httpResponse);
       default:
         throw new IllegalArgumentException(String.format("Unsupported page format: '%s'", config.getFormat()));
+    }
+  }
+
+  private static ProgramFailureException getProgramFailureExceptionBasedOnStatusCode(
+      HttpResponse httpResponse, String fileFormat, Exception e) {
+    if (httpResponse.getStatusCode() != HttpURLConnection.HTTP_OK) {
+      ErrorUtils.ActionErrorPair pair = ErrorUtils.getActionErrorByStatusCode(
+          httpResponse.getStatusCode());
+      String errorReason = String.format(
+          "Failed to read %s page with status code: %s. %s. For more details, see %s", fileFormat,
+          httpResponse.getStatusCode(), pair.getCorrectiveAction(),
+          HttpErrorDetailsProvider.getSupportedDocumentUrl());
+      String errorMessage = String.format(
+          "Failed to read %s page with status code: %s, message: %s", fileFormat,
+          httpResponse.getStatusCode(), e.getMessage());
+      return ErrorUtils.getProgramFailureException(
+          new ErrorCategory(ErrorCategory.ErrorCategoryEnum.PLUGIN), errorReason, errorMessage,
+          pair.getErrorType(), true, ErrorCodeType.HTTP,
+          String.valueOf(httpResponse.getStatusCode()),
+          HttpErrorDetailsProvider.getSupportedDocumentUrl(), e);
+    } else {
+      String errorReason = String.format("Failed to read %s page, %s: %s", fileFormat,
+          e.getClass().getName(), e.getMessage());
+      return ErrorUtils.getProgramFailureException(
+          new ErrorCategory(ErrorCategory.ErrorCategoryEnum.PLUGIN), errorReason, errorReason,
+          ErrorType.SYSTEM, true, e);
     }
   }
 }

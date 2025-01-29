@@ -19,6 +19,9 @@ package io.cdap.plugin.http.sink.batch;
 import com.google.gson.Gson;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.api.exception.ErrorCategory;
+import io.cdap.cdap.api.exception.ErrorType;
+import io.cdap.cdap.api.exception.ErrorUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.OutputCommitter;
@@ -37,12 +40,18 @@ public class HTTPOutputFormat extends OutputFormat<StructuredRecord, StructuredR
   static final String INPUT_SCHEMA_KEY = "http.sink.input.schema";
 
   @Override
-  public RecordWriter<StructuredRecord, StructuredRecord> getRecordWriter(TaskAttemptContext context)
-          throws IOException {
+  public RecordWriter<StructuredRecord, StructuredRecord> getRecordWriter(TaskAttemptContext context) {
     Configuration hConf = context.getConfiguration();
     HTTPSinkConfig config = GSON.fromJson(hConf.get(CONFIG_KEY), HTTPSinkConfig.class);
-    Schema inputSchema = Schema.parseJson(hConf.get(INPUT_SCHEMA_KEY));
-    return new HTTPRecordWriter(config, inputSchema);
+    Schema inputSchema;
+    try {
+      inputSchema = Schema.parseJson(hConf.get(INPUT_SCHEMA_KEY));
+      return new HTTPRecordWriter(config, inputSchema);
+    } catch (IOException e) {
+      String errorReason = String.format("Failed to parse the input schema with message: %s", e.getMessage());
+      throw ErrorUtils.getProgramFailureException(new ErrorCategory(ErrorCategory.ErrorCategoryEnum.PLUGIN),
+        errorReason, errorReason, ErrorType.USER, false, e);
+    }
   }
 
   @Override
