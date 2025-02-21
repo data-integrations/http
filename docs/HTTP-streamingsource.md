@@ -209,6 +209,9 @@ can be omitted as long as the field is present in schema.
 
 ### Authentication
 * **OAuth2**
+    * **Grant Type:** Which OAuth2 grant type flow is used. It can be Refresh Token or Client Credentials Flow.
+    * **Client Authentication:** Send OAuth2 Credentials in the Request Body or as Query Parameter or as Basic Auth
+      Header.
     * **Auth URL:** Endpoint for the authorization server used to retrieve the authorization code.
     * **Token URL:** Endpoint for the resource server, which exchanges the authorization code for an access token.
     * **Client ID:** Client identifier obtained during the Application registration process.

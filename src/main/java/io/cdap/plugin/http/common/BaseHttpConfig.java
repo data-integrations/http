@@ -29,8 +29,8 @@ import io.cdap.plugin.http.common.http.OAuthUtil;
 
 import java.io.File;
 import java.util.Optional;
+import java.util.stream.Stream;
 import javax.annotation.Nullable;
-
 
 /**
  *  Base configuration for HTTP Source and HTTP Sink
@@ -48,6 +48,8 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
     public static final String PROPERTY_PROXY_URL = "proxyUrl";
     public static final String PROPERTY_PROXY_USERNAME = "proxyUsername";
     public static final String PROPERTY_PROXY_PASSWORD = "proxyPassword";
+    public static final String PROPERTY_OAUTH2_GRANT_TYPE = "oauth2GrantType";
+    public static final String PROPERTY_OAUTH2_CLIENT_AUTHENTICATION = "oauth2ClientAuthentication";
 
     public static final String PROPERTY_AUTH_TYPE_LABEL = "Auth type";
 
@@ -92,6 +94,18 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
     @Description("Endpoint for the authorization server used to retrieve the authorization code.")
     @Macro
     protected String authUrl;
+
+    @Nullable
+    @Name(PROPERTY_OAUTH2_GRANT_TYPE)
+    @Description("Which Oauth2 grant type flow is used.")
+    @Macro
+    protected String oauth2GrantType;
+
+    @Nullable
+    @Name(PROPERTY_OAUTH2_CLIENT_AUTHENTICATION)
+    @Description("Send auth credentials in the request body or as query param.")
+    @Macro
+    protected String oauth2ClientAuthentication;
 
     @Nullable
     @Name(PROPERTY_TOKEN_URL)
@@ -206,6 +220,19 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
 
     public String getOAuth2Enabled() {
         return oauth2Enabled;
+    }
+
+    public OAuth2GrantType getOauth2GrantType() {
+        OAuth2GrantType grantType = OAuth2GrantType.getGrantType(oauth2GrantType);
+        return getEnumValueByString(OAuth2GrantType.class, grantType.getValue(),
+            PROPERTY_OAUTH2_GRANT_TYPE);
+    }
+
+    public OAuth2ClientAuthentication getOauth2ClientAuthentication() {
+        OAuth2ClientAuthentication clientAuthentication = OAuth2ClientAuthentication.getClientAuthentication(
+            oauth2ClientAuthentication);
+        return getEnumValueByString(OAuth2ClientAuthentication.class,
+            clientAuthentication.getValue(), PROPERTY_OAUTH2_CLIENT_AUTHENTICATION);
     }
 
     @Nullable
@@ -359,19 +386,7 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
         AuthType authType = getAuthType();
         switch (authType) {
             case OAUTH2:
-                String reasonOauth2 = "OAuth2 is enabled";
-                if (!containsMacro(PROPERTY_TOKEN_URL)) {
-                    assertIsSet(getTokenUrl(), PROPERTY_TOKEN_URL, reasonOauth2);
-                }
-                if (!containsMacro(PROPERTY_CLIENT_ID)) {
-                    assertIsSet(getClientId(), PROPERTY_CLIENT_ID, reasonOauth2);
-                }
-                if (!containsMacro((PROPERTY_CLIENT_SECRET))) {
-                    assertIsSet(getClientSecret(), PROPERTY_CLIENT_SECRET, reasonOauth2);
-                }
-                if (!containsMacro(PROPERTY_REFRESH_TOKEN)) {
-                    assertIsSet(getRefreshToken(), PROPERTY_REFRESH_TOKEN, reasonOauth2);
-                }
+                validateOAuth2Fields(failureCollector);
                 break;
             case SERVICE_ACCOUNT:
                 String reasonSA = "Service Account is enabled";
@@ -404,5 +419,66 @@ public abstract class BaseHttpConfig extends ReferencePluginConfig {
             throw new InvalidConfigPropertyException(
                     String.format("Property '%s' must be set, since %s", propertyName, reason), propertyName);
         }
+    }
+
+    public static void assertIsSetWithFailureCollector(Object propertyValue, String propertyName, String reason,
+                                                       FailureCollector failureCollector) {
+        if (propertyValue == null) {
+            failureCollector.addFailure(String.format("Property '%s' must be set, since %s", propertyName, reason),
+              null).withConfigProperty(propertyName);
+        }
+    }
+
+    private void validateOAuth2Fields(FailureCollector failureCollector) {
+        String reasonOauth2GrantType = String.format("OAuth2 is enabled and grant type is %s.",
+            getOauth2GrantType().getValue());
+        if (!containsMacro(PROPERTY_TOKEN_URL)) {
+            assertIsSetWithFailureCollector(getTokenUrl(), PROPERTY_TOKEN_URL,
+                reasonOauth2GrantType, failureCollector);
+        }
+        if (!containsMacro(PROPERTY_CLIENT_ID)) {
+            assertIsSetWithFailureCollector(getClientId(), PROPERTY_CLIENT_ID,
+                reasonOauth2GrantType, failureCollector);
+        }
+        if (!containsMacro(PROPERTY_CLIENT_SECRET)) {
+            assertIsSetWithFailureCollector(getClientSecret(), PROPERTY_CLIENT_SECRET,
+                reasonOauth2GrantType, failureCollector);
+        }
+        if (!containsMacro(PROPERTY_OAUTH2_CLIENT_AUTHENTICATION)) {
+            assertIsSetWithFailureCollector(getOauth2ClientAuthentication(),
+                PROPERTY_OAUTH2_CLIENT_AUTHENTICATION, reasonOauth2GrantType, failureCollector);
+        }
+        // in case of refresh token grant type, also check additional fields
+        if (OAuth2GrantType.REFRESH_TOKEN.equals(getOauth2GrantType())) {
+            if (!containsMacro(PROPERTY_REFRESH_TOKEN)) {
+                assertIsSetWithFailureCollector(getRefreshToken(), PROPERTY_REFRESH_TOKEN,
+                    reasonOauth2GrantType, failureCollector);
+            }
+        }
+        failureCollector.getOrThrowException();
+    }
+
+    /**
+     * Retrieves the corresponding enum constant of a given string value.
+     *
+     * <p>This method takes an enum class that implements {@code EnumWithValue} and searches for an
+     * enum constant that matches the provided string value. If no matching value is found, it throws
+     * an {@code InvalidConfigPropertyException}.</p>
+     *
+     * @param <T>          the type of enum that implements {@code EnumWithValue}
+     * @param enumClass    the class of the enum to search within
+     * @param stringValue  the string representation of the enum value
+     * @param propertyName the name of the property (used for error messages)
+     * @return the corresponding enum constant if a match is found
+     * @throws InvalidConfigPropertyException if the string value does not match any enum constant
+     */
+    public static <T extends EnumWithValue> T
+    getEnumValueByString(Class<T> enumClass, String stringValue, String propertyName) {
+        return Stream.of(enumClass.getEnumConstants())
+            .filter(keyType -> keyType.getValue().equalsIgnoreCase(stringValue))
+            .findAny()
+            .orElseThrow(() -> new InvalidConfigPropertyException(
+                String.format("Unsupported value for '%s': '%s'", propertyName, stringValue),
+                propertyName));
     }
 }
