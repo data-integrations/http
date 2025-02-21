@@ -83,7 +83,7 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
       }
 
       try (CloseableHttpClient closeableHttpClient = httpclientBuilder.build()) {
-        OAuthUtil.getAccessTokenByRefreshToken(closeableHttpClient, this);
+        OAuthUtil.getAccessToken(closeableHttpClient, this);
       } catch (JsonSyntaxException | HttpHostConnectException e) {
         String errorMessage = "Error occurred during credential validation : " + e.getMessage();
         collector.addFailure(errorMessage, null);
@@ -151,6 +151,8 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
     this.proxyUrl = builder.proxyUrl;
     this.proxyUsername = builder.proxyUsername;
     this.proxyPassword = builder.proxyPassword;
+    this.oauth2GrantType = builder.oauth2GrantType;
+    this.oauth2ClientAuthentication = builder.oauth2ClientAuthentication;
   }
 
   public static HttpBatchSourceConfigBuilder builder() {
@@ -190,7 +192,19 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
     private String proxyPassword;
     private String username;
     private String password;
+    private String oauth2GrantType;
+    private String oauth2ClientAuthentication;
 
+    public HttpBatchSourceConfigBuilder setOauth2GrantType(String oauth2GrantType) {
+      this.oauth2GrantType = oauth2GrantType;
+      return this;
+    }
+
+    public HttpBatchSourceConfigBuilder setOauth2ClientAuthentication(
+        String oauth2ClientAuthentication) {
+      this.oauth2ClientAuthentication = oauth2ClientAuthentication;
+      return this;
+    }
 
     public HttpBatchSourceConfigBuilder setReferenceName(String referenceName) {
       this.referenceName = referenceName;
