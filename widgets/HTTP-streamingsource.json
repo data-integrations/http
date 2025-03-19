@@ -134,6 +134,30 @@
           }
         },
         {
+          "widget-type": "select",
+          "label": "Grant Type",
+          "name": "oauth2GrantType",
+          "widget-attributes": {
+            "values": [
+              "Refresh Token",
+              "Client Credentials"
+            ],
+            "default": "Refresh Token"
+          }
+        },
+        {
+          "widget-type": "select",
+          "label": "Client Authentication",
+          "name": "oauth2ClientAuthentication",
+          "widget-attributes": {
+            "values": [
+              "Body",
+              "Request Parameter"
+            ],
+            "default": "Body"
+          }
+        },
+        {
           "widget-type": "textbox",
           "label": "Auth URL",
           "name": "authUrl"
@@ -677,6 +701,30 @@
       ]
     },
     {
+      "name": "Show Client Authentication when with Grant type is Client Credentials",
+      "condition": {
+        "expression": "authType == 'oAuth2' && oauth2GrantType == 'Client Credentials'"
+      },
+      "show": [
+        {
+          "name": "oauth2ClientAuthentication",
+          "type": "property"
+        }
+      ]
+    },
+    {
+      "name": "Show Refresh_Token when Grant type is 'Refresh Token' or NULL for older version pipeline",
+      "condition": {
+        "expression": "authType == 'oAuth2' && oauth2GrantType != 'Client Credentials'"
+      },
+      "show": [
+        {
+          "name": "refreshToken",
+          "type": "property"
+        }
+      ]
+    },
+    {
       "name": "Authenticate with OAuth2",
       "condition": {
         "property": "authType",
@@ -684,6 +732,10 @@
         "value": "oAuth2"
       },
       "show": [
+        {
+          "name": "oauth2GrantType",
+          "type": "property"
+        },
         {
           "name": "authUrl",
           "type": "property"
@@ -702,10 +754,6 @@
         },
         {
           "name": "scopes",
-          "type": "property"
-        },
-        {
-          "name": "refreshToken",
           "type": "property"
         }
       ]
