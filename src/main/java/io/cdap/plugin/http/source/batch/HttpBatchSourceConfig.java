@@ -22,7 +22,6 @@ import io.cdap.plugin.http.common.http.AuthType;
 import io.cdap.plugin.http.common.http.HttpClient;
 import io.cdap.plugin.http.common.http.OAuthUtil;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
@@ -69,7 +68,8 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
     if (!containsMacro(PROPERTY_CLIENT_ID) && !containsMacro(PROPERTY_CLIENT_SECRET) &&
       !containsMacro(PROPERTY_TOKEN_URL) && !containsMacro(PROPERTY_REFRESH_TOKEN) &&
       !containsMacro(PROPERTY_PROXY_PASSWORD) && !containsMacro(PROPERTY_PROXY_USERNAME) &&
-      !containsMacro(PROPERTY_PROXY_URL)) {
+      !containsMacro(PROPERTY_PROXY_URL) && !containsMacro(PROPERTY_OAUTH2_CLIENT_AUTHENTICATION) &&
+      !containsMacro(PROPERTY_OAUTH2_GRANT_TYPE)) {
       HttpClientBuilder httpclientBuilder = HttpClients.custom();
       if (!Strings.isNullOrEmpty(getProxyUrl())) {
         HttpHost proxyHost = HttpHost.create(getProxyUrl());

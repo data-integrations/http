@@ -21,7 +21,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonElement;
 import io.cdap.plugin.http.common.BaseHttpConfig;
-import io.cdap.plugin.http.common.OAuth2ClientAuthentication;
 import io.cdap.plugin.http.common.OAuth2GrantType;
 import io.cdap.plugin.http.common.pagination.page.JSONUtil;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
@@ -31,6 +30,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
@@ -44,15 +44,21 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import javax.annotation.Nullable;
 
 /**
  * A class which contains utilities to make OAuth2 specific calls.
  */
 public class OAuthUtil {
+
+  private static final String PARAM_GRANT_TYPE = "grant_type";
+  private static final String PARAM_CLIENT_ID = "client_id";
+  private static final String PARAM_CLIENT_SECRET = "client_secret";
+  private static final String PARAM_REFRESH_TOKEN = "refresh_token";
+  private static final String PARAM_SCOPE = "scope";
 
   /**
    * Get Authorization header based on the config parameters provided
@@ -116,8 +122,8 @@ public class OAuthUtil {
    * Retrieves an OAuth2 access token using the Client Credentials grant type.
    *
    * <p>This method constructs an HTTP POST request to fetch an access token from the authorization
-   * server. The client authentication method (either "BODY" or "REQUEST") determines whether client
-   * credentials are sent in the request body or as query parameters in the URL.</p>
+   * server. The client authentication method (either "BODY" or "REQUEST" or "BASIC_AUTH_HEADER") determines whether
+   * client credentials are sent in the request body or as query parameters or as basic auth header.</p>
    *
    * <p>Steps:
    * 1. If client authentication is set to "BODY": - Constructs a URI using the token URL. - Adds
@@ -127,7 +133,11 @@ public class OAuthUtil {
    * 2. If client authentication is set to "REQUEST": - Constructs a URI with client credentials as
    * query parameters. - Creates an HTTP POST request with the URI.
    * <br>
-   * 3. Calls `fetchAccessToken(httpclient,httppost)` to execute the request and retrieve the
+   * 3. If client authentication is set to "BASIC_AUTH_HEADER": - Constructs a URI with client credentials first
+   * concatenated and encoded to Base64 and passed a Basic Authorization Header and
+   * grant type and scope as part of body.
+   *  <br>
+   * 4. Calls `fetchAccessToken(httpclient,httppost)` to execute the request and retrieve the
    * token.
    *
    * @param httpclient           The HTTP client to execute the request.
@@ -139,29 +149,51 @@ public class OAuthUtil {
       BaseHttpConfig config) throws IOException {
     URI uri;
     HttpPost httppost;
+
     try {
-      if (Objects.equals(config.getOauth2ClientAuthentication().getValue(),
-          OAuth2ClientAuthentication.BODY.getValue())) {
-        uri = new URIBuilder(config.getTokenUrl()).build();
-        List<BasicNameValuePair> nameValuePairs = new ArrayList<>();
-        nameValuePairs.add(
-            new BasicNameValuePair("grant_type", OAuth2GrantType.CLIENT_CREDENTIALS.getValue()));
-        nameValuePairs.add(new BasicNameValuePair("client_id", config.getClientId()));
-        nameValuePairs.add(new BasicNameValuePair("client_secret", config.getClientSecret()));
-        if (!Strings.isNullOrEmpty(config.getScopes())) {
-          nameValuePairs.add(new BasicNameValuePair("scope", config.getScopes()));
-        }
-        httppost = new HttpPost(uri);
-        httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-      } else {
-        URIBuilder uriBuilder = new URIBuilder(config.getTokenUrl()).setParameter("client_id",
-                config.getClientId()).setParameter("client_secret", config.getClientSecret())
-            .setParameter("grant_type", OAuth2GrantType.CLIENT_CREDENTIALS.getValue());
-        if (!Strings.isNullOrEmpty(config.getScopes())) {
-          uriBuilder.setParameter("scope", config.getScopes());
-        }
-        uri = uriBuilder.build();
-        httppost = new HttpPost(uri);
+      List<BasicNameValuePair> nameValuePairs = new ArrayList<>();
+      switch (config.getOauth2ClientAuthentication()) {
+        case BODY:
+          uri = new URIBuilder(config.getTokenUrl()).build();
+          nameValuePairs.add(
+            new BasicNameValuePair(PARAM_GRANT_TYPE, OAuth2GrantType.CLIENT_CREDENTIALS.getValue()));
+          nameValuePairs.add(new BasicNameValuePair(PARAM_CLIENT_ID, config.getClientId()));
+          nameValuePairs.add(new BasicNameValuePair(PARAM_CLIENT_SECRET, config.getClientSecret()));
+          if (!Strings.isNullOrEmpty(config.getScopes())) {
+            nameValuePairs.add(new BasicNameValuePair(PARAM_SCOPE, config.getScopes()));
+          }
+          httppost = new HttpPost(uri);
+          httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+          break;
+
+        case REQUEST_PARAMETER:
+          URIBuilder uriBuilder = new URIBuilder(config.getTokenUrl()).setParameter(PARAM_CLIENT_ID,
+                                                                                    config.getClientId())
+            .setParameter(PARAM_CLIENT_SECRET, config.getClientSecret())
+            .setParameter(PARAM_GRANT_TYPE, OAuth2GrantType.CLIENT_CREDENTIALS.getValue());
+          if (!Strings.isNullOrEmpty(config.getScopes())) {
+            uriBuilder.setParameter(PARAM_SCOPE, config.getScopes());
+          }
+          uri = uriBuilder.build();
+          httppost = new HttpPost(uri);
+          break;
+          
+        case BASIC_AUTH_HEADER:
+          String credentials = config.getClientId() + ":" + config.getClientSecret();
+          String basicAuthHeader = String.format("Basic %s", Base64.getEncoder()
+            .encodeToString(credentials.getBytes(StandardCharsets.UTF_8)));
+          nameValuePairs.add(new BasicNameValuePair(PARAM_SCOPE, config.getScopes()));
+          nameValuePairs.add(new BasicNameValuePair(PARAM_GRANT_TYPE, OAuth2GrantType.CLIENT_CREDENTIALS.getValue()));
+          uri = new URIBuilder(config.getTokenUrl()).build();
+          httppost = new HttpPost(uri);
+          httppost.setHeader(new BasicHeader("Authorization", basicAuthHeader));
+          httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+          break;
+          
+        default:
+          throw new IllegalArgumentException(
+            String.format("Unknown OAuth client authentication '%s'",
+                          config.getOauth2ClientAuthentication().getValue()));
       }
       return fetchAccessToken(httpclient, httppost);
     } catch (URISyntaxException e) {
@@ -205,10 +237,10 @@ public class OAuthUtil {
     URI uri;
     try {
       uri = new URIBuilder(config.getTokenUrl())
-              .setParameter("client_id", config.getClientId())
-              .setParameter("client_secret", config.getClientSecret())
-              .setParameter("refresh_token", config.getRefreshToken())
-              .setParameter("grant_type", "refresh_token")
+        .setParameter(PARAM_CLIENT_ID, config.getClientId())
+        .setParameter(PARAM_CLIENT_SECRET, config.getClientSecret())
+        .setParameter(PARAM_REFRESH_TOKEN, config.getRefreshToken())
+        .setParameter(PARAM_GRANT_TYPE, OAuth2GrantType.REFRESH_TOKEN.getValue())
               .build();
       HttpPost httppost = new HttpPost(uri);
       return fetchAccessToken(httpclient, httppost);
@@ -232,7 +264,16 @@ public class OAuthUtil {
 
     JsonElement accessTokenElement = JSONUtil.toJsonObject(responseString).get("access_token");
     if (accessTokenElement == null) {
-      throw new IllegalArgumentException("Access token not found");
+      String errorResponse;
+      if (response.getStatusLine() != null) {
+        errorResponse = String.format("Response Code: '%s', Error Message:'%s'.",
+                                      response.getStatusLine().getStatusCode(),
+                                      response.getStatusLine().getReasonPhrase());
+      } else {
+        errorResponse = response.toString();
+      }
+      throw new IllegalArgumentException(
+        "Access token not found with Details: " + errorResponse);
     }
 
     JsonElement expiresInElement = JSONUtil.toJsonObject(responseString).get("expires_in");
