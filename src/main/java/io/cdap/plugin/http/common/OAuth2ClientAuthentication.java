@@ -23,7 +23,8 @@ import java.util.Objects;
  */
 public enum OAuth2ClientAuthentication implements EnumWithValue {
   BODY("body", "Body"),
-  REQUEST_PARAMETER("request_parameter", "Request Parameter");
+  REQUEST_PARAMETER("request_parameter", "Request Parameter"),
+  BASIC_AUTH_HEADER("basic_auth_header", "Basic Auth Header");
 
   private final String value;
   private final String label;
@@ -37,21 +38,22 @@ public enum OAuth2ClientAuthentication implements EnumWithValue {
    * Determines the OAuth2 client authentication method based on the provided input.
    *
    * <p>This method checks if the given client authentication type matches the predefined
-   * BODY authentication type. If it matches, the method returns the BODY authentication. Otherwise,
-   * it defaults to REQUEST_PARAMETER authentication.</p>
+   *  authentication type. If it matches, the method returns the same authentication. Otherwise,
+   * it defaults to BASIC_AUTH_HEADER authentication.</p>
    *
    * @param clientAuthentication The client authentication type as a {@link String}. It can be
-   *                             either the value or the label of the BODY authentication method.
-   * @return {@link OAuth2ClientAuthentication} The corresponding authentication type. Returns
-   * {@code BODY} if the input matches its value or label; otherwise, returns
-   * {@code REQUEST_PARAMETER}.
+   *                             either the value or the label of the authentication method.
+   * @return {@link OAuth2ClientAuthentication} The corresponding authentication type.
    */
   public static OAuth2ClientAuthentication getClientAuthentication(String clientAuthentication) {
     if (Objects.equals(clientAuthentication, BODY.getValue()) || Objects.equals(
         clientAuthentication, BODY.getLabel())) {
       return BODY;
-    } else {
+    } else if (Objects.equals(clientAuthentication, REQUEST_PARAMETER.getValue()) || Objects.equals(
+      clientAuthentication, REQUEST_PARAMETER.getLabel())) {
       return REQUEST_PARAMETER;
+    } else {
+      return BASIC_AUTH_HEADER;
     }
   }
 

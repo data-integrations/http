@@ -184,7 +184,8 @@
           "widget-attributes": {
             "values": [
               "Body",
-              "Request Parameter"
+              "Request Parameter",
+              "Basic Auth Header"
             ],
             "default": "Body"
           }
