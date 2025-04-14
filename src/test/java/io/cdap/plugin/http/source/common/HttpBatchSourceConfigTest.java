@@ -25,7 +25,6 @@ import io.cdap.plugin.http.common.http.OAuthUtil;
 import io.cdap.plugin.http.common.pagination.BaseHttpPaginationIterator;
 import io.cdap.plugin.http.common.pagination.PaginationIteratorFactory;
 import io.cdap.plugin.http.source.batch.HttpBatchSourceConfig;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -93,13 +92,14 @@ public class HttpBatchSourceConfigTest {
   @Test
   public void testValidateOAuth2() throws Exception {
     FailureCollector collector = new MockFailureCollector();
-    HttpBatchSourceConfig config = HttpBatchSourceConfig.builder()
-      .setReferenceName("test").setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth")
-      .setFormat("JSON").setAuthType("none").setErrorHandling(StringUtils.EMPTY)
-      .setRetryPolicy(StringUtils.EMPTY).setMaxRetryDuration(600L).setConnectTimeout(120)
-      .setReadTimeout(120).setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id").
-      setClientSecret("secret").setRefreshToken("token").setScopes("scope").setTokenUrl("https//:token").setRetryPolicy(
-        "exponential").build();
+    HttpBatchSourceConfig config = HttpBatchSourceConfig.builder().setReferenceName("test")
+        .setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth").setFormat("JSON")
+        .setErrorHandling(StringUtils.EMPTY).setRetryPolicy(StringUtils.EMPTY)
+        .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
+        .setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id")
+        .setClientSecret("secret").setRefreshToken("token").setScopes("scope")
+        .setTokenUrl("https//:token").setRetryPolicy("exponential")
+        .setOauth2GrantType("refresh_token").build();
     PowerMockito.mockStatic(PaginationIteratorFactory.class);
     BaseHttpPaginationIterator baseHttpPaginationIterator = Mockito.mock(BaseHttpPaginationIterator.class);
     PowerMockito.when(PaginationIteratorFactory.createInstance(Mockito.any(), Mockito.any()))
@@ -128,7 +128,7 @@ public class HttpBatchSourceConfigTest {
       .setReadTimeout(120).setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id").
       setClientSecret("secret").setRefreshToken("token").setScopes("scope").setTokenUrl("https//:token").setRetryPolicy(
         "exponential").setProxyUrl("https://proxy").setProxyUsername("proxyuser").setProxyPassword("proxypassword")
-      .build();
+        .setOauth2GrantType("refresh_token").build();
     HttpClientBuilder httpClientBuilder = Mockito.mock(HttpClientBuilder.class);
     CredentialsProvider credentialsProvider = Mockito.mock(CredentialsProvider.class);
     HttpHost proxy = PowerMockito.mock(HttpHost.class);
@@ -155,11 +155,11 @@ public class HttpBatchSourceConfigTest {
     FailureCollector collector = new MockFailureCollector();
     HttpBatchSourceConfig config = HttpBatchSourceConfig.builder()
       .setReferenceName("test").setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth")
-      .setFormat("JSON").setAuthType("none").setErrorHandling(StringUtils.EMPTY)
+        .setFormat("JSON").setErrorHandling(StringUtils.EMPTY)
       .setRetryPolicy(StringUtils.EMPTY).setMaxRetryDuration(600L).setConnectTimeout(120)
       .setReadTimeout(120).setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id").
       setClientSecret("secret").setRefreshToken("token").setScopes("scope").setTokenUrl("https//:token").setRetryPolicy(
-        "exponential").build();
+            "exponential").setOauth2GrantType("refresh_token").build();
     CloseableHttpClient httpClientMock = Mockito.mock(CloseableHttpClient.class);
     CloseableHttpResponse httpResponse = Mockito.mock(CloseableHttpResponse.class);
     Mockito.when(httpClientMock.execute(Mockito.any())).thenReturn(httpResponse);
@@ -225,4 +225,324 @@ public class HttpBatchSourceConfigTest {
       .getValidationFailures().get(0).getMessage());
   }
 
+  // Client credentials unit test cases for "Body" authentication
+  @Test
+  public void testValidateOAuth2WithClientCredentialsAndBodyAuthentication() throws Exception {
+    FailureCollector collector = new MockFailureCollector();
+    HttpBatchSourceConfig config = HttpBatchSourceConfig.builder().setReferenceName("test")
+        .setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth").setFormat("JSON")
+        .setErrorHandling(StringUtils.EMPTY).setRetryPolicy(StringUtils.EMPTY)
+        .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
+        .setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id")
+        .setClientSecret("secret").setScopes("scope").setTokenUrl("https//:token")
+        .setRetryPolicy("exponential").setOauth2GrantType("client_credentials")
+        .setOauth2ClientAuthentication("body").build();
+    PowerMockito.mockStatic(PaginationIteratorFactory.class);
+    BaseHttpPaginationIterator baseHttpPaginationIterator = Mockito.mock(
+        BaseHttpPaginationIterator.class);
+    PowerMockito.when(PaginationIteratorFactory.createInstance(Mockito.any(), Mockito.any()))
+        .thenReturn(baseHttpPaginationIterator);
+    PowerMockito.when(baseHttpPaginationIterator.supportsSkippingPages()).thenReturn(true);
+    PowerMockito.mockStatic(HttpClients.class);
+    HttpClientBuilder httpClientBuilder = Mockito.mock(HttpClientBuilder.class);
+    Mockito.when(HttpClients.custom()).thenReturn(httpClientBuilder);
+    AccessToken accessToken = Mockito.mock(AccessToken.class);
+    Mockito.when(accessToken.getTokenValue()).thenReturn("1234");
+    PowerMockito.mockStatic(OAuthUtil.class);
+    Mockito.when(OAuthUtil.getAccessTokenByClientCredentials(Mockito.any(), Mockito.any()))
+        .thenReturn(accessToken);
+    config.validate(collector);
+    Assert.assertEquals(0, collector.getValidationFailures().size());
+  }
+
+
+  @Test
+  public void testValidateOAuth2CredentialsWithProxyWithClientCredentialsAndBodyAuthentication()
+      throws IOException {
+    FailureCollector collector = new MockFailureCollector();
+    FailureCollector collectorMock = new MockFailureCollector();
+    HttpBatchSourceConfig config = HttpBatchSourceConfig.builder().setReferenceName("test")
+        .setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth").setFormat("JSON")
+        .setErrorHandling(StringUtils.EMPTY).setRetryPolicy(StringUtils.EMPTY)
+        .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
+        .setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id")
+        .setClientSecret("secret").setRefreshToken("token").setScopes("scope")
+        .setTokenUrl("https//:token").setRetryPolicy("exponential").setProxyUrl("https://proxy")
+        .setProxyUsername("proxyuser").setProxyPassword("proxypassword")
+        .setOauth2GrantType("client_credentials").setOauth2ClientAuthentication("body").build();
+    HttpClientBuilder httpClientBuilder = Mockito.mock(HttpClientBuilder.class);
+    CredentialsProvider credentialsProvider = Mockito.mock(CredentialsProvider.class);
+    HttpHost proxy = PowerMockito.mock(HttpHost.class);
+    httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+    httpClientBuilder.setProxy(proxy);
+    PowerMockito.mockStatic(HttpClients.class);
+    CloseableHttpClient closeableHttpClient = Mockito.mock(CloseableHttpClient.class);
+    Mockito.when(HttpClients.createDefault()).thenReturn(closeableHttpClient);
+    Mockito.when(HttpClients.custom()).thenReturn(httpClientBuilder);
+    Mockito.when(
+        HttpClients.custom().setDefaultCredentialsProvider(credentialsProvider).setProxy(proxy)
+            .build()).thenReturn(closeableHttpClient);
+    AccessToken accessToken = Mockito.mock(AccessToken.class);
+    Mockito.when(accessToken.getTokenValue()).thenReturn("1234");
+    PowerMockito.mockStatic(OAuthUtil.class);
+    Mockito.when(OAuthUtil.getAccessTokenByRefreshToken(Mockito.any(), Mockito.any()))
+        .thenReturn(accessToken);
+    config.validate(collectorMock);
+    Assert.assertEquals(0, collector.getValidationFailures().size());
+  }
+
+  @Test
+  public void testValidateCredentialsOAuth2WithInvalidAccessTokenRequestForClientCredentialsAndBodyAuthentication()
+      throws Exception {
+    FailureCollector collector = new MockFailureCollector();
+    HttpBatchSourceConfig config = HttpBatchSourceConfig.builder().setReferenceName("test")
+        .setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth").setFormat("JSON")
+        .setErrorHandling(StringUtils.EMPTY).setRetryPolicy(StringUtils.EMPTY)
+        .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
+        .setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id")
+        .setClientSecret("secret").setRefreshToken("token").setScopes("scope")
+        .setTokenUrl("https//:token").setRetryPolicy("exponential")
+        .setOauth2GrantType("client_credentials").setOauth2ClientAuthentication("body").build();
+    CloseableHttpClient httpClientMock = Mockito.mock(CloseableHttpClient.class);
+    CloseableHttpResponse httpResponse = Mockito.mock(CloseableHttpResponse.class);
+    Mockito.when(httpClientMock.execute(Mockito.any())).thenReturn(httpResponse);
+    HttpEntity entity = Mockito.mock(HttpEntity.class);
+    Mockito.when(httpResponse.getEntity()).thenReturn(entity);
+    PowerMockito.mockStatic(EntityUtils.class);
+    String response = "  <title>Error 404 (Not Found)!!1</title>\n"
+        + "  <a href=//www.google.com/><span id=logo aria-label=Google></span></a>\n"
+        + "  <p><b>404.</b> <ins>That’s an error.</ins>\n";
+
+    Mockito.when(EntityUtils.toString(entity, "UTF-8")).thenReturn(response);
+    PowerMockito.mockStatic(PaginationIteratorFactory.class);
+    BaseHttpPaginationIterator baseHttpPaginationIterator = Mockito.mock(
+        BaseHttpPaginationIterator.class);
+    PowerMockito.when(PaginationIteratorFactory.createInstance(Mockito.any(), Mockito.any()))
+        .thenReturn(baseHttpPaginationIterator);
+    PowerMockito.when(baseHttpPaginationIterator.supportsSkippingPages()).thenReturn(true);
+    PowerMockito.mockStatic(HttpClients.class);
+    HttpClientBuilder httpClientBuilder = Mockito.mock(HttpClientBuilder.class);
+    Mockito.when(HttpClients.custom()).thenReturn(httpClientBuilder);
+    Mockito.when(httpClientBuilder.build()).thenReturn(httpClientMock);
+    try {
+      config.validate(collector);
+    } catch (IllegalStateException e) {
+      Assert.assertEquals(1, collector.getValidationFailures().size());
+    }
+  }
+
+  // Client credentials unit test cases for "Request Parameter" authentication
+  @Test
+  public void testValidateOAuth2WithClientCredentialsAndRequestParamAuthentication()
+      throws Exception {
+    FailureCollector collector = new MockFailureCollector();
+    HttpBatchSourceConfig config = HttpBatchSourceConfig.builder().setReferenceName("test")
+        .setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth").setFormat("JSON")
+        .setErrorHandling(StringUtils.EMPTY).setRetryPolicy(StringUtils.EMPTY)
+        .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
+        .setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id")
+        .setClientSecret("secret").setScopes("scope").setTokenUrl("https//:token")
+        .setRetryPolicy("exponential").setOauth2GrantType("client_credentials")
+        .setOauth2ClientAuthentication("request_parameter").build();
+    PowerMockito.mockStatic(PaginationIteratorFactory.class);
+    BaseHttpPaginationIterator baseHttpPaginationIterator = Mockito.mock(
+        BaseHttpPaginationIterator.class);
+    PowerMockito.when(PaginationIteratorFactory.createInstance(Mockito.any(), Mockito.any()))
+        .thenReturn(baseHttpPaginationIterator);
+    PowerMockito.when(baseHttpPaginationIterator.supportsSkippingPages()).thenReturn(true);
+    PowerMockito.mockStatic(HttpClients.class);
+    HttpClientBuilder httpClientBuilder = Mockito.mock(HttpClientBuilder.class);
+    Mockito.when(HttpClients.custom()).thenReturn(httpClientBuilder);
+    AccessToken accessToken = Mockito.mock(AccessToken.class);
+    Mockito.when(accessToken.getTokenValue()).thenReturn("1234");
+    PowerMockito.mockStatic(OAuthUtil.class);
+    Mockito.when(OAuthUtil.getAccessTokenByClientCredentials(Mockito.any(), Mockito.any()))
+        .thenReturn(accessToken);
+    config.validate(collector);
+    Assert.assertEquals(0, collector.getValidationFailures().size());
+  }
+
+
+  @Test
+  public void testValidateOAuth2CredentialsWithProxyWithClientCredentialsAndRequestParamAuthentication()
+      throws IOException {
+    FailureCollector collector = new MockFailureCollector();
+    FailureCollector collectorMock = new MockFailureCollector();
+    HttpBatchSourceConfig config = HttpBatchSourceConfig.builder().setReferenceName("test")
+        .setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth").setFormat("JSON")
+        .setErrorHandling(StringUtils.EMPTY).setRetryPolicy(StringUtils.EMPTY)
+        .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
+        .setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id")
+        .setClientSecret("secret").setRefreshToken("token").setScopes("scope")
+        .setTokenUrl("https//:token").setRetryPolicy("exponential").setProxyUrl("https://proxy")
+        .setProxyUsername("proxyuser").setProxyPassword("proxypassword")
+        .setOauth2GrantType("client_credentials").setOauth2ClientAuthentication("request_parameter")
+        .build();
+    HttpClientBuilder httpClientBuilder = Mockito.mock(HttpClientBuilder.class);
+    CredentialsProvider credentialsProvider = Mockito.mock(CredentialsProvider.class);
+    HttpHost proxy = PowerMockito.mock(HttpHost.class);
+    httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+    httpClientBuilder.setProxy(proxy);
+    PowerMockito.mockStatic(HttpClients.class);
+    CloseableHttpClient closeableHttpClient = Mockito.mock(CloseableHttpClient.class);
+    Mockito.when(HttpClients.createDefault()).thenReturn(closeableHttpClient);
+    Mockito.when(HttpClients.custom()).thenReturn(httpClientBuilder);
+    Mockito.when(
+        HttpClients.custom().setDefaultCredentialsProvider(credentialsProvider).setProxy(proxy)
+            .build()).thenReturn(closeableHttpClient);
+    AccessToken accessToken = Mockito.mock(AccessToken.class);
+    Mockito.when(accessToken.getTokenValue()).thenReturn("1234");
+    PowerMockito.mockStatic(OAuthUtil.class);
+    Mockito.when(OAuthUtil.getAccessTokenByRefreshToken(Mockito.any(), Mockito.any()))
+        .thenReturn(accessToken);
+    config.validate(collectorMock);
+    Assert.assertEquals(0, collector.getValidationFailures().size());
+  }
+
+  @Test
+  public void testValidateCredentialsOAuth2WithInvalidAccessTokenRequestForClientCredAndRequestParamAuthentication()
+      throws Exception {
+    FailureCollector collector = new MockFailureCollector();
+    HttpBatchSourceConfig config = HttpBatchSourceConfig.builder().setReferenceName("test")
+        .setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth").setFormat("JSON")
+        .setErrorHandling(StringUtils.EMPTY).setRetryPolicy(StringUtils.EMPTY)
+        .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
+        .setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id")
+        .setClientSecret("secret").setRefreshToken("token").setScopes("scope")
+        .setTokenUrl("https//:token").setRetryPolicy("exponential")
+        .setOauth2GrantType("client_credentials").setOauth2ClientAuthentication("request_parameter")
+        .build();
+    CloseableHttpClient httpClientMock = Mockito.mock(CloseableHttpClient.class);
+    CloseableHttpResponse httpResponse = Mockito.mock(CloseableHttpResponse.class);
+    Mockito.when(httpClientMock.execute(Mockito.any())).thenReturn(httpResponse);
+    HttpEntity entity = Mockito.mock(HttpEntity.class);
+    Mockito.when(httpResponse.getEntity()).thenReturn(entity);
+    PowerMockito.mockStatic(EntityUtils.class);
+    String response = "  <title>Error 404 (Not Found)!!1</title>\n"
+        + "  <a href=//www.google.com/><span id=logo aria-label=Google></span></a>\n"
+        + "  <p><b>404.</b> <ins>That’s an error.</ins>\n";
+
+    Mockito.when(EntityUtils.toString(entity, "UTF-8")).thenReturn(response);
+    PowerMockito.mockStatic(PaginationIteratorFactory.class);
+    BaseHttpPaginationIterator baseHttpPaginationIterator = Mockito.mock(
+        BaseHttpPaginationIterator.class);
+    PowerMockito.when(PaginationIteratorFactory.createInstance(Mockito.any(), Mockito.any()))
+        .thenReturn(baseHttpPaginationIterator);
+    PowerMockito.when(baseHttpPaginationIterator.supportsSkippingPages()).thenReturn(true);
+    PowerMockito.mockStatic(HttpClients.class);
+    HttpClientBuilder httpClientBuilder = Mockito.mock(HttpClientBuilder.class);
+    Mockito.when(HttpClients.custom()).thenReturn(httpClientBuilder);
+    Mockito.when(httpClientBuilder.build()).thenReturn(httpClientMock);
+    try {
+      config.validate(collector);
+    } catch (IllegalStateException e) {
+      Assert.assertEquals(1, collector.getValidationFailures().size());
+    }
+  }
+
+  // Client credentials unit test cases for "Basic Auth Header" authentication
+  @Test
+  public void testValidateOAuth2WithClientCredentialsAndBasicAuthHeaderAuthentication()
+    throws Exception {
+    FailureCollector collector = new MockFailureCollector();
+    HttpBatchSourceConfig config = HttpBatchSourceConfig.builder().setReferenceName("test")
+      .setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth").setFormat("JSON")
+      .setErrorHandling(StringUtils.EMPTY).setRetryPolicy(StringUtils.EMPTY)
+      .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
+      .setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id")
+      .setClientSecret("secret").setScopes("scope").setTokenUrl("https//:token")
+      .setRetryPolicy("exponential").setOauth2GrantType("client_credentials")
+      .setOauth2ClientAuthentication("basic_auth_header").build();
+    PowerMockito.mockStatic(PaginationIteratorFactory.class);
+    BaseHttpPaginationIterator baseHttpPaginationIterator = Mockito.mock(
+      BaseHttpPaginationIterator.class);
+    PowerMockito.when(PaginationIteratorFactory.createInstance(Mockito.any(), Mockito.any()))
+      .thenReturn(baseHttpPaginationIterator);
+    PowerMockito.when(baseHttpPaginationIterator.supportsSkippingPages()).thenReturn(true);
+    PowerMockito.mockStatic(HttpClients.class);
+    HttpClientBuilder httpClientBuilder = Mockito.mock(HttpClientBuilder.class);
+    Mockito.when(HttpClients.custom()).thenReturn(httpClientBuilder);
+    AccessToken accessToken = Mockito.mock(AccessToken.class);
+    Mockito.when(accessToken.getTokenValue()).thenReturn("1234");
+    PowerMockito.mockStatic(OAuthUtil.class);
+    Mockito.when(OAuthUtil.getAccessTokenByClientCredentials(Mockito.any(), Mockito.any()))
+      .thenReturn(accessToken);
+    config.validate(collector);
+    Assert.assertEquals(0, collector.getValidationFailures().size());
+  }
+
+
+  @Test
+  public void testValidateOAuth2CredentialsWithProxyWithClientCredentialsAndBasicAuthHeaderAuthentication()
+    throws IOException {
+    FailureCollector collector = new MockFailureCollector();
+    FailureCollector collectorMock = new MockFailureCollector();
+    HttpBatchSourceConfig config = HttpBatchSourceConfig.builder().setReferenceName("test")
+      .setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth").setFormat("JSON")
+      .setErrorHandling(StringUtils.EMPTY).setRetryPolicy(StringUtils.EMPTY)
+      .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
+      .setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id")
+      .setClientSecret("secret").setRefreshToken("token").setScopes("scope")
+      .setTokenUrl("https//:token").setRetryPolicy("exponential").setProxyUrl("https://proxy")
+      .setProxyUsername("proxyuser").setProxyPassword("proxypassword")
+      .setOauth2GrantType("client_credentials").setOauth2ClientAuthentication("basic_auth_header")
+      .build();
+    HttpClientBuilder httpClientBuilder = Mockito.mock(HttpClientBuilder.class);
+    CredentialsProvider credentialsProvider = Mockito.mock(CredentialsProvider.class);
+    HttpHost proxy = PowerMockito.mock(HttpHost.class);
+    httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+    httpClientBuilder.setProxy(proxy);
+    PowerMockito.mockStatic(HttpClients.class);
+    CloseableHttpClient closeableHttpClient = Mockito.mock(CloseableHttpClient.class);
+    Mockito.when(HttpClients.createDefault()).thenReturn(closeableHttpClient);
+    Mockito.when(HttpClients.custom()).thenReturn(httpClientBuilder);
+    Mockito.when(
+      HttpClients.custom().setDefaultCredentialsProvider(credentialsProvider).setProxy(proxy)
+        .build()).thenReturn(closeableHttpClient);
+    AccessToken accessToken = Mockito.mock(AccessToken.class);
+    Mockito.when(accessToken.getTokenValue()).thenReturn("1234");
+    PowerMockito.mockStatic(OAuthUtil.class);
+    Mockito.when(OAuthUtil.getAccessTokenByRefreshToken(Mockito.any(), Mockito.any()))
+      .thenReturn(accessToken);
+    config.validate(collectorMock);
+    Assert.assertEquals(0, collector.getValidationFailures().size());
+  }
+
+  @Test
+  public void testValidateCredentialsOAuth2WithInvalidAccessTokenRequestForClientCredAndBasicAuthHeaderAuthentication()
+    throws Exception {
+    FailureCollector collector = new MockFailureCollector();
+    HttpBatchSourceConfig config = HttpBatchSourceConfig.builder().setReferenceName("test")
+      .setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth").setFormat("JSON")
+      .setErrorHandling(StringUtils.EMPTY).setRetryPolicy(StringUtils.EMPTY)
+      .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
+      .setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id")
+      .setClientSecret("secret").setRefreshToken("token").setScopes("scope")
+      .setTokenUrl("https//:token").setRetryPolicy("exponential")
+      .setOauth2GrantType("client_credentials").setOauth2ClientAuthentication("basic_auth_header")
+      .build();
+    CloseableHttpClient httpClientMock = Mockito.mock(CloseableHttpClient.class);
+    CloseableHttpResponse httpResponse = Mockito.mock(CloseableHttpResponse.class);
+    Mockito.when(httpClientMock.execute(Mockito.any())).thenReturn(httpResponse);
+    HttpEntity entity = Mockito.mock(HttpEntity.class);
+    Mockito.when(httpResponse.getEntity()).thenReturn(entity);
+    PowerMockito.mockStatic(EntityUtils.class);
+    String response = "  <title>Error 404 (Not Found)!!1</title>\n"
+      + "  <a href=//www.google.com/><span id=logo aria-label=Google></span></a>\n"
+      + "  <p><b>404.</b> <ins>That’s an error.</ins>\n";
+
+    Mockito.when(EntityUtils.toString(entity, "UTF-8")).thenReturn(response);
+    PowerMockito.mockStatic(PaginationIteratorFactory.class);
+    BaseHttpPaginationIterator baseHttpPaginationIterator = Mockito.mock(
+      BaseHttpPaginationIterator.class);
+    PowerMockito.when(PaginationIteratorFactory.createInstance(Mockito.any(), Mockito.any()))
+      .thenReturn(baseHttpPaginationIterator);
+    PowerMockito.when(baseHttpPaginationIterator.supportsSkippingPages()).thenReturn(true);
+    PowerMockito.mockStatic(HttpClients.class);
+    HttpClientBuilder httpClientBuilder = Mockito.mock(HttpClientBuilder.class);
+    Mockito.when(HttpClients.custom()).thenReturn(httpClientBuilder);
+    Mockito.when(httpClientBuilder.build()).thenReturn(httpClientMock);
+    config.validate(collector);
+    Assert.assertEquals(1, collector.getValidationFailures().size());
+  }
 }

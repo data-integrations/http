@@ -28,7 +28,6 @@ import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.plugin.common.ReferenceNames;
 
 import io.cdap.plugin.http.common.BaseHttpConfig;
-import io.cdap.plugin.http.common.EnumWithValue;
 import io.cdap.plugin.http.common.RetryPolicy;
 import io.cdap.plugin.http.common.error.ErrorHandling;
 import io.cdap.plugin.http.common.error.HttpErrorHandlerEntity;
@@ -48,7 +47,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.ws.rs.HttpMethod;
 
@@ -340,15 +338,6 @@ public class HTTPSinkConfig extends BaseHttpConfig {
       return RetryPolicy.EXPONENTIAL;
     }
     return getEnumValueByString(RetryPolicy.class, retryPolicy, PROPERTY_RETRY_POLICY);
-  }
-
-  private static <T extends EnumWithValue> T
-  getEnumValueByString(Class<T> enumClass, String stringValue, String propertyName) {
-    return Stream.of(enumClass.getEnumConstants())
-      .filter(keyType -> keyType.getValue().equalsIgnoreCase(stringValue))
-      .findAny()
-      .orElseThrow(() -> new InvalidConfigPropertyException(
-        String.format("Unsupported value for '%s': '%s'", propertyName, stringValue), propertyName));
   }
 
   @Nullable
