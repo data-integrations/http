@@ -749,16 +749,6 @@ public abstract class BaseHttpSourceConfig extends BaseHttpConfig {
     }
   }
 
-
-  public static <T extends EnumWithValue> T
-  getEnumValueByString(Class<T> enumClass, String stringValue, String propertyName) {
-    return Stream.of(enumClass.getEnumConstants())
-      .filter(keyType -> keyType.getValue().equalsIgnoreCase(stringValue))
-      .findAny()
-      .orElseThrow(() -> new InvalidConfigPropertyException(
-        String.format("Unsupported value for '%s': '%s'", propertyName, stringValue), propertyName));
-  }
-
   @Nullable
   public static Long toLong(String value, String propertyName) {
     if (Strings.isNullOrEmpty(value)) {

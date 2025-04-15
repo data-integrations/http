@@ -87,6 +87,36 @@ Skip on error - Ignores erroneous records.
 
 **Wait Time Between Request:** Time in milliseconds to wait between HTTP requests. Defaults to 0. (Macro enabled)
 
+### Authentication
+
+* **OAuth2**
+    * **Grant Type:** Which OAuth2 grant type flow is used. It can be Refresh Token or Client Credentials Flow.
+    * **Client Authentication:** Send OAuth2 Credentials in the Request Body or as Query Parameter or as Basic Auth
+      Header.
+    * **Auth URL:** Endpoint for the authorization server used to retrieve the authorization code.
+    * **Token URL:** Endpoint for the resource server, which exchanges the authorization code for an access token.
+    * **Client ID:** Client identifier obtained during the Application registration process.
+    * **Client Secret:** Client secret obtained during the Application registration process.
+    * **Scopes:** Scope of the access request, which might have multiple space-separated values.
+    * **Refresh Token:** Token used to receive accessToken, which is end product of OAuth2.
+* **Service Account** - service account key used for authorization
+    * **File Path**: Path on the local file system of the service account key used for
+      authorization. Can be set to 'auto-detect' when running on a Dataproc cluster.
+      When running on other clusters, the file must be present on every node in the cluster.
+    * **JSON**: Contents of the service account JSON file.
+    * **Scope**: The additional Google credential scopes required to access entered url, cloud-platform is included by
+      default, visit https://developers.google.com/identity/protocols/oauth2/scopes for more information.
+        * Scope example:
+
+```
+https://www.googleapis.com/auth/bigquery
+https://www.googleapis.com/auth/cloud-platform
+```
+
+* **Basic Authentication**
+    * **Username:** Username for basic authentication.
+    * **Password:** Password for basic authentication.
+
 ### HTTP Proxy
 
 **Proxy URL:** Proxy URL. Must contain a protocol, address and port.
