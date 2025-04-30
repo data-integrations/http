@@ -22,7 +22,6 @@ import io.cdap.plugin.http.common.http.AuthType;
 import io.cdap.plugin.http.common.http.HttpClient;
 import io.cdap.plugin.http.common.http.OAuthUtil;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
@@ -69,7 +68,8 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
     if (!containsMacro(PROPERTY_CLIENT_ID) && !containsMacro(PROPERTY_CLIENT_SECRET) &&
       !containsMacro(PROPERTY_TOKEN_URL) && !containsMacro(PROPERTY_REFRESH_TOKEN) &&
       !containsMacro(PROPERTY_PROXY_PASSWORD) && !containsMacro(PROPERTY_PROXY_USERNAME) &&
-      !containsMacro(PROPERTY_PROXY_URL)) {
+      !containsMacro(PROPERTY_PROXY_URL) && !containsMacro(PROPERTY_OAUTH2_CLIENT_AUTHENTICATION) &&
+      !containsMacro(PROPERTY_OAUTH2_GRANT_TYPE)) {
       HttpClientBuilder httpclientBuilder = HttpClients.custom();
       if (!Strings.isNullOrEmpty(getProxyUrl())) {
         HttpHost proxyHost = HttpHost.create(getProxyUrl());
@@ -83,7 +83,7 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
       }
 
       try (CloseableHttpClient closeableHttpClient = httpclientBuilder.build()) {
-        OAuthUtil.getAccessTokenByRefreshToken(closeableHttpClient, this);
+        OAuthUtil.getAccessToken(closeableHttpClient, this);
       } catch (JsonSyntaxException | HttpHostConnectException e) {
         String errorMessage = "Error occurred during credential validation : " + e.getMessage();
         collector.addFailure(errorMessage, null);
@@ -151,6 +151,8 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
     this.proxyUrl = builder.proxyUrl;
     this.proxyUsername = builder.proxyUsername;
     this.proxyPassword = builder.proxyPassword;
+    this.oauth2GrantType = builder.oauth2GrantType;
+    this.oauth2ClientAuthentication = builder.oauth2ClientAuthentication;
   }
 
   public static HttpBatchSourceConfigBuilder builder() {
@@ -190,7 +192,19 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
     private String proxyPassword;
     private String username;
     private String password;
+    private String oauth2GrantType;
+    private String oauth2ClientAuthentication;
 
+    public HttpBatchSourceConfigBuilder setOauth2GrantType(String oauth2GrantType) {
+      this.oauth2GrantType = oauth2GrantType;
+      return this;
+    }
+
+    public HttpBatchSourceConfigBuilder setOauth2ClientAuthentication(
+        String oauth2ClientAuthentication) {
+      this.oauth2ClientAuthentication = oauth2ClientAuthentication;
+      return this;
+    }
 
     public HttpBatchSourceConfigBuilder setReferenceName(String referenceName) {
       this.referenceName = referenceName;
