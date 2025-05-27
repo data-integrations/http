@@ -165,7 +165,7 @@ public abstract class BaseHttpPaginationIterator implements Iterator<BasePage>, 
             config.getPaginationType()));
         }
         LOG.warn(String.format("Fetching from url '%s' returned status code '%d' and body '%s'",
-                               nextPageUrl, httpStatusCode, response.getBody()));
+                               nextPageUrl, httpStatusCode, response == null ? null : response.getBody()));
         // this will be handled by PageFactory. Here no handling is needed.
         break;
       default:
