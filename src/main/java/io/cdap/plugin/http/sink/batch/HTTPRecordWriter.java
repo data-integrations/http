@@ -28,7 +28,6 @@ import io.cdap.plugin.http.common.error.RetryableErrorHandling;
 import io.cdap.plugin.http.common.http.HttpRequest;
 import io.cdap.plugin.http.common.http.HttpResponse;
 import io.cdap.plugin.http.common.http.OAuthUtil;
-
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.http.Header;
@@ -68,7 +67,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -178,7 +176,7 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
   }
 
   private boolean executeHTTPServiceAndCheckStatusCode() throws IOException {
-    LOG.debug("HTTP Request Attempt No. : {}", ++retryCount);
+    LOG.warn("HTTP Request Attempt No. : {}", ++retryCount);
     CloseableHttpClient httpClient = createHttpClient(configURL);
 
     CloseableHttpResponse response = null;
@@ -207,7 +205,7 @@ public class HTTPRecordWriter extends RecordWriter<StructuredRecord, StructuredR
 
       response = httpClient.execute(request);
       httpStatusCode = response.getStatusLine().getStatusCode();
-      LOG.debug("Response HTTP Status code: {}", httpStatusCode);
+      LOG.warn("Response HTTP Status code: {}", httpStatusCode);
       httpResponseBody = new HttpResponse(response).getBody();
 
     } catch (MalformedURLException | ProtocolException e) {
