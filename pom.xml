@@ -55,7 +55,7 @@
   <distributionManagement>
     <repository>
       <id>sonatype.release</id>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+      <url>https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2</url>
     </repository>
     <site>
       <id>cdap</id>
@@ -66,11 +66,11 @@
   <repositories>
     <repository>
       <id>sonatype</id>
-      <url>https://oss.sonatype.org/content/groups/public</url>
+      <url>https://ossrh-staging-api.central.sonatype.com/content/groups/public</url>
     </repository>
     <repository>
       <id>sonatype-snapshots</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+      <url>https://central.sonatype.com/repositories/snapshots</url>
     </repository>
   </repositories>
 
