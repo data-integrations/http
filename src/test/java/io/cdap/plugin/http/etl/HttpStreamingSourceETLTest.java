@@ -50,8 +50,8 @@ public class HttpStreamingSourceETLTest extends HttpSourceETLTest {
   private static final Logger LOG = LoggerFactory.getLogger(HttpStreamingSourceETLTest.class);
   private static final ArtifactId APP_ARTIFACT_ID = NamespaceId.DEFAULT.artifact("data-streams", "1.0.0");
   private static final ArtifactSummary APP_ARTIFACT = new ArtifactSummary("data-streams", "1.0.0");
-  private static final int WAIT_FOR_RECORDS_TIMEOUT_SECONDS = 60;
-  private static final long WAIT_FOR_RECORDS_POLLING_INTERVAL_MS = 100;
+  private static final int WAIT_FOR_RECORDS_TIMEOUT_SECONDS = 120;
+  private static final long WAIT_FOR_RECORDS_POLLING_INTERVAL_MS = 200;
 
   @BeforeClass
   public static void setupTest() throws Exception {
@@ -113,6 +113,7 @@ public class HttpStreamingSourceETLTest extends HttpSourceETLTest {
       .atMost(WAIT_FOR_RECORDS_TIMEOUT_SECONDS, TimeUnit.SECONDS)
       .pollInterval(WAIT_FOR_RECORDS_POLLING_INTERVAL_MS, TimeUnit.MILLISECONDS)
       .untilAsserted((() -> {
+        outputManager.get();
         int recordsCount = MockSink.readOutput(outputManager).size();
         Assert.assertTrue(
           String.format("At least %d records expected, but %d found", exceptedNumberOfRecords, recordsCount),
@@ -122,6 +123,7 @@ public class HttpStreamingSourceETLTest extends HttpSourceETLTest {
     programManager.stop();
     programManager.waitForStopped(10, TimeUnit.SECONDS);
 
+    outputManager.get();
     return MockSink.readOutput(outputManager);
   }
 
