@@ -21,6 +21,7 @@ import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
 import io.cdap.plugin.http.common.http.HttpClient;
+import io.cdap.plugin.http.common.http.KeyStoreType;
 import io.cdap.plugin.http.common.http.OAuthUtil;
 import io.cdap.plugin.http.common.pagination.BaseHttpPaginationIterator;
 import io.cdap.plugin.http.common.pagination.PaginationIteratorFactory;
@@ -53,7 +54,7 @@ import java.io.IOException;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({PaginationIteratorFactory.class, HttpClientBuilder.class, HttpClients.class, OAuthUtil.class,
   HttpHost.class, EntityUtils.class, HttpClient.class})
-@PowerMockIgnore("javax.management.*")
+@PowerMockIgnore({"javax.management.*", "javax.net.ssl.*"})
 public class HttpBatchSourceConfigTest {
 
   @Mock
@@ -74,8 +75,8 @@ public class HttpBatchSourceConfigTest {
     HttpBatchSourceConfig config = HttpBatchSourceConfig.builder()
       .setReferenceName("test").setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:")
       .setFormat("JSON").setAuthType("none").setErrorHandling(StringUtils.EMPTY)
-      .setRetryPolicy(StringUtils.EMPTY).setMaxRetryDuration(600L).setConnectTimeout(120)
-      .setReadTimeout(120).setPaginationType("NONE").setVerifyHttps("true").build();
+      .setRetryPolicy(StringUtils.EMPTY).setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
+        .setPaginationType("NONE").setVerifyHttps("false").setKeystoreType(KeyStoreType.JKS).build();
     config.validate(collector);
   }
 
@@ -85,7 +86,7 @@ public class HttpBatchSourceConfigTest {
       .setReferenceName("test").setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth")
       .setFormat("JSON").setAuthType("none").setErrorHandling(StringUtils.EMPTY)
       .setRetryPolicy(StringUtils.EMPTY).setMaxRetryDuration(600L).setConnectTimeout(120)
-      .setReadTimeout(120).setPaginationType("NONE").setVerifyHttps("true").build();
+      .setReadTimeout(120).setPaginationType("NONE").setVerifyHttps("false").setKeystoreType(KeyStoreType.JKS).build();
     config.validateSchema();
   }
 
@@ -96,8 +97,8 @@ public class HttpBatchSourceConfigTest {
         .setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth").setFormat("JSON")
         .setErrorHandling(StringUtils.EMPTY).setRetryPolicy(StringUtils.EMPTY)
         .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
-        .setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id")
-        .setClientSecret("secret").setRefreshToken("token").setScopes("scope")
+        .setPaginationType("NONE").setVerifyHttps("false").setKeystoreType(KeyStoreType.JKS).setAuthType("oAuth2")
+        .setClientId("id").setClientSecret("secret").setRefreshToken("token").setScopes("scope")
         .setTokenUrl("https//:token").setRetryPolicy("exponential")
         .setOauth2GrantType("refresh_token").build();
     PowerMockito.mockStatic(PaginationIteratorFactory.class);
@@ -124,9 +125,10 @@ public class HttpBatchSourceConfigTest {
     HttpBatchSourceConfig config = HttpBatchSourceConfig.builder()
       .setReferenceName("test").setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth")
       .setFormat("JSON").setAuthType("none").setErrorHandling(StringUtils.EMPTY)
-      .setRetryPolicy(StringUtils.EMPTY).setMaxRetryDuration(600L).setConnectTimeout(120)
-      .setReadTimeout(120).setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id").
-      setClientSecret("secret").setRefreshToken("token").setScopes("scope").setTokenUrl("https//:token").setRetryPolicy(
+      .setRetryPolicy(StringUtils.EMPTY).setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
+        .setPaginationType("NONE").setVerifyHttps("false").setKeystoreType(KeyStoreType.JKS).setAuthType("oAuth2")
+        .setClientId("id").setClientSecret("secret").setRefreshToken("token").setScopes("scope")
+        .setTokenUrl("https//:token").setRetryPolicy(
         "exponential").setProxyUrl("https://proxy").setProxyUsername("proxyuser").setProxyPassword("proxypassword")
         .setOauth2GrantType("refresh_token").build();
     HttpClientBuilder httpClientBuilder = Mockito.mock(HttpClientBuilder.class);
@@ -156,10 +158,10 @@ public class HttpBatchSourceConfigTest {
     HttpBatchSourceConfig config = HttpBatchSourceConfig.builder()
       .setReferenceName("test").setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth")
         .setFormat("JSON").setErrorHandling(StringUtils.EMPTY)
-      .setRetryPolicy(StringUtils.EMPTY).setMaxRetryDuration(600L).setConnectTimeout(120)
-      .setReadTimeout(120).setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id").
-      setClientSecret("secret").setRefreshToken("token").setScopes("scope").setTokenUrl("https//:token").setRetryPolicy(
-            "exponential").setOauth2GrantType("refresh_token").build();
+      .setRetryPolicy(StringUtils.EMPTY).setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
+        .setPaginationType("NONE").setVerifyHttps("false").setKeystoreType(KeyStoreType.JKS).setAuthType("oAuth2")
+        .setClientId("id").setClientSecret("secret").setRefreshToken("token").setScopes("scope")
+        .setTokenUrl("https//:token").setRetryPolicy("exponential").setOauth2GrantType("refresh_token").build();
     CloseableHttpClient httpClientMock = Mockito.mock(CloseableHttpClient.class);
     CloseableHttpResponse httpResponse = Mockito.mock(CloseableHttpResponse.class);
     Mockito.when(httpClientMock.execute(Mockito.any())).thenReturn(httpResponse);
@@ -193,10 +195,9 @@ public class HttpBatchSourceConfigTest {
     HttpBatchSourceConfig config = HttpBatchSourceConfig.builder()
       .setReferenceName("test").setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth")
       .setFormat("JSON").setAuthType("none").setErrorHandling(StringUtils.EMPTY)
-      .setRetryPolicy(StringUtils.EMPTY).setMaxRetryDuration(600L).setConnectTimeout(120)
-      .setReadTimeout(120).setPaginationType("NONE").setVerifyHttps("true").setAuthType("basicAuth").setUsername(
-        "username").setPassword("password").setRetryPolicy(
-        "exponential").build();
+      .setRetryPolicy(StringUtils.EMPTY).setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
+        .setPaginationType("NONE").setVerifyHttps("false").setKeystoreType(KeyStoreType.JKS).setAuthType("basicAuth")
+        .setUsername("username").setPassword("password").setRetryPolicy("exponential").build();
     Mockito.when(httpClient.executeHTTP(Mockito.any())).thenReturn(response);
     Mockito.when(response.getStatusLine()).thenReturn(statusLine);
     Mockito.when(statusLine.getStatusCode()).thenReturn(200);
@@ -210,10 +211,9 @@ public class HttpBatchSourceConfigTest {
     HttpBatchSourceConfig config = HttpBatchSourceConfig.builder()
       .setReferenceName("test").setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth")
       .setFormat("JSON").setAuthType("none").setErrorHandling(StringUtils.EMPTY)
-      .setRetryPolicy(StringUtils.EMPTY).setMaxRetryDuration(600L).setConnectTimeout(120)
-      .setReadTimeout(120).setPaginationType("NONE").setVerifyHttps("true").setAuthType("basicAuth").setUsername(
-        "username").setPassword("password").setRetryPolicy(
-        "exponential").build();
+      .setRetryPolicy(StringUtils.EMPTY).setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
+        .setPaginationType("NONE").setVerifyHttps("false").setKeystoreType(KeyStoreType.JKS).setAuthType("basicAuth")
+        .setUsername("username").setPassword("password").setRetryPolicy("exponential").build();
     Mockito.when(httpClient.executeHTTP(Mockito.any())).thenReturn(response);
     Mockito.when(response.getStatusLine()).thenReturn(statusLine);
     Mockito.when(statusLine.getStatusCode()).thenReturn(400);
@@ -232,8 +232,8 @@ public class HttpBatchSourceConfigTest {
     HttpBatchSourceConfig config = HttpBatchSourceConfig.builder().setReferenceName("test")
         .setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth").setFormat("JSON")
         .setErrorHandling(StringUtils.EMPTY).setRetryPolicy(StringUtils.EMPTY)
-        .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
-        .setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id")
+        .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120).setPaginationType("NONE")
+        .setVerifyHttps("false").setKeystoreType(KeyStoreType.JKS).setAuthType("oAuth2").setClientId("id")
         .setClientSecret("secret").setScopes("scope").setTokenUrl("https//:token")
         .setRetryPolicy("exponential").setOauth2GrantType("client_credentials")
         .setOauth2ClientAuthentication("body").build();
@@ -264,8 +264,8 @@ public class HttpBatchSourceConfigTest {
     HttpBatchSourceConfig config = HttpBatchSourceConfig.builder().setReferenceName("test")
         .setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth").setFormat("JSON")
         .setErrorHandling(StringUtils.EMPTY).setRetryPolicy(StringUtils.EMPTY)
-        .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
-        .setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id")
+        .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120).setPaginationType("NONE")
+        .setVerifyHttps("false").setKeystoreType(KeyStoreType.JKS).setAuthType("oAuth2").setClientId("id")
         .setClientSecret("secret").setRefreshToken("token").setScopes("scope")
         .setTokenUrl("https//:token").setRetryPolicy("exponential").setProxyUrl("https://proxy")
         .setProxyUsername("proxyuser").setProxyPassword("proxypassword")
@@ -298,8 +298,8 @@ public class HttpBatchSourceConfigTest {
     HttpBatchSourceConfig config = HttpBatchSourceConfig.builder().setReferenceName("test")
         .setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth").setFormat("JSON")
         .setErrorHandling(StringUtils.EMPTY).setRetryPolicy(StringUtils.EMPTY)
-        .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
-        .setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id")
+        .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120).setPaginationType("NONE")
+        .setVerifyHttps("false").setKeystoreType(KeyStoreType.JKS).setAuthType("oAuth2").setClientId("id")
         .setClientSecret("secret").setRefreshToken("token").setScopes("scope")
         .setTokenUrl("https//:token").setRetryPolicy("exponential")
         .setOauth2GrantType("client_credentials").setOauth2ClientAuthentication("body").build();
@@ -339,8 +339,8 @@ public class HttpBatchSourceConfigTest {
     HttpBatchSourceConfig config = HttpBatchSourceConfig.builder().setReferenceName("test")
         .setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth").setFormat("JSON")
         .setErrorHandling(StringUtils.EMPTY).setRetryPolicy(StringUtils.EMPTY)
-        .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
-        .setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id")
+        .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120).setPaginationType("NONE")
+        .setVerifyHttps("false").setKeystoreType(KeyStoreType.JKS).setAuthType("oAuth2").setClientId("id")
         .setClientSecret("secret").setScopes("scope").setTokenUrl("https//:token")
         .setRetryPolicy("exponential").setOauth2GrantType("client_credentials")
         .setOauth2ClientAuthentication("request_parameter").build();
@@ -371,8 +371,8 @@ public class HttpBatchSourceConfigTest {
     HttpBatchSourceConfig config = HttpBatchSourceConfig.builder().setReferenceName("test")
         .setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth").setFormat("JSON")
         .setErrorHandling(StringUtils.EMPTY).setRetryPolicy(StringUtils.EMPTY)
-        .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
-        .setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id")
+        .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120).setPaginationType("NONE")
+        .setVerifyHttps("false").setKeystoreType(KeyStoreType.JKS).setAuthType("oAuth2").setClientId("id")
         .setClientSecret("secret").setRefreshToken("token").setScopes("scope")
         .setTokenUrl("https//:token").setRetryPolicy("exponential").setProxyUrl("https://proxy")
         .setProxyUsername("proxyuser").setProxyPassword("proxypassword")
@@ -406,8 +406,8 @@ public class HttpBatchSourceConfigTest {
     HttpBatchSourceConfig config = HttpBatchSourceConfig.builder().setReferenceName("test")
         .setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth").setFormat("JSON")
         .setErrorHandling(StringUtils.EMPTY).setRetryPolicy(StringUtils.EMPTY)
-        .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
-        .setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id")
+        .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120).setPaginationType("NONE")
+        .setVerifyHttps("false").setKeystoreType(KeyStoreType.JKS).setAuthType("oAuth2").setClientId("id")
         .setClientSecret("secret").setRefreshToken("token").setScopes("scope")
         .setTokenUrl("https//:token").setRetryPolicy("exponential")
         .setOauth2GrantType("client_credentials").setOauth2ClientAuthentication("request_parameter")
@@ -448,8 +448,8 @@ public class HttpBatchSourceConfigTest {
     HttpBatchSourceConfig config = HttpBatchSourceConfig.builder().setReferenceName("test")
       .setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth").setFormat("JSON")
       .setErrorHandling(StringUtils.EMPTY).setRetryPolicy(StringUtils.EMPTY)
-      .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
-      .setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id")
+      .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120).setPaginationType("NONE")
+        .setVerifyHttps("false").setKeystoreType(KeyStoreType.JKS).setAuthType("oAuth2").setClientId("id")
       .setClientSecret("secret").setScopes("scope").setTokenUrl("https//:token")
       .setRetryPolicy("exponential").setOauth2GrantType("client_credentials")
       .setOauth2ClientAuthentication("basic_auth_header").build();
@@ -480,8 +480,8 @@ public class HttpBatchSourceConfigTest {
     HttpBatchSourceConfig config = HttpBatchSourceConfig.builder().setReferenceName("test")
       .setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth").setFormat("JSON")
       .setErrorHandling(StringUtils.EMPTY).setRetryPolicy(StringUtils.EMPTY)
-      .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
-      .setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id")
+      .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120).setPaginationType("NONE")
+        .setVerifyHttps("false").setKeystoreType(KeyStoreType.JKS).setAuthType("oAuth2").setClientId("id")
       .setClientSecret("secret").setRefreshToken("token").setScopes("scope")
       .setTokenUrl("https//:token").setRetryPolicy("exponential").setProxyUrl("https://proxy")
       .setProxyUsername("proxyuser").setProxyPassword("proxypassword")
@@ -515,8 +515,8 @@ public class HttpBatchSourceConfigTest {
     HttpBatchSourceConfig config = HttpBatchSourceConfig.builder().setReferenceName("test")
       .setUrl("http://localhost").setHttpMethod("GET").setHeaders("Auth:auth").setFormat("JSON")
       .setErrorHandling(StringUtils.EMPTY).setRetryPolicy(StringUtils.EMPTY)
-      .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120)
-      .setPaginationType("NONE").setVerifyHttps("true").setAuthType("oAuth2").setClientId("id")
+      .setMaxRetryDuration(600L).setConnectTimeout(120).setReadTimeout(120).setPaginationType("NONE")
+        .setVerifyHttps("false").setKeystoreType(KeyStoreType.JKS).setAuthType("oAuth2").setClientId("id")
       .setClientSecret("secret").setRefreshToken("token").setScopes("scope")
       .setTokenUrl("https//:token").setRetryPolicy("exponential")
       .setOauth2GrantType("client_credentials").setOauth2ClientAuthentication("basic_auth_header")

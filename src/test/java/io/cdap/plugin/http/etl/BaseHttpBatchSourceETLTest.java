@@ -64,7 +64,7 @@ public abstract class BaseHttpBatchSourceETLTest extends HydratorTestBase {
   public TestName name = new TestName();
 
   @Rule
-  public WireMockRule wireMockRule = new WireMockRule();
+  public WireMockRule wireMockRule = new WireMockRule(0);
 
   private static final ArtifactSummary APP_ARTIFACT = new ArtifactSummary("data-pipeline", "3.2.0");
 

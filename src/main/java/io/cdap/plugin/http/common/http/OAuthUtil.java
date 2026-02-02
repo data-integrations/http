@@ -83,6 +83,13 @@ public class OAuthUtil {
         // get accessToken from service account
         return OAuthUtil.getAccessTokenByServiceAccount(config);
       case OAUTH2:
+        if (config instanceof BaseHttpSourceConfig) {
+          try (CloseableHttpClient client = HttpClients.custom()
+              .setSSLSocketFactory(new SSLConnectionSocketFactoryCreator((BaseHttpSourceConfig) config).create())
+              .build()) {
+            return getAccessToken(client, config);
+          }
+        }
         try (CloseableHttpClient client = HttpClients.createDefault()) {
           return getAccessToken(client, config);
         }
