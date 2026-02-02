@@ -42,7 +42,7 @@ public abstract class HttpSourceETLTest extends HydratorTestBase {
   @Rule
   public TestName testName = new TestName();
   @Rule
-  public WireMockRule wireMockRule = new WireMockRule();
+  public WireMockRule wireMockRule = new WireMockRule(0);
 
   @Test
   public void testIncrementAnIndex() throws Exception {

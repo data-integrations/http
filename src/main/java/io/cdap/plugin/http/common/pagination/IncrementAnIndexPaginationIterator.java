@@ -44,6 +44,12 @@ public class IncrementAnIndexPaginationIterator extends BaseHttpPaginationIterat
     // if loadFromState() hasn't already set it
     if (index == null) {
       this.index = config.getStartIndex() - this.indexIncrement;
+    } else {
+      // When resuming from state, getCurrentState() saved the index after it was
+      // already advanced by getNextPageUrl(). Subtract the increment so that the
+      // getNextPageUrl() call below produces the correct next page URL instead of
+      // skipping a page due to double-incrementing.
+      this.index -= this.indexIncrement;
     }
 
     this.nextPageUrl = getNextPageUrl();

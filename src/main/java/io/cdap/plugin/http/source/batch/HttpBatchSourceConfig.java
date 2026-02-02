@@ -20,7 +20,9 @@ import com.google.gson.JsonSyntaxException;
 import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.http.common.http.AuthType;
 import io.cdap.plugin.http.common.http.HttpClient;
+import io.cdap.plugin.http.common.http.KeyStoreType;
 import io.cdap.plugin.http.common.http.OAuthUtil;
+import io.cdap.plugin.http.common.http.SSLConnectionSocketFactoryCreator;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -70,7 +72,8 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
       !containsMacro(PROPERTY_PROXY_PASSWORD) && !containsMacro(PROPERTY_PROXY_USERNAME) &&
       !containsMacro(PROPERTY_PROXY_URL) && !containsMacro(PROPERTY_OAUTH2_CLIENT_AUTHENTICATION) &&
       !containsMacro(PROPERTY_OAUTH2_GRANT_TYPE)) {
-      HttpClientBuilder httpclientBuilder = HttpClients.custom();
+      HttpClientBuilder httpclientBuilder = HttpClients.custom()
+          .setSSLSocketFactory(new SSLConnectionSocketFactoryCreator(this).create());
       if (!Strings.isNullOrEmpty(getProxyUrl())) {
         HttpHost proxyHost = HttpHost.create(getProxyUrl());
         if (!Strings.isNullOrEmpty(getProxyUsername()) && !Strings.isNullOrEmpty(getProxyPassword())) {
@@ -140,6 +143,7 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
     this.readTimeout = builder.readTimeout;
     this.paginationType = builder.paginationType;
     this.verifyHttps = builder.verifyHttps;
+    this.keystoreType = builder.keystoreType;
     this.authType = builder.authType;
     this.authUrl = builder.authUrl;
     this.clientId = builder.clientId;
@@ -180,6 +184,7 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
     private Integer readTimeout;
     private String paginationType;
     private String verifyHttps;
+    private String keystoreType;
     private String authType;
     private String authUrl;
     private String tokenUrl;
@@ -342,6 +347,11 @@ public class HttpBatchSourceConfig extends BaseHttpSourceConfig {
 
     public HttpBatchSourceConfigBuilder setAuthType(String authType) {
       this.authType = authType;
+      return this;
+    }
+
+    public  HttpBatchSourceConfigBuilder setKeystoreType(KeyStoreType keystoreTypeObj) {
+      this.keystoreType = keystoreTypeObj.getValue();
       return this;
     }
 

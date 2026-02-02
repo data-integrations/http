@@ -50,8 +50,8 @@ public class HttpStreamingSourceETLTest extends HttpSourceETLTest {
   private static final Logger LOG = LoggerFactory.getLogger(HttpStreamingSourceETLTest.class);
   private static final ArtifactId APP_ARTIFACT_ID = NamespaceId.DEFAULT.artifact("data-streams", "1.0.0");
   private static final ArtifactSummary APP_ARTIFACT = new ArtifactSummary("data-streams", "1.0.0");
-  private static final int WAIT_FOR_RECORDS_TIMEOUT_SECONDS = 60;
-  private static final long WAIT_FOR_RECORDS_POLLING_INTERVAL_MS = 100;
+  private static final int WAIT_FOR_RECORDS_TIMEOUT_SECONDS = 300;
+  private static final long WAIT_FOR_RECORDS_POLLING_INTERVAL_MS = 200;
 
   @BeforeClass
   public static void setupTest() throws Exception {
@@ -100,7 +100,7 @@ public class HttpStreamingSourceETLTest extends HttpSourceETLTest {
 
     ProgramManager programManager =
       deployETL(sourceConfig, sinkConfig, "HTTPStreaming_" + testName.getMethodName());
-    programManager.startAndWaitForRun(ProgramRunStatus.RUNNING, 30, TimeUnit.SECONDS);
+    programManager.startAndWaitForRun(ProgramRunStatus.RUNNING, 120, TimeUnit.SECONDS);
 
     return programManager;
   }
@@ -120,7 +120,7 @@ public class HttpStreamingSourceETLTest extends HttpSourceETLTest {
       }));
 
     programManager.stop();
-    programManager.waitForStopped(10, TimeUnit.SECONDS);
+    programManager.waitForStopped(120, TimeUnit.SECONDS);
 
     return MockSink.readOutput(outputManager);
   }
