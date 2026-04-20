@@ -73,7 +73,7 @@
     <junit.version>4.11</junit.version>
     <jython.version>2.7.1</jython.version>
     <mockito.version>2.24.0</mockito.version>
-    <spark3.version>3.3.2</spark3.version>
+    <spark3.version>3.5.7</spark3.version>
     <unxml.version>0.9</unxml.version>
     <wiremock.version>1.49</wiremock.version>
   </properties>
