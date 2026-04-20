@@ -24,11 +24,17 @@ import io.cdap.plugin.http.common.BaseHttpConfig;
 import io.cdap.plugin.http.common.OAuth2GrantType;
 import io.cdap.plugin.http.common.pagination.page.JSONUtil;
 import io.cdap.plugin.http.source.common.BaseHttpSourceConfig;
+import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
@@ -83,14 +89,26 @@ public class OAuthUtil {
         // get accessToken from service account
         return OAuthUtil.getAccessTokenByServiceAccount(config);
       case OAUTH2:
+        HttpClientBuilder httpClientBuilder = HttpClients.custom();
+
         if (config instanceof BaseHttpSourceConfig) {
-          try (CloseableHttpClient client = HttpClients.custom()
-              .setSSLSocketFactory(new SSLConnectionSocketFactoryCreator((BaseHttpSourceConfig) config).create())
-              .build()) {
-            return getAccessToken(client, config);
-          }
+          httpClientBuilder.setSSLSocketFactory(
+                  new SSLConnectionSocketFactoryCreator((BaseHttpSourceConfig) config).create()
+          );
         }
-        try (CloseableHttpClient client = HttpClients.createDefault()) {
+        // Apply Proxy settings if they exist
+        if (!Strings.isNullOrEmpty(config.getProxyUrl())) {
+          HttpHost proxyHost = HttpHost.create(config.getProxyUrl());
+
+          if (!Strings.isNullOrEmpty(config.getProxyUsername()) && !Strings.isNullOrEmpty(config.getProxyPassword())) {
+            CredentialsProvider credsProvider = new BasicCredentialsProvider();
+            credsProvider.setCredentials(new AuthScope(proxyHost),
+                    new UsernamePasswordCredentials(config.getProxyUsername(), config.getProxyPassword()));
+            httpClientBuilder.setDefaultCredentialsProvider(credsProvider);
+          }
+          httpClientBuilder.setProxy(proxyHost);
+        }
+        try (CloseableHttpClient client = httpClientBuilder.build()) {
           return getAccessToken(client, config);
         }
     }
